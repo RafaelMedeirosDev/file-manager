@@ -35,3 +35,5 @@ Thumbs.db
 # tests / temp
 .tmp/
 tmp/
+
+AGENTS.md
