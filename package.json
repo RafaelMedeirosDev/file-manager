@@ -1,0 +1,7 @@
+{
+  "name": "file-manager",
+  "private": true,
+  "scripts": {
+    "start:dev": "pnpm --dir back-end start:dev"
+  }
+}
