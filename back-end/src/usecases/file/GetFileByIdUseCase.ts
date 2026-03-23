@@ -53,7 +53,7 @@ export class GetFileByIdUseCase {
       throw new NotFoundException(ErrorMessagesEnum.FILE_NOT_FOUND);
     }
 
-    if (input.requesterRole !== ROLE.ADMIN && file.userId !== input.requesterUserId) {
+    if (!this.canAccessResource(file.userId, input)) {
       throw new ForbiddenException(ErrorMessagesEnum.FILE_ACCESS_FORBIDDEN);
     }
 
@@ -64,30 +64,52 @@ export class GetFileByIdUseCase {
       folderId: file.folderId,
       extension: file.extension,
       url: file.url,
-      folder: file.folder
-        ? {
-            id: file.folder.id,
-            name: file.folder.name,
-            userId: file.folder.userId,
-            folderId: file.folder.folderId,
-            parent: file.folder.parent
-              ? {
-                  id: file.folder.parent.id,
-                  name: file.folder.parent.name,
-                  userId: file.folder.parent.userId,
-                  folderId: file.folder.parent.folderId,
-                }
-              : null,
-            children: file.folder.children.map((child) => ({
-              id: child.id,
-              name: child.name,
-              userId: child.userId,
-              folderId: child.folderId,
-            })),
-          }
-        : null,
+      folder:
+        file.folder &&
+        !file.folder.deletedAt &&
+        this.canAccessResource(file.folder.userId, input)
+          ? {
+              id: file.folder.id,
+              name: file.folder.name,
+              userId: file.folder.userId,
+              folderId: file.folder.folderId,
+              parent:
+                file.folder.parent &&
+                !file.folder.parent.deletedAt &&
+                this.canAccessResource(file.folder.parent.userId, input)
+                  ? {
+                      id: file.folder.parent.id,
+                      name: file.folder.parent.name,
+                      userId: file.folder.parent.userId,
+                      folderId: file.folder.parent.folderId,
+                    }
+                  : null,
+              children: file.folder.children
+                .filter(
+                  (child) =>
+                    !child.deletedAt && this.canAccessResource(child.userId, input),
+                )
+                .map((child) => ({
+                  id: child.id,
+                  name: child.name,
+                  userId: child.userId,
+                  folderId: child.folderId,
+                })),
+            }
+          : null,
       createdAt: file.createdAt,
       updatedAt: file.updatedAt,
     };
+  }
+
+  private canAccessResource(
+    ownerUserId: string,
+    input: { requesterUserId: string; requesterRole: ROLE },
+  ): boolean {
+    if (input.requesterRole === ROLE.ADMIN) {
+      return true;
+    }
+
+    return ownerUserId === input.requesterUserId;
   }
 }

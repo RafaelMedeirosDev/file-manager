@@ -5,9 +5,11 @@ export enum ErrorMessagesEnum {
   FOLDER_NOT_FOUND = 'Pasta nao encontrada',
   FILE_NOT_FOUND = 'Arquivo nao encontrado',
   FILE_ACCESS_FORBIDDEN = 'Voce nao tem permissao para acessar este arquivo',
+  FOLDER_ACCESS_FORBIDDEN = 'Voce nao tem permissao para acessar esta pasta',
   INVALID_FILE_URL = 'URL do arquivo invalida',
   FILE_DOWNLOAD_TIMEOUT = 'Tempo limite excedido ao baixar arquivo',
   FILE_DOWNLOAD_UNAVAILABLE = 'Nao foi possivel realizar o download do arquivo',
   FOLDER_DOES_NOT_BELONG_TO_USER = 'A pasta informada nao pertence ao usuario',
   AT_LEAST_ONE_FIELD_REQUIRED = 'Informe ao menos um campo para atualizacao',
+  INVALID_FOLDER_LIST_FILTER = 'Informe apenas folderId ou rootsOnly',
 }
