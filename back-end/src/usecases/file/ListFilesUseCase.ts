@@ -20,12 +20,17 @@ export class ListFilesUseCase {
   async execute(input: {
     requesterUserId: string;
     requesterRole: ROLE;
+    folderId?: string;
   }): Promise<ListFilesOutput> {
     const files = await this.fileRepository.findAll();
 
     return files
       .filter((file) => {
         if (file.deletedAt) {
+          return false;
+        }
+
+        if (input.folderId && file.folderId !== input.folderId) {
           return false;
         }
 

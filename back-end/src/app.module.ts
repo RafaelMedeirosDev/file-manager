@@ -16,6 +16,7 @@ import { CreateFolderUseCase } from './usecases/folder/CreateFolderUseCase';
 import { UpdateFolderUseCase } from './usecases/folder/UpdateFolderUseCase';
 import { ListFoldersUseCase } from './usecases/folder/ListFoldersUseCase';
 import { SoftDeleteFolderUseCase } from './usecases/folder/SoftDeleteFolderUseCase';
+import { GetFolderByIdUseCase } from './usecases/folder/GetFolderByIdUseCase';
 import { FileRepository } from './repositories/FileRepository';
 import { CreateFileUseCase } from './usecases/file/CreateFileUseCase';
 import { ListFilesUseCase } from './usecases/file/ListFilesUseCase';
@@ -36,6 +37,7 @@ import { RolesGuard } from './auth/roles.guard';
     SoftDeleteUserUseCase,
     CreateFolderUseCase,
     ListFoldersUseCase,
+    GetFolderByIdUseCase,
     UpdateFolderUseCase,
     SoftDeleteFolderUseCase,
     CreateFileUseCase,

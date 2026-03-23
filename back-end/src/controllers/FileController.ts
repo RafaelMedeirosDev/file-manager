@@ -7,6 +7,7 @@ import {
   Patch,
   ParseUUIDPipe,
   Post,
+  Query,
   Req,
   Res,
   StreamableFile,
@@ -16,6 +17,7 @@ import {
 import type { Request, Response } from 'express';
 import { ROLE } from '@prisma/client';
 import { CreateFileDTO } from '../shared/dto/file/CreateFileDTO';
+import { ListFilesQueryDTO } from '../shared/dto/file/ListFilesQueryDTO';
 import {
   UpdateFileDTO,
   UpdateFileParamsDTO,
@@ -23,15 +25,27 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
-import { CreateFileOutput, CreateFileUseCase } from '../usecases/file/CreateFileUseCase';
-import { ListFilesOutput, ListFilesUseCase } from '../usecases/file/ListFilesUseCase';
-import { UpdateFileOutput, UpdateFileUseCase } from '../usecases/file/UpdateFileUseCase';
+import {
+  CreateFileOutput,
+  CreateFileUseCase,
+} from '../usecases/file/CreateFileUseCase';
+import {
+  GetFileByIdOutput,
+  GetFileByIdUseCase,
+} from '../usecases/file/GetFileByIdUseCase';
+import {
+  ListFilesOutput,
+  ListFilesUseCase,
+} from '../usecases/file/ListFilesUseCase';
+import { DownloadFileUseCase } from '../usecases/file/DownloadFileUseCase';
 import {
   SoftDeleteFileOutput,
   SoftDeleteFileUseCase,
 } from '../usecases/file/SoftDeleteFileUseCase';
-import { GetFileByIdOutput, GetFileByIdUseCase } from '../usecases/file/GetFileByIdUseCase';
-import { DownloadFileUseCase } from '../usecases/file/DownloadFileUseCase';
+import {
+  UpdateFileOutput,
+  UpdateFileUseCase,
+} from '../usecases/file/UpdateFileUseCase';
 import type { JwtPayload } from '../auth/jwt.strategy';
 
 @Controller('files')
@@ -50,10 +64,19 @@ export class FileController {
   @Roles(ROLE.USER, ROLE.ADMIN)
   async findAll(
     @Req() req: Request & { user: JwtPayload },
+    @Query(
+      new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        forbidNonWhitelisted: true,
+      }),
+    )
+    query: ListFilesQueryDTO,
   ): Promise<ListFilesOutput> {
     return this.listFilesUseCase.execute({
       requesterUserId: req.user.sub,
       requesterRole: req.user.role,
+      folderId: query.folderId,
     });
   }
 
@@ -89,7 +112,10 @@ export class FileController {
       res.setHeader('Content-Length', file.contentLength);
     }
 
-    res.setHeader('Content-Disposition', `attachment; filename=\"${file.fileName}\"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${file.fileName}"`,
+    );
 
     return new StreamableFile(file.stream);
   }
