@@ -72,6 +72,8 @@ export class FolderController {
       requesterRole: req.user.role,
       folderId: query.folderId,
       rootsOnly: query.rootsOnly,
+      page: query.page,
+      limit: query.limit,
     });
   }
 

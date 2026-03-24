@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
   ValidationPipe,
 } from '@nestjs/common';
@@ -14,6 +15,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { CreateUserDTO } from '../shared/dto/user/CreateUserDTO';
+import { ListUsersQueryDTO } from '../shared/dto/user/ListUsersQueryDTO';
 import { UpdateUserBodyDTO } from '../shared/dto/user/UpdateUserBodyDTO';
 import { UpdateUserParamsDTO } from '../shared/dto/user/UpdateUserParamsDTO';
 import {
@@ -42,8 +44,20 @@ export class UserController {
   ) {}
 
   @Get()
-  async findAll(): Promise<ListUsersOutput> {
-    return this.listUsersUseCase.execute();
+  async findAll(
+    @Query(
+      new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        forbidNonWhitelisted: true,
+      }),
+    )
+    query: ListUsersQueryDTO,
+  ): Promise<ListUsersOutput> {
+    return this.listUsersUseCase.execute({
+      page: query.page,
+      limit: query.limit,
+    });
   }
 
   @Post()
