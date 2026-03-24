@@ -2,16 +2,24 @@ import { Injectable } from '@nestjs/common';
 import { ROLE } from '@prisma/client';
 import { FileRepository } from '../../repositories/FileRepository';
 
-export type ListFilesOutput = Array<{
-  id: string;
-  name: string;
-  userId: string;
-  folderId: string | null;
-  extension: string;
-  url: string;
-  createdAt: Date;
-  updatedAt: Date;
-}>;
+export type ListFilesOutput = {
+  data: Array<{
+    id: string;
+    name: string;
+    userId: string;
+    folderId: string | null;
+    extension: string;
+    url: string;
+    createdAt: Date;
+    updatedAt: Date;
+  }>;
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    hasNextPage: boolean;
+  };
+};
 
 @Injectable()
 export class ListFilesUseCase {
@@ -21,26 +29,36 @@ export class ListFilesUseCase {
     requesterUserId: string;
     requesterRole: ROLE;
     folderId?: string;
+    page?: number;
+    limit?: number;
   }): Promise<ListFilesOutput> {
+    const page = input.page ?? 1;
+    const limit = input.limit ?? 10;
+
     const files = await this.fileRepository.findAll();
 
-    return files
-      .filter((file) => {
-        if (file.deletedAt) {
-          return false;
-        }
+    const filteredFiles = files.filter((file) => {
+      if (file.deletedAt) {
+        return false;
+      }
 
-        if (input.folderId && file.folderId !== input.folderId) {
-          return false;
-        }
+      if (input.folderId && file.folderId !== input.folderId) {
+        return false;
+      }
 
-        if (input.requesterRole === ROLE.ADMIN) {
-          return true;
-        }
+      if (input.requesterRole === ROLE.ADMIN) {
+        return true;
+      }
 
-        return file.userId === input.requesterUserId;
-      })
-      .map((file) => ({
+      return file.userId === input.requesterUserId;
+    });
+
+    const total = filteredFiles.length;
+    const start = (page - 1) * limit;
+    const paginatedFiles = filteredFiles.slice(start, start + limit);
+
+    return {
+      data: paginatedFiles.map((file) => ({
         id: file.id,
         name: file.name,
         userId: file.userId,
@@ -49,6 +67,13 @@ export class ListFilesUseCase {
         url: file.url,
         createdAt: file.createdAt,
         updatedAt: file.updatedAt,
-      }));
+      })),
+      meta: {
+        page,
+        limit,
+        total,
+        hasNextPage: start + limit < total,
+      },
+    };
   }
 }
