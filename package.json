@@ -2,6 +2,9 @@
   "name": "file-manager",
   "private": true,
   "scripts": {
-    "start:dev": "pnpm --dir back-end start:dev"
+    "start:dev": "pnpm --dir back-end start:dev",
+    "start:front": "pnpm --dir front-end dev",
+    "build:back": "pnpm --dir back-end build",
+    "build:front": "pnpm --dir front-end build"
   }
 }
