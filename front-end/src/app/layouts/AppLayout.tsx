@@ -7,9 +7,12 @@ export function AppLayout() {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <Link to="/" className="brand">
-          File Manager
-        </Link>
+        <div>
+          <Link to="/" className="brand">
+            File Manager
+          </Link>
+          <p className="brand-subtitle">SaaS Storage</p>
+        </div>
 
         <nav className="nav-list">
           <NavLink to="/" end>
