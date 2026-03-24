@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { api } from '../services/api';
 import { FileIcon, FolderIcon } from '../components/Icons';
@@ -41,16 +41,24 @@ function getApiErrorMessage(error: any, fallback: string) {
   return fallback;
 }
 
+type ExplorerEntry =
+  | { type: 'folder'; id: string; name: string }
+  | { type: 'file'; id: string; name: string; extension: string };
+
 export function FolderDetailsPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+
   const [folder, setFolder] = useState<FolderDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+
   const [newFolderName, setNewFolderName] = useState('');
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const fetchFolder = useCallback(async () => {
     if (!id) return;
@@ -73,11 +81,43 @@ export function FolderDetailsPage() {
     setActionError(null);
     setCreatingFolder(false);
     setDownloadingFileId(null);
+    setSearchTerm('');
   }, [id]);
 
   useEffect(() => {
     void fetchFolder();
   }, [fetchFolder]);
+
+  const entries = useMemo(() => {
+    if (!folder) return [] as ExplorerEntry[];
+
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+
+    const folders = folder.children
+      .filter((child) =>
+        normalizedSearch ? child.name.toLowerCase().includes(normalizedSearch) : true,
+      )
+      .map<ExplorerEntry>((child) => ({
+        type: 'folder',
+        id: child.id,
+        name: child.name,
+      }));
+
+    const files = folder.files
+      .filter((file) => {
+        if (!normalizedSearch) return true;
+        const fullName = `${file.name}.${file.extension}`.toLowerCase();
+        return fullName.includes(normalizedSearch);
+      })
+      .map<ExplorerEntry>((file) => ({
+        type: 'file',
+        id: file.id,
+        name: file.name,
+        extension: file.extension,
+      }));
+
+    return [...folders, ...files];
+  }, [folder, searchTerm]);
 
   async function handleDownload(fileId: string, fileName: string, extension: string) {
     setActionError(null);
@@ -134,102 +174,98 @@ export function FolderDetailsPage() {
         <>
           <h1 className="text-2xl font-bold text-slate-900">{folder.name}</h1>
 
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-slate-500">
-            <Link to="/folders" className="font-semibold text-brand-700 hover:text-brand-800">
-              Desktop
-            </Link>
-            <span>/</span>
-            {folder.parent ? (
-              <>
-                <Link to={`/folders/${folder.parent.id}`} className="font-semibold text-brand-700 hover:text-brand-800">
-                  {folder.parent.name}
+          <div className="mt-4 app-card p-3">
+            <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
+              <div className="flex flex-1 flex-wrap items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-600">
+                <Link to="/folders" className="font-semibold text-brand-700 hover:text-brand-800">
+                  Desktop
                 </Link>
-                <span>/</span>
-              </>
-            ) : null}
-            <span className="font-semibold text-slate-700">{folder.name}</span>
+                <span>{'>'}</span>
+                {folder.parent ? (
+                  <>
+                    <Link to={`/folders/${folder.parent.id}`} className="font-semibold text-brand-700 hover:text-brand-800">
+                      {folder.parent.name}
+                    </Link>
+                    <span>{'>'}</span>
+                  </>
+                ) : null}
+                <span className="font-semibold text-slate-800">{folder.name}</span>
+              </div>
+
+              <input
+                className="app-input lg:max-w-xs"
+                placeholder="Buscar nesta pasta"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+              />
+            </div>
           </div>
 
           {actionError ? <p className="mt-3 text-sm font-medium text-rose-600">{actionError}</p> : null}
 
-          <div className="mt-4 grid gap-4 lg:grid-cols-[260px_1fr]">
-            <aside className="app-card bg-slate-50 p-3">
-              <h2 className="app-section-title">Navegacao</h2>
-              <ul className="mt-3 space-y-2 text-sm">
-                <li>
-                  <Link to="/folders" className="inline-flex items-center gap-2 font-semibold text-brand-700">
-                    <FolderIcon className="h-4 w-4 text-amber-500" />
-                    <span>Desktop</span>
-                  </Link>
-                </li>
-                {folder.parent ? (
-                  <li>
-                    <Link to={`/folders/${folder.parent.id}`} className="inline-flex items-center gap-2 text-slate-700 hover:text-brand-700">
-                      <FolderIcon className="h-4 w-4 text-amber-500" />
-                      <span>{folder.parent.name}</span>
-                    </Link>
-                  </li>
-                ) : null}
-                {folder.children.map((child) => (
-                  <li key={`tree-${child.id}`}>
-                    <Link to={`/folders/${child.id}`} className="inline-flex items-center gap-2 text-slate-700 hover:text-brand-700">
-                      <FolderIcon className="h-4 w-4 text-amber-500" />
-                      <span>{child.name}</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </aside>
+          {user?.role === 'ADMIN' ? (
+            <form className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto]" onSubmit={handleCreateSubFolder}>
+              <input
+                placeholder="Nova subpasta"
+                value={newFolderName}
+                onChange={(event) => setNewFolderName(event.target.value)}
+                className="app-input"
+                required
+              />
+              <button type="submit" className="btn-primary" disabled={creatingFolder}>
+                {creatingFolder ? 'Criando...' : 'Criar pasta'}
+              </button>
+            </form>
+          ) : null}
 
-            <section className="app-card p-3">
-              <h2 className="text-lg font-semibold text-slate-900">Conteudo da pasta</h2>
+          <section className="mt-4 app-card overflow-hidden">
+            <div className="grid grid-cols-[1fr_auto] border-b border-slate-200 bg-slate-50 px-4 py-2 text-xs font-bold uppercase tracking-wide text-slate-500">
+              <span>Nome</span>
+              
+            </div>
 
-              {user?.role === 'ADMIN' ? (
-                <div className="mt-3 grid gap-3">
-                  <form className="grid gap-2 sm:grid-cols-[1fr_auto]" onSubmit={handleCreateSubFolder}>
-                    <input placeholder="Nova subpasta" value={newFolderName} onChange={(event) => setNewFolderName(event.target.value)} className="app-input" required />
-                    <button type="submit" className="btn-primary" disabled={creatingFolder}>{creatingFolder ? 'Criando...' : 'Criar pasta'}</button>
-                  </form>
-                </div>
-              ) : null}
-
-              <h3 className="app-section-title mt-5">Subpastas</h3>
-              <ul className="mt-2 space-y-2">
-                {folder.children.map((child) => (
-                  <li key={child.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm">
-                    <Link to={`/folders/${child.id}`} className="inline-flex items-center gap-2 font-semibold text-brand-700">
-                      <FolderIcon className="h-4 w-4 text-amber-500" />
-                      <span>{child.name}</span>
-                    </Link>
-                  </li>
-                ))}
-                {folder.children.length === 0 ? <li className="rounded-xl border border-dashed border-slate-300 p-3 text-sm text-slate-500">Sem subpastas.</li> : null}
-              </ul>
-
-              <h3 className="app-section-title mt-5">Arquivos</h3>
-              <ul className="mt-2 space-y-2">
-                {folder.files.map((file) => (
-                  <li key={file.id} className="app-list-item">
-                    <span className="inline-flex items-center gap-2 text-slate-700">
-                      <FileIcon className="h-4 w-4 text-slate-500" />
-                      <span>{file.name}.{file.extension}</span>
-                    </span>
+            <ul>
+              {entries.map((entry) => (
+                <li key={entry.id} className="flex items-center justify-between border-b border-slate-100 px-4 py-3 text-sm last:border-b-0">
+                  {entry.type === 'folder' ? (
                     <button
                       type="button"
-                      className="download-btn sm:ml-auto"
-                      disabled={downloadingFileId === file.id}
-                      onClick={() => handleDownload(file.id, file.name, file.extension)}
+                      className="inline-flex items-center gap-2 text-left font-semibold text-brand-700 hover:text-brand-800"
+                      onClick={() => navigate(`/folders/${entry.id}`)}
                     >
-                      {downloadingFileId === file.id ? 'Baixando...' : 'Download'}
+                      <FolderIcon className="h-4 w-4 text-amber-500" />
+                      <span>{entry.name}</span>
                     </button>
-                  </li>
-                ))}
-                {folder.files.length === 0 ? <li className="rounded-xl border border-dashed border-slate-300 p-3 text-sm text-slate-500">Sem arquivos.</li> : null}
-              </ul>
-            </section>
-          </div>
+                  ) : (
+                    <span className="inline-flex items-center gap-2 text-slate-700">
+                      <FileIcon className="h-4 w-4 text-slate-500" />
+                      <span>{entry.name}.{entry.extension}</span>
+                    </span>
+                  )}
+
+                  {entry.type === 'folder' ? null : (
+                    <button
+                      type="button"
+                      className="download-btn"
+                      disabled={downloadingFileId === entry.id}
+                      onClick={() => handleDownload(entry.id, entry.name, entry.extension)}
+                    >
+                      {downloadingFileId === entry.id ? 'Baixando...' : 'Download'}
+                    </button>
+                  )}
+                </li>
+              ))}
+
+              {entries.length === 0 ? (
+                <li className="px-4 py-5 text-sm text-slate-500">Nenhum item encontrado nesta pasta.</li>
+              ) : null}
+            </ul>
+          </section>
         </>
       ) : null}
     </div>
   );
 }
+
+
+
