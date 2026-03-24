@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 import { api } from '../services/api';
 
 type FolderItem = {
@@ -12,11 +13,15 @@ type FolderItem = {
 };
 
 export function FoldersPage() {
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const folderId = searchParams.get('folderId');
   const [folders, setFolders] = useState<FolderItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
 
   const title = useMemo(() => {
     if (folderId) {
@@ -26,26 +31,52 @@ export function FoldersPage() {
     return 'Pastas Raiz';
   }, [folderId]);
 
-  useEffect(() => {
-    async function fetchFolders() {
-      setLoading(true);
-      setError(null);
+  const fetchFolders = useCallback(async () => {
+    setLoading(true);
+    setError(null);
 
-      try {
-        const { data } = await api.get<FolderItem[]>('/folders', {
-          params: folderId ? { folderId } : { rootsOnly: true },
-        });
-        setFolders(data);
-      } catch (err: any) {
-        const apiMessage = err?.response?.data?.message;
-        setError(typeof apiMessage === 'string' ? apiMessage : 'Erro ao carregar pastas.');
-      } finally {
-        setLoading(false);
-      }
+    try {
+      const { data } = await api.get<FolderItem[]>('/folders', {
+        params: folderId ? { folderId } : { rootsOnly: true },
+      });
+      setFolders(data);
+    } catch (err: any) {
+      const apiMessage = err?.response?.data?.message;
+      setError(typeof apiMessage === 'string' ? apiMessage : 'Erro ao carregar pastas.');
+    } finally {
+      setLoading(false);
+    }
+  }, [folderId]);
+
+  useEffect(() => {
+    void fetchFolders();
+  }, [fetchFolders]);
+
+  async function handleCreateFolder(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!user) {
+      return;
     }
 
-    void fetchFolders();
-  }, [folderId]);
+    setCreating(true);
+    setCreateError(null);
+
+    try {
+      await api.post('/folders', {
+        name: newFolderName,
+        userId: user.id,
+        folderId: folderId ?? undefined,
+      });
+      setNewFolderName('');
+      await fetchFolders();
+    } catch (err: any) {
+      const apiMessage = err?.response?.data?.message;
+      setCreateError(typeof apiMessage === 'string' ? apiMessage : 'Erro ao criar pasta.');
+    } finally {
+      setCreating(false);
+    }
+  }
 
   return (
     <div>
@@ -55,6 +86,22 @@ export function FoldersPage() {
           Ver raiz
         </button>
       </div>
+
+      {user?.role === 'ADMIN' ? (
+        <form className="inline-form" onSubmit={handleCreateFolder}>
+          <input
+            value={newFolderName}
+            onChange={(event) => setNewFolderName(event.target.value)}
+            placeholder={folderId ? 'Nova subpasta' : 'Nova pasta raiz'}
+            required
+          />
+          <button type="submit" disabled={creating}>
+            {creating ? 'Criando...' : 'Criar pasta'}
+          </button>
+        </form>
+      ) : null}
+
+      {createError ? <p className="error-message">{createError}</p> : null}
 
       {loading ? <p>Carregando...</p> : null}
       {error ? <p className="error-message">{error}</p> : null}
