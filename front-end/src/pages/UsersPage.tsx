@@ -36,23 +36,31 @@ export function UsersPage() {
 
   return (
     <div>
-      <h1>Usuarios</h1>
-      {loading ? <p>Carregando...</p> : null}
-      {error ? <p className="error-message">{error}</p> : null}
+      <h1 className="text-2xl font-bold text-slate-900">Usuarios</h1>
+
+      {loading ? <p className="mt-3 text-sm text-slate-500">Carregando...</p> : null}
+      {error ? <p className="mt-3 text-sm font-medium text-rose-600">{error}</p> : null}
 
       {!loading && !error ? (
-        <ul className="item-list">
+        <ul className="mt-4 space-y-2">
           {users.map((user) => (
-            <li key={user.id}>
-              <span>
+            <li key={user.id} className="app-list-item">
+              <span className="text-sm text-slate-700">
                 {user.name} - {user.email}
               </span>
-              <strong>{user.role}</strong>
+              <strong className="rounded-full bg-brand-100 px-3 py-1 text-xs uppercase tracking-wide text-brand-700">
+                {user.role}
+              </strong>
             </li>
           ))}
-          {users.length === 0 ? <li>Nenhum usuario encontrado.</li> : null}
+          {users.length === 0 ? (
+            <li className="rounded-xl border border-dashed border-slate-300 p-3 text-sm text-slate-500">
+              Nenhum usuario encontrado.
+            </li>
+          ) : null}
         </ul>
       ) : null}
     </div>
   );
 }
+
