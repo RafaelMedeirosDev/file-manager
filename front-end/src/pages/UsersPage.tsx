@@ -36,7 +36,8 @@ export function UsersPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-slate-900">Usuarios</h1>
+      <h1 className="app-page-title">Usuarios</h1>
+      <p className="app-page-subtitle">Painel administrativo de contas e perfis.</p>
 
       {loading ? <p className="mt-3 text-sm text-slate-500">Carregando...</p> : null}
       {error ? <p className="mt-3 text-sm font-medium text-rose-600">{error}</p> : null}
@@ -46,11 +47,10 @@ export function UsersPage() {
           {users.map((user) => (
             <li key={user.id} className="app-list-item">
               <span className="text-sm text-slate-700">
-                {user.name} - {user.email}
+                <span className="block font-semibold text-slate-900">{user.name}</span>
+                <span className="text-slate-500">{user.email}</span>
               </span>
-              <strong className="rounded-full bg-brand-100 px-3 py-1 text-xs uppercase tracking-wide text-brand-700">
-                {user.role}
-              </strong>
+              <strong className="app-chip">{user.role}</strong>
             </li>
           ))}
           {users.length === 0 ? (
@@ -63,4 +63,3 @@ export function UsersPage() {
     </div>
   );
 }
-

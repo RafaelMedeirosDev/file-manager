@@ -120,7 +120,7 @@ export function FoldersPage() {
   return (
     <div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-slate-900">Pastas Raiz</h1>
+        <h1 className="app-page-title">Pastas Raiz</h1>
       </div>
 
       {user?.role === 'ADMIN' ? (
@@ -193,7 +193,7 @@ export function FoldersPage() {
                   to={`/folders/${folder.id}`}
                   className="flex h-full min-h-[112px] flex-col items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white p-3 text-center transition hover:border-brand-300 hover:bg-brand-50"
                 >
-                  <FolderIcon className="h-8 w-8 text-amber-500" />
+                  <FolderIcon className="h-8 w-8 text-brand-600" />
                   <span className="line-clamp-2 text-sm font-semibold text-slate-800">{folder.name}</span>
                   {user?.role === 'ADMIN' ? (
                     <span className="line-clamp-1 text-[11px] text-slate-500">{ownerName}</span>
@@ -212,3 +212,5 @@ export function FoldersPage() {
     </div>
   );
 }
+
+

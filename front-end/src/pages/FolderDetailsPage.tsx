@@ -233,7 +233,7 @@ export function FolderDetailsPage() {
                       className="inline-flex items-center gap-2 text-left font-semibold text-brand-700 hover:text-brand-800"
                       onClick={() => navigate(`/folders/${entry.id}`)}
                     >
-                      <FolderIcon className="h-4 w-4 text-amber-500" />
+                      <FolderIcon className="h-4 w-4 text-brand-600" />
                       <span>{entry.name}</span>
                     </button>
                   ) : (
@@ -266,6 +266,7 @@ export function FolderDetailsPage() {
     </div>
   );
 }
+
 
 
 
