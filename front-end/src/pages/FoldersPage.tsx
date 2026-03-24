@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { api } from '../services/api';
 import { FolderIcon } from '../components/Icons';
@@ -28,8 +28,6 @@ function getApiErrorMessage(error: any, fallback: string) {
 
 export function FoldersPage() {
   const { user } = useAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const folderId = searchParams.get('folderId');
 
   const [folders, setFolders] = useState<FolderItem[]>([]);
   const [usersOptions, setUsersOptions] = useState<UserOption[]>([]);
@@ -42,8 +40,6 @@ export function FoldersPage() {
 
   const [selectedCreateUserId, setSelectedCreateUserId] = useState('');
   const [filterUserId, setFilterUserId] = useState('');
-
-  const title = useMemo(() => (folderId ? 'Subpastas' : 'Pastas Raiz'), [folderId]);
 
   const usersById = useMemo(
     () => new Map(usersOptions.map((option) => [option.id, option.name])),
@@ -61,7 +57,7 @@ export function FoldersPage() {
 
     try {
       const { data } = await api.get<FolderItem[]>('/folders', {
-        params: folderId ? { folderId } : { rootsOnly: true },
+        params: { rootsOnly: true },
       });
       setFolders(data);
     } catch (err: any) {
@@ -69,7 +65,7 @@ export function FoldersPage() {
     } finally {
       setLoading(false);
     }
-  }, [folderId]);
+  }, []);
 
   useEffect(() => {
     void fetchFolders();
@@ -110,7 +106,6 @@ export function FoldersPage() {
       await api.post('/folders', {
         name: newFolderName,
         userId: user.role === 'ADMIN' ? selectedCreateUserId : user.id,
-        folderId: folderId ?? undefined,
       });
 
       setNewFolderName('');
@@ -125,14 +120,7 @@ export function FoldersPage() {
   return (
     <div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-slate-900">{title}</h1>
-        <button
-          type="button"
-          className="btn-secondary w-full sm:w-auto"
-          onClick={() => setSearchParams({})}
-        >
-          Ver raiz
-        </button>
+        <h1 className="text-2xl font-bold text-slate-900">Pastas Raiz</h1>
       </div>
 
       {user?.role === 'ADMIN' ? (
@@ -179,7 +167,7 @@ export function FoldersPage() {
           <input
             value={newFolderName}
             onChange={(event) => setNewFolderName(event.target.value)}
-            placeholder={folderId ? 'Nova subpasta' : 'Nova pasta raiz'}
+            placeholder="Nova pasta raiz"
             className="app-input"
             required
           />
@@ -195,27 +183,27 @@ export function FoldersPage() {
       {error ? <p className="mt-3 text-sm font-medium text-rose-600">{error}</p> : null}
 
       {!loading && !error ? (
-        <ul className="mt-4 space-y-2">
+        <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6">
           {visibleFolders.map((folder) => {
             const ownerName = usersById.get(folder.userId) ?? 'Usuario desconhecido';
 
             return (
-              <li
-                key={folder.id}
-                className="rounded-xl border border-slate-200 bg-white p-3 text-sm transition hover:border-brand-200 hover:bg-brand-50"
-              >
-                <Link to={`/folders/${folder.id}`} className="inline-flex items-center gap-2 font-semibold text-brand-700">
-                  <FolderIcon className="h-4 w-4 text-amber-500" />
-                  <span>{folder.name}</span>
+              <li key={folder.id}>
+                <Link
+                  to={`/folders/${folder.id}`}
+                  className="flex h-full min-h-[112px] flex-col items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white p-3 text-center transition hover:border-brand-300 hover:bg-brand-50"
+                >
+                  <FolderIcon className="h-8 w-8 text-amber-500" />
+                  <span className="line-clamp-2 text-sm font-semibold text-slate-800">{folder.name}</span>
+                  {user?.role === 'ADMIN' ? (
+                    <span className="line-clamp-1 text-[11px] text-slate-500">{ownerName}</span>
+                  ) : null}
                 </Link>
-                {user?.role === 'ADMIN' ? (
-                  <p className="mt-1 text-xs text-slate-500">Usuario: {ownerName}</p>
-                ) : null}
               </li>
             );
           })}
           {visibleFolders.length === 0 ? (
-            <li className="rounded-xl border border-dashed border-slate-300 p-3 text-sm text-slate-500">
+            <li className="col-span-full rounded-xl border border-dashed border-slate-300 p-3 text-sm text-slate-500">
               Nenhuma pasta encontrada.
             </li>
           ) : null}
