@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --app-surface: #ffffff;
+    --app-border: #dbe5f3;
+  }
+
+  body {
+    @apply m-0 min-h-screen text-slate-800 antialiased;
+    font-family: 'Manrope', 'Segoe UI', sans-serif;
+    background:
+      radial-gradient(1200px 700px at 5% -10%, #dbeafe 0%, transparent 55%),
+      radial-gradient(1000px 600px at 95% 0%, #e0e7ff 0%, transparent 50%),
+      linear-gradient(180deg, #f8fbff 0%, #f3f7fd 100%);
+  }
+}
+
+@layer components {
+  .app-card {
+    @apply rounded-2xl border bg-white/90 shadow-[0_10px_30px_rgba(15,23,42,0.06)] backdrop-blur-sm;
+    border-color: var(--app-border);
+  }
+
+  .app-section-title {
+    @apply text-xs font-bold uppercase tracking-[0.14em] text-slate-500;
+  }
+
+  .app-page-title {
+    @apply text-3xl font-extrabold tracking-tight text-slate-900;
+  }
+
+  .app-page-subtitle {
+    @apply mt-1 text-sm text-slate-500;
+  }
+
+  .app-input {
+    @apply w-full rounded-xl border bg-white px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20;
+    border-color: #cdd9ea;
+  }
+
+  .btn-primary {
+    @apply rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .btn-secondary {
+    @apply rounded-xl border px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100;
+    border-color: #cdd9ea;
+    background: rgba(255, 255, 255, 0.8);
+  }
+
+  .download-btn {
+    @apply rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-700;
+  }
+
+  .app-list-item {
+    @apply flex flex-col gap-2 rounded-xl border p-3 text-sm transition sm:flex-row sm:items-center sm:justify-between;
+    border-color: #dbe5f3;
+    background: rgba(255, 255, 255, 0.9);
+  }
+
+  .app-metric {
+    @apply app-card p-4;
+  }
+
+  .app-metric-label {
+    @apply text-xs font-semibold uppercase tracking-[0.12em] text-slate-500;
+  }
+
+  .app-metric-value {
+    @apply mt-2 text-2xl font-bold text-slate-900;
+  }
+
+  .app-chip {
+    @apply inline-flex w-fit rounded-full border border-brand-100 bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700;
+  }
+}
+

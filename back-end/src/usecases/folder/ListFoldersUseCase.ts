@@ -3,26 +3,34 @@ import { ROLE } from '@prisma/client';
 import { FolderRepository } from '../../repositories/FolderRepository';
 import { ErrorMessagesEnum } from '../../shared/enums/ErrorMessagesEnum';
 
-export type ListFoldersOutput = Array<{
-  id: string;
-  name: string;
-  userId: string;
-  folderId: string | null;
-  parent: {
+export type ListFoldersOutput = {
+  data: Array<{
     id: string;
     name: string;
     userId: string;
     folderId: string | null;
-  } | null;
-  children: Array<{
-    id: string;
-    name: string;
-    userId: string;
-    folderId: string | null;
+    parent: {
+      id: string;
+      name: string;
+      userId: string;
+      folderId: string | null;
+    } | null;
+    children: Array<{
+      id: string;
+      name: string;
+      userId: string;
+      folderId: string | null;
+    }>;
+    createdAt: Date;
+    updatedAt: Date;
   }>;
-  createdAt: Date;
-  updatedAt: Date;
-}>;
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    hasNextPage: boolean;
+  };
+};
 
 @Injectable()
 export class ListFoldersUseCase {
@@ -33,30 +41,40 @@ export class ListFoldersUseCase {
     requesterRole: ROLE;
     folderId?: string;
     rootsOnly?: boolean;
+    page?: number;
+    limit?: number;
   }): Promise<ListFoldersOutput> {
     if (input.folderId && input.rootsOnly) {
       throw new BadRequestException(ErrorMessagesEnum.INVALID_FOLDER_LIST_FILTER);
     }
 
+    const page = input.page ?? 1;
+    const limit = input.limit ?? 10;
+
     const folders = await this.folderRepository.findAll();
 
-    return folders
-      .filter((folder) => {
-        if (!this.canAccessFolder(folder.userId, folder.deletedAt, input)) {
-          return false;
-        }
+    const filteredFolders = folders.filter((folder) => {
+      if (!this.canAccessFolder(folder.userId, folder.deletedAt, input)) {
+        return false;
+      }
 
-        if (input.folderId) {
-          return folder.folderId === input.folderId;
-        }
+      if (input.folderId) {
+        return folder.folderId === input.folderId;
+      }
 
-        if (input.rootsOnly) {
-          return folder.folderId === null;
-        }
+      if (input.rootsOnly) {
+        return folder.folderId === null;
+      }
 
-        return true;
-      })
-      .map((folder) => ({
+      return true;
+    });
+
+    const total = filteredFolders.length;
+    const start = (page - 1) * limit;
+    const paginatedFolders = filteredFolders.slice(start, start + limit);
+
+    return {
+      data: paginatedFolders.map((folder) => ({
         id: folder.id,
         name: folder.name,
         userId: folder.userId,
@@ -72,7 +90,9 @@ export class ListFoldersUseCase {
               }
             : null,
         children: folder.children
-          .filter((child) => this.canAccessFolder(child.userId, child.deletedAt, input))
+          .filter((child) =>
+            this.canAccessFolder(child.userId, child.deletedAt, input),
+          )
           .map((child) => ({
             id: child.id,
             name: child.name,
@@ -81,7 +101,14 @@ export class ListFoldersUseCase {
           })),
         createdAt: folder.createdAt,
         updatedAt: folder.updatedAt,
-      }));
+      })),
+      meta: {
+        page,
+        limit,
+        total,
+        hasNextPage: start + limit < total,
+      },
+    };
   }
 
   private canAccessFolder(

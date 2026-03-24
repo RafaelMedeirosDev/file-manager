@@ -1,11 +1,7 @@
 import { Transform } from 'class-transformer';
-import { IsInt, IsOptional, IsUUID, Max, Min } from 'class-validator';
+import { IsInt, IsOptional, Max, Min } from 'class-validator';
 
-export class ListFilesQueryDTO {
-  @IsOptional()
-  @IsUUID()
-  folderId?: string;
-
+export class ListUsersQueryDTO {
   @IsOptional()
   @Transform(({ value }) => {
     if (value === undefined) {
