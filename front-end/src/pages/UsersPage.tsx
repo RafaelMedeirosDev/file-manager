@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../services/api';
 
 type UserItem = {
@@ -10,55 +10,264 @@ type UserItem = {
   updatedAt: string;
 };
 
+type ListUsersResponse = {
+  data: UserItem[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    hasNextPage: boolean;
+  };
+};
+
+type PaginatedResult<T> = {
+  items: T[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    hasNextPage: boolean;
+  };
+  isLegacyArray: boolean;
+};
+
+function getApiErrorMessage(error: any, fallback: string) {
+  const message = error?.response?.data?.message;
+  if (typeof message === 'string') return message;
+  if (Array.isArray(message)) return message.join(', ');
+  return fallback;
+}
+
+function normalizePaginatedResponse<T>(
+  payload: unknown,
+  fallbackPage: number,
+  fallbackLimit: number,
+): PaginatedResult<T> {
+  if (Array.isArray(payload)) {
+    return {
+      items: payload as T[],
+      meta: {
+        page: 1,
+        limit: payload.length,
+        total: payload.length,
+        hasNextPage: false,
+      },
+      isLegacyArray: true,
+    };
+  }
+
+  const response = payload as {
+    data?: T[];
+    meta?: {
+      page?: number;
+      limit?: number;
+      total?: number;
+      hasNextPage?: boolean;
+    };
+  };
+
+  const items = Array.isArray(response.data) ? response.data : [];
+  const meta = response.meta ?? {};
+
+  return {
+    items,
+    meta: {
+      page: meta.page ?? fallbackPage,
+      limit: meta.limit ?? fallbackLimit,
+      total: meta.total ?? items.length,
+      hasNextPage: meta.hasNextPage ?? false,
+    },
+    isLegacyArray: false,
+  };
+}
+
 export function UsersPage() {
   const [users, setUsers] = useState<UserItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [creatingUser, setCreatingUser] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const [reloadKey, setReloadKey] = useState(0);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  const loadUsersPage = useCallback(async (page: number, append: boolean) => {
+    const { data } = await api.get<ListUsersResponse | UserItem[]>('/users', {
+      params: {
+        page,
+        limit: 10,
+      },
+    });
+
+    const parsed = normalizePaginatedResponse<UserItem>(data, page, 10);
+
+    setUsers((prev) => {
+      if (!append) {
+        return parsed.items;
+      }
+
+      const existingIds = new Set(prev.map((user) => user.id));
+      const merged = [...prev];
+
+      for (const item of parsed.items) {
+        if (!existingIds.has(item.id)) {
+          merged.push(item);
+        }
+      }
+
+      return merged;
+    });
+
+    setCurrentPage(parsed.meta.page);
+    setHasNextPage(parsed.isLegacyArray ? false : parsed.meta.hasNextPage);
+  }, []);
+
   useEffect(() => {
-    async function fetchUsers() {
+    async function fetchFirstPage() {
       setLoading(true);
       setError(null);
 
       try {
-        const { data } = await api.get<UserItem[]>('/users');
-        setUsers(data);
+        await loadUsersPage(1, false);
       } catch (err: any) {
-        const apiMessage = err?.response?.data?.message;
-        setError(typeof apiMessage === 'string' ? apiMessage : 'Erro ao carregar usuarios.');
+        setError(getApiErrorMessage(err, 'Erro ao carregar usuarios.'));
       } finally {
         setLoading(false);
       }
     }
 
-    void fetchUsers();
-  }, []);
+    void fetchFirstPage();
+  }, [reloadKey, loadUsersPage]);
+
+  useEffect(() => {
+    if (!sentinelRef.current || loading || loadingMore || !hasNextPage) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry?.isIntersecting) {
+          return;
+        }
+
+        setLoadingMore(true);
+        void loadUsersPage(currentPage + 1, true)
+          .catch((err: any) => {
+            setError(getApiErrorMessage(err, 'Erro ao carregar mais usuarios.'));
+          })
+          .finally(() => {
+            setLoadingMore(false);
+          });
+      },
+      { rootMargin: '180px' },
+    );
+
+    observer.observe(sentinelRef.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [currentPage, hasNextPage, loading, loadingMore, loadUsersPage]);
+
+  async function handleCreateUser(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    setActionError(null);
+    setCreatingUser(true);
+
+    try {
+      await api.post('/users', {
+        name: newUserName,
+        email: newUserEmail,
+        password: newUserPassword,
+      });
+
+      setNewUserName('');
+      setNewUserEmail('');
+      setNewUserPassword('');
+      setReloadKey((prev) => prev + 1);
+    } catch (err: any) {
+      setActionError(getApiErrorMessage(err, 'Erro ao criar usuario.'));
+    } finally {
+      setCreatingUser(false);
+    }
+  }
 
   return (
     <div>
       <h1 className="app-page-title">Usuarios</h1>
       <p className="app-page-subtitle">Painel administrativo de contas e perfis.</p>
 
+      <form
+        className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4"
+        onSubmit={handleCreateUser}
+      >
+        <input
+          className="app-input"
+          value={newUserName}
+          onChange={(event) => setNewUserName(event.target.value)}
+          placeholder="Nome"
+          required
+        />
+        <input
+          className="app-input"
+          type="email"
+          value={newUserEmail}
+          onChange={(event) => setNewUserEmail(event.target.value)}
+          placeholder="Email"
+          required
+        />
+        <input
+          className="app-input"
+          type="password"
+          value={newUserPassword}
+          onChange={(event) => setNewUserPassword(event.target.value)}
+          placeholder="Senha"
+          required
+        />
+        <button type="submit" className="btn-primary" disabled={creatingUser}>
+          {creatingUser ? 'Criando...' : 'Criar usuario'}
+        </button>
+      </form>
+
+      {actionError ? (
+        <p className="mt-3 text-sm font-medium text-rose-600">{actionError}</p>
+      ) : null}
       {loading ? <p className="mt-3 text-sm text-slate-500">Carregando...</p> : null}
       {error ? <p className="mt-3 text-sm font-medium text-rose-600">{error}</p> : null}
 
       {!loading && !error ? (
-        <ul className="mt-4 space-y-2">
-          {users.map((user) => (
-            <li key={user.id} className="app-list-item">
-              <span className="text-sm text-slate-700">
-                <span className="block font-semibold text-slate-900">{user.name}</span>
-                <span className="text-slate-500">{user.email}</span>
-              </span>
-              <strong className="app-chip">{user.role}</strong>
-            </li>
-          ))}
-          {users.length === 0 ? (
-            <li className="rounded-xl border border-dashed border-slate-300 p-3 text-sm text-slate-500">
-              Nenhum usuario encontrado.
-            </li>
+        <>
+          <ul className="mt-4 space-y-2">
+            {users.map((user) => (
+              <li key={user.id} className="app-list-item">
+                <span className="text-sm text-slate-700">
+                  <span className="block font-semibold text-slate-900">{user.name}</span>
+                  <span className="text-slate-500">{user.email}</span>
+                </span>
+                <strong className="app-chip">{user.role}</strong>
+              </li>
+            ))}
+            {users.length === 0 ? (
+              <li className="rounded-xl border border-dashed border-slate-300 p-3 text-sm text-slate-500">
+                Nenhum usuario encontrado.
+              </li>
+            ) : null}
+          </ul>
+
+          <div ref={sentinelRef} className="h-10" />
+          {loadingMore ? (
+            <p className="mt-2 text-center text-sm text-slate-500">Carregando mais usuarios...</p>
           ) : null}
-        </ul>
+        </>
       ) : null}
     </div>
   );
