@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
@@ -9,6 +9,10 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setEmail('admin@email.com');
+  }, []);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -29,10 +33,10 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,_#bfdbfe_0%,_#eff6ff_42%,_#f8fafc_100%)] p-4">
-      <form className="app-card w-full max-w-md border-brand-100 p-6 shadow-soft" onSubmit={handleSubmit}>
-        <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">File Manager</h1>
-        <p className="mt-1 text-sm text-slate-500">Acesse o painel com sua conta.</p>
+    <div className="flex min-h-screen items-center justify-center p-4">
+      <form className="app-card w-full max-w-md p-6 shadow-[0_20px_60px_rgba(30,58,138,0.18)]" onSubmit={handleSubmit}>
+        <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">File Manager</h1>
+        <p className="mt-1 text-sm text-slate-500">Entre para acessar seu workspace.</p>
 
         <div className="mt-5 space-y-4">
           <label className="block text-sm font-semibold text-slate-700" htmlFor="email">

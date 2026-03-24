@@ -214,7 +214,7 @@ export function FilesPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-slate-900">Arquivos</h1>
+      <h1 className="app-page-title">Arquivos</h1>
 
       <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
         {user?.role === 'ADMIN' ? (
@@ -334,3 +334,5 @@ export function FilesPage() {
     </div>
   );
 }
+
+
