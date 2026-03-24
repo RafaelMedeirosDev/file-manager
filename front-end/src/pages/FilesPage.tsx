@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 import { api } from '../services/api';
 
 type FileItem = {
@@ -14,11 +15,16 @@ type FileItem = {
 };
 
 export function FilesPage() {
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const folderId = searchParams.get('folderId') ?? '';
   const [files, setFiles] = useState<FileItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [newFileName, setNewFileName] = useState('');
+  const [newFileExtension, setNewFileExtension] = useState('');
+  const [newFileUrl, setNewFileUrl] = useState('');
+  const [newFileFolderId, setNewFileFolderId] = useState('');
 
   const hasFilter = useMemo(() => folderId.trim().length > 0, [folderId]);
 
@@ -58,6 +64,28 @@ export function FilesPage() {
     window.URL.revokeObjectURL(url);
   }
 
+  async function handleCreateFile(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!user) {
+      return;
+    }
+
+    await api.post('/files', {
+      name: newFileName,
+      userId: user.id,
+      folderId: newFileFolderId,
+      extension: newFileExtension,
+      url: newFileUrl,
+    });
+
+    setNewFileName('');
+    setNewFileExtension('');
+    setNewFileUrl('');
+    setNewFileFolderId('');
+    setSearchParams({});
+  }
+
   return (
     <div>
       <h1>Arquivos</h1>
@@ -81,6 +109,36 @@ export function FilesPage() {
         <button type="submit">Filtrar</button>
       </form>
 
+      {user?.role === 'ADMIN' ? (
+        <form className="inline-form" onSubmit={handleCreateFile}>
+          <input
+            value={newFileName}
+            onChange={(event) => setNewFileName(event.target.value)}
+            placeholder="Nome"
+            required
+          />
+          <input
+            value={newFileExtension}
+            onChange={(event) => setNewFileExtension(event.target.value)}
+            placeholder="Extensao"
+            required
+          />
+          <input
+            value={newFileUrl}
+            onChange={(event) => setNewFileUrl(event.target.value)}
+            placeholder="URL"
+            required
+          />
+          <input
+            value={newFileFolderId}
+            onChange={(event) => setNewFileFolderId(event.target.value)}
+            placeholder="folderId"
+            required
+          />
+          <button type="submit">Criar arquivo</button>
+        </form>
+      ) : null}
+
       {loading ? <p>Carregando...</p> : null}
       {error ? <p className="error-message">{error}</p> : null}
 
@@ -89,7 +147,7 @@ export function FilesPage() {
           {files.map((file) => (
             <li key={file.id}>
               <span>
-                {file.name}.{file.extension}
+                ?? {file.name}.{file.extension}
               </span>
               <button
                 type="button"
