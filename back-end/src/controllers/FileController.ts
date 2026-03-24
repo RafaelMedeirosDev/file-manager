@@ -4,8 +4,8 @@ import {
   Delete,
   Get,
   Param,
-  Patch,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
   Req,
@@ -77,6 +77,8 @@ export class FileController {
       requesterUserId: req.user.sub,
       requesterRole: req.user.role,
       folderId: query.folderId,
+      page: query.page,
+      limit: query.limit,
     });
   }
 
