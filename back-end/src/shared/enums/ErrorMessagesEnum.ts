@@ -3,6 +3,7 @@ export enum ErrorMessagesEnum {
   INVALID_EMAIL_OR_PASSWORD = 'Invalid email or password',
   USER_NOT_FOUND = 'Usuario nao encontrado',
   FOLDER_NOT_FOUND = 'Pasta nao encontrada',
+  FOLDER_NAME_ALREADY_REGISTERED = 'Ja existe uma pasta ativa com este nome para este usuario',
   FILE_NOT_FOUND = 'Arquivo nao encontrado',
   FILE_ACCESS_FORBIDDEN = 'Voce nao tem permissao para acessar este arquivo',
   FOLDER_ACCESS_FORBIDDEN = 'Voce nao tem permissao para acessar esta pasta',
@@ -13,3 +14,4 @@ export enum ErrorMessagesEnum {
   AT_LEAST_ONE_FIELD_REQUIRED = 'Informe ao menos um campo para atualizacao',
   INVALID_FOLDER_LIST_FILTER = 'Informe apenas folderId ou rootsOnly',
 }
+
