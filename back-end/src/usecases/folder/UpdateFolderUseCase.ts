@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { FolderRepository } from '../../repositories/FolderRepository';
 import { ErrorMessagesEnum } from '../../shared/enums/ErrorMessagesEnum';
 
@@ -25,6 +25,17 @@ export class UpdateFolderUseCase {
 
     if (!existingFolder || existingFolder.deletedAt) {
       throw new NotFoundException(ErrorMessagesEnum.FOLDER_NOT_FOUND);
+    }
+
+    const activeFolderWithSameName =
+      await this.folderRepository.findActiveByUserIdAndName({
+        userId: existingFolder.userId,
+        name: input.name,
+        excludeId: existingFolder.id,
+      });
+
+    if (activeFolderWithSameName) {
+      throw new ConflictException(ErrorMessagesEnum.FOLDER_NAME_ALREADY_REGISTERED);
     }
 
     const updatedFolder = await this.folderRepository.updateById(input.id, {

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { FolderRepository } from '../../repositories/FolderRepository';
 import { UserRepository } from '../../repositories/UserRepository';
 import { ErrorMessagesEnum } from '../../shared/enums/ErrorMessagesEnum';
@@ -38,6 +38,16 @@ export class CreateFolderUseCase {
       if (!parentFolder || parentFolder.deletedAt) {
         throw new NotFoundException(ErrorMessagesEnum.FOLDER_NOT_FOUND);
       }
+    }
+
+    const activeFolderWithSameName =
+      await this.folderRepository.findActiveByUserIdAndName({
+        userId: input.userId,
+        name: input.name,
+      });
+
+    if (activeFolderWithSameName) {
+      throw new ConflictException(ErrorMessagesEnum.FOLDER_NAME_ALREADY_REGISTERED);
     }
 
     const folder = await this.folderRepository.create({

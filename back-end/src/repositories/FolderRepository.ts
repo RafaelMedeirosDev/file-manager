@@ -42,6 +42,26 @@ export class FolderRepository {
     });
   }
 
+  findActiveByUserIdAndName(input: {
+    userId: string;
+    name: string;
+    excludeId?: string;
+  }): Promise<Folder | null> {
+    return this.prisma.folder.findFirst({
+      where: {
+        userId: input.userId,
+        name: input.name,
+        deletedAt: null,
+        ...(input.excludeId
+          ? {
+              NOT: {
+                id: input.excludeId,
+              },
+            }
+          : {}),
+      },
+    });
+  }
   updateById(
     id: string,
     data: {
@@ -61,3 +81,4 @@ export class FolderRepository {
     });
   }
 }
+
