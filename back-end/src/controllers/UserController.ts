@@ -57,6 +57,8 @@ export class UserController {
     return this.listUsersUseCase.execute({
       page: query.page,
       limit: query.limit,
+      name: query.name,
+      email: query.email,
     });
   }
 
@@ -116,3 +118,4 @@ export class UserController {
     });
   }
 }
+

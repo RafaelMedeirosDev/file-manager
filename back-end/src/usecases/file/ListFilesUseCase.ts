@@ -53,9 +53,13 @@ export class ListFilesUseCase {
       return file.userId === input.requesterUserId;
     });
 
-    const total = filteredFiles.length;
+    const sortedFiles = [...filteredFiles].sort((a, b) =>
+      a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }),
+    );
+
+    const total = sortedFiles.length;
     const start = (page - 1) * limit;
-    const paginatedFiles = filteredFiles.slice(start, start + limit);
+    const paginatedFiles = sortedFiles.slice(start, start + limit);
 
     return {
       data: paginatedFiles.map((file) => ({

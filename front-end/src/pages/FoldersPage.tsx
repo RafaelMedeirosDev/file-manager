@@ -114,6 +114,8 @@ export function FoldersPage() {
   const [newFolderName, setNewFolderName] = useState('');
   const [createError, setCreateError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [deletingFolderId, setDeletingFolderId] = useState<string | null>(null);
+  const [selectedDeleteFolderId, setSelectedDeleteFolderId] = useState('');
 
   const [selectedCreateUserId, setSelectedCreateUserId] = useState('');
   const [filterUserId, setFilterUserId] = useState('');
@@ -130,6 +132,20 @@ export function FoldersPage() {
     if (!filterUserId) return folders;
     return folders.filter((folder) => folder.userId === filterUserId);
   }, [folders, filterUserId]);
+
+  const folderById = useMemo(
+    () => new Map(folders.map((folder) => [folder.id, folder])),
+    [folders],
+  );
+
+  useEffect(() => {
+    if (!selectedDeleteFolderId) return;
+
+    const exists = visibleFolders.some((folder) => folder.id === selectedDeleteFolderId);
+    if (!exists) {
+      setSelectedDeleteFolderId('');
+    }
+  }, [selectedDeleteFolderId, visibleFolders]);
 
   const loadFoldersPage = useCallback(async (page: number, append: boolean) => {
     const { data } = await api.get<ListFoldersResponse | FolderItem[]>('/folders', {
@@ -285,6 +301,29 @@ export function FoldersPage() {
     }
   }
 
+  async function handleSoftDeleteFolder(folderId: string, folderName: string) {
+    const confirmed = window.confirm(
+      `Deseja realmente excluir a pasta \"${folderName}\"?`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setCreateError(null);
+    setDeletingFolderId(folderId);
+
+    try {
+      await api.delete(`/folders/${folderId}`);
+      setSelectedDeleteFolderId('');
+      setReloadKey((prev) => prev + 1);
+    } catch (err: any) {
+      setCreateError(getApiErrorMessage(err, 'Erro ao excluir pasta.'));
+    } finally {
+      setDeletingFolderId(null);
+    }
+  }
+
   return (
     <div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -347,6 +386,45 @@ export function FoldersPage() {
             {creating ? 'Criando...' : 'Criar pasta'}
           </button>
         </form>
+      ) : null}
+
+      {user?.role === 'ADMIN' ? (
+        <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_auto]">
+          <select
+            className="app-input"
+            value={selectedDeleteFolderId}
+            onChange={(event) => setSelectedDeleteFolderId(event.target.value)}
+          >
+            <option value="">Selecione uma pasta para excluir</option>
+            {visibleFolders.map((folder) => (
+              <option key={folder.id} value={folder.id}>
+                {folder.name}
+              </option>
+            ))}
+          </select>
+
+          <button
+            type="button"
+            className="rounded-xl border border-rose-200 px-4 py-2 text-sm font-semibold text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+            onClick={() => {
+              if (!selectedDeleteFolderId) {
+                setCreateError('Selecione uma pasta para excluir.');
+                return;
+              }
+
+              const folder = folderById.get(selectedDeleteFolderId);
+              if (!folder) {
+                setCreateError('Pasta selecionada nao encontrada.');
+                return;
+              }
+
+              void handleSoftDeleteFolder(folder.id, folder.name);
+            }}
+            disabled={deletingFolderId !== null}
+          >
+            {deletingFolderId ? 'Excluindo...' : 'Excluir pasta'}
+          </button>
+        </div>
       ) : null}
 
       {createError ? (
