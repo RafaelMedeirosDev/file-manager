@@ -23,14 +23,36 @@ export type ListUsersOutput = {
 export class ListUsersUseCase {
   constructor(private readonly userRepository: UserRepository) {}
 
-  async execute(input?: { page?: number; limit?: number }): Promise<ListUsersOutput> {
+  async execute(input?: {
+    page?: number;
+    limit?: number;
+    name?: string;
+    email?: string;
+  }): Promise<ListUsersOutput> {
     const page = input?.page ?? 1;
     const limit = input?.limit ?? 10;
+    const normalizedName = input?.name?.trim().toLowerCase();
+    const normalizedEmail = input?.email?.trim().toLowerCase();
 
     const users = await this.userRepository.findAll();
 
-    const activeUsers = users
-      .filter((user) => !user.deletedAt)
+    const filteredUsers = users.filter((user) => {
+      if (user.deletedAt) {
+        return false;
+      }
+
+      if (normalizedName && !user.name.toLowerCase().includes(normalizedName)) {
+        return false;
+      }
+
+      if (normalizedEmail && !user.email.toLowerCase().includes(normalizedEmail)) {
+        return false;
+      }
+
+      return true;
+    });
+
+    const mappedUsers = filteredUsers
       .map((user) => ({
         id: user.id,
         name: user.name,
@@ -38,11 +60,14 @@ export class ListUsersUseCase {
         role: user.role,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
-      }));
+      }))
+      .sort((a, b) =>
+        a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }),
+      );
 
-    const total = activeUsers.length;
+    const total = mappedUsers.length;
     const start = (page - 1) * limit;
-    const paginatedUsers = activeUsers.slice(start, start + limit);
+    const paginatedUsers = mappedUsers.slice(start, start + limit);
 
     return {
       data: paginatedUsers,

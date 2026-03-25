@@ -1,7 +1,23 @@
 import { Transform } from 'class-transformer';
-import { IsInt, IsOptional, Max, Min } from 'class-validator';
+import { IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 
 export class ListUsersQueryDTO {
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toLowerCase() : value,
+  )
+  email?: string;
+
   @IsOptional()
   @Transform(({ value }) => {
     if (value === undefined) {
