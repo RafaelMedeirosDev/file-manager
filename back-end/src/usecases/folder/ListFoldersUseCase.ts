@@ -69,9 +69,13 @@ export class ListFoldersUseCase {
       return true;
     });
 
-    const total = filteredFolders.length;
+    const sortedFolders = [...filteredFolders].sort((a, b) =>
+      a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }),
+    );
+
+    const total = sortedFolders.length;
     const start = (page - 1) * limit;
-    const paginatedFolders = filteredFolders.slice(start, start + limit);
+    const paginatedFolders = sortedFolders.slice(start, start + limit);
 
     return {
       data: paginatedFolders.map((folder) => ({
@@ -92,6 +96,9 @@ export class ListFoldersUseCase {
         children: folder.children
           .filter((child) =>
             this.canAccessFolder(child.userId, child.deletedAt, input),
+          )
+          .sort((a, b) =>
+            a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }),
           )
           .map((child) => ({
             id: child.id,
