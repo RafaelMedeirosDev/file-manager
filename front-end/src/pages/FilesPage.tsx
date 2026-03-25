@@ -134,6 +134,7 @@ export function FilesPage() {
   const [newFileUrl, setNewFileUrl] = useState('');
   const [creatingFile, setCreatingFile] = useState(false);
   const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
+  const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
 
   const [usersOptions, setUsersOptions] = useState<UserOption[]>([]);
   const [foldersOptions, setFoldersOptions] = useState<FolderOption[]>([]);
@@ -392,6 +393,27 @@ export function FilesPage() {
     }
   }
 
+  async function handleSoftDeleteFile(fileId: string, fileName: string) {
+    const confirmed = window.confirm(
+      `Deseja realmente excluir o arquivo "${fileName}"?`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setActionError(null);
+    setDeletingFileId(fileId);
+
+    try {
+      await api.delete(`/files/${fileId}`);
+      setReloadKey((prev) => prev + 1);
+    } catch (err: any) {
+      setActionError(getApiErrorMessage(err, 'Nao foi possivel excluir o arquivo.'));
+    } finally {
+      setDeletingFileId(null);
+    }
+  }
   async function handleCreateFile(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!user || user.role !== 'ADMIN') return;
@@ -586,14 +608,27 @@ export function FilesPage() {
                       </span>
                     ) : null}
                   </span>
-                  <button
-                    type="button"
-                    className="download-btn sm:ml-auto"
-                    disabled={downloadingFileId === file.id}
-                    onClick={() => handleDownload(file.id, file.name, file.extension)}
-                  >
-                    {downloadingFileId === file.id ? 'Baixando...' : 'Download'}
-                  </button>
+                  <div className="flex items-center gap-2 sm:ml-auto">
+                    {user?.role === 'ADMIN' ? (
+                      <button
+                        type="button"
+                        className="rounded-lg border border-rose-200 px-3 py-1 text-xs font-semibold text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                        disabled={deletingFileId === file.id}
+                        onClick={() => handleSoftDeleteFile(file.id, `${file.name}.${file.extension}`)}
+                      >
+                        {deletingFileId === file.id ? 'Excluindo...' : 'Excluir'}
+                      </button>
+                    ) : null}
+
+                    <button
+                      type="button"
+                      className="download-btn"
+                      disabled={downloadingFileId === file.id}
+                      onClick={() => handleDownload(file.id, file.name, file.extension)}
+                    >
+                      {downloadingFileId === file.id ? 'Baixando...' : 'Download'}
+                    </button>
+                  </div>
                 </li>
               );
             })}
@@ -613,3 +648,6 @@ export function FilesPage() {
     </div>
   );
 }
+
+
+

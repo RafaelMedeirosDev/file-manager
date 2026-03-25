@@ -93,41 +93,58 @@ export function UsersPage() {
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserPassword, setNewUserPassword] = useState('');
   const [creatingUser, setCreatingUser] = useState(false);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  const [searchName, setSearchName] = useState('');
+  const [searchEmail, setSearchEmail] = useState('');
 
   const [reloadKey, setReloadKey] = useState(0);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-  const loadUsersPage = useCallback(async (page: number, append: boolean) => {
-    const { data } = await api.get<ListUsersResponse | UserItem[]>('/users', {
-      params: {
+  const loadUsersPage = useCallback(
+    async (page: number, append: boolean) => {
+      const params: Record<string, string | number> = {
         page,
         limit: 10,
-      },
-    });
+      };
 
-    const parsed = normalizePaginatedResponse<UserItem>(data, page, 10);
-
-    setUsers((prev) => {
-      if (!append) {
-        return parsed.items;
+      if (searchName.trim()) {
+        params.name = searchName.trim();
       }
 
-      const existingIds = new Set(prev.map((user) => user.id));
-      const merged = [...prev];
+      if (searchEmail.trim()) {
+        params.email = searchEmail.trim();
+      }
 
-      for (const item of parsed.items) {
-        if (!existingIds.has(item.id)) {
-          merged.push(item);
+      const { data } = await api.get<ListUsersResponse | UserItem[]>('/users', {
+        params,
+      });
+
+      const parsed = normalizePaginatedResponse<UserItem>(data, page, 10);
+
+      setUsers((prev) => {
+        if (!append) {
+          return parsed.items;
         }
-      }
 
-      return merged;
-    });
+        const existingIds = new Set(prev.map((user) => user.id));
+        const merged = [...prev];
 
-    setCurrentPage(parsed.meta.page);
-    setHasNextPage(parsed.isLegacyArray ? false : parsed.meta.hasNextPage);
-  }, []);
+        for (const item of parsed.items) {
+          if (!existingIds.has(item.id)) {
+            merged.push(item);
+          }
+        }
+
+        return merged;
+      });
+
+      setCurrentPage(parsed.meta.page);
+      setHasNextPage(parsed.isLegacyArray ? false : parsed.meta.hasNextPage);
+    },
+    [searchName, searchEmail],
+  );
 
   useEffect(() => {
     async function fetchFirstPage() {
@@ -201,13 +218,61 @@ export function UsersPage() {
     }
   }
 
+  async function handleSoftDeleteUser(userId: string, userName: string) {
+    const confirmed = window.confirm(
+      `Deseja realmente excluir o usuario \"${userName}\"?`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setActionError(null);
+    setDeletingUserId(userId);
+
+    try {
+      await api.delete(`/users/${userId}`);
+      setReloadKey((prev) => prev + 1);
+    } catch (err: any) {
+      setActionError(getApiErrorMessage(err, 'Erro ao excluir usuario.'));
+    } finally {
+      setDeletingUserId(null);
+    }
+  }
+
   return (
     <div>
       <h1 className="app-page-title">Usuarios</h1>
       <p className="app-page-subtitle">Painel administrativo de contas e perfis.</p>
 
+      <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <input
+          className="app-input"
+          value={searchName}
+          onChange={(event) => setSearchName(event.target.value)}
+          placeholder="Buscar por nome"
+        />
+        <input
+          className="app-input"
+          type="email"
+          value={searchEmail}
+          onChange={(event) => setSearchEmail(event.target.value)}
+          placeholder="Buscar por email"
+        />
+        <button
+          type="button"
+          className="btn-secondary"
+          onClick={() => {
+            setSearchName('');
+            setSearchEmail('');
+          }}
+        >
+          Limpar filtros
+        </button>
+      </div>
+
       <form
-        className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4"
+        className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4"
         onSubmit={handleCreateUser}
       >
         <input
@@ -253,7 +318,17 @@ export function UsersPage() {
                   <span className="block font-semibold text-slate-900">{user.name}</span>
                   <span className="text-slate-500">{user.email}</span>
                 </span>
-                <strong className="app-chip">{user.role}</strong>
+                <div className="flex items-center gap-2">
+                  <strong className="app-chip">{user.role}</strong>
+                  <button
+                    type="button"
+                    className="rounded-lg border border-rose-200 px-3 py-1 text-xs font-semibold text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    onClick={() => handleSoftDeleteUser(user.id, user.name)}
+                    disabled={deletingUserId === user.id}
+                  >
+                    {deletingUserId === user.id ? 'Excluindo...' : 'Excluir'}
+                  </button>
+                </div>
               </li>
             ))}
             {users.length === 0 ? (
