@@ -11,6 +11,7 @@ import { UserRepository } from './repositories/UserRepository';
 import { UpdateUserUseCase } from './usecases/user/UpdateUserUseCase';
 import { SoftDeleteUserUseCase } from './usecases/user/SoftDeleteUserUseCase';
 import { ListUsersUseCase } from './usecases/user/ListUsersUseCase';
+import { ChangeOwnPasswordUseCase } from './usecases/user/ChangeOwnPasswordUseCase';
 import { FolderRepository } from './repositories/FolderRepository';
 import { CreateFolderUseCase } from './usecases/folder/CreateFolderUseCase';
 import { UpdateFolderUseCase } from './usecases/folder/UpdateFolderUseCase';
@@ -35,6 +36,7 @@ import { RolesGuard } from './auth/roles.guard';
     ListUsersUseCase,
     UpdateUserUseCase,
     SoftDeleteUserUseCase,
+    ChangeOwnPasswordUseCase,
     CreateFolderUseCase,
     ListFoldersUseCase,
     GetFolderByIdUseCase,
@@ -53,3 +55,4 @@ import { RolesGuard } from './auth/roles.guard';
   ],
 })
 export class AppModule {}
+

@@ -13,5 +13,9 @@ export enum ErrorMessagesEnum {
   FOLDER_DOES_NOT_BELONG_TO_USER = 'A pasta informada nao pertence ao usuario',
   AT_LEAST_ONE_FIELD_REQUIRED = 'Informe ao menos um campo para atualizacao',
   INVALID_FOLDER_LIST_FILTER = 'Informe apenas folderId ou rootsOnly',
+  INVALID_CURRENT_PASSWORD = 'Senha atual invalida',
+  PASSWORD_CONFIRMATION_DOES_NOT_MATCH = 'Confirmacao de nova senha nao confere',
+  NEW_PASSWORD_MUST_BE_DIFFERENT = 'A nova senha deve ser diferente da senha atual',
 }
+
 
