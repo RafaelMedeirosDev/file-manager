@@ -7,17 +7,21 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseGuards,
   ValidationPipe,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { ROLE } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import type { JwtPayload } from '../auth/jwt.strategy';
 import { CreateUserDTO } from '../shared/dto/user/CreateUserDTO';
 import { ListUsersQueryDTO } from '../shared/dto/user/ListUsersQueryDTO';
 import { UpdateUserBodyDTO } from '../shared/dto/user/UpdateUserBodyDTO';
 import { UpdateUserParamsDTO } from '../shared/dto/user/UpdateUserParamsDTO';
+import { ChangeOwnPasswordDTO } from '../shared/dto/user/ChangeOwnPasswordDTO';
 import {
   CreateUserOutput,
   CreateUserUseCase,
@@ -31,6 +35,10 @@ import {
   SoftDeleteUserUseCase,
 } from '../usecases/user/SoftDeleteUserUseCase';
 import { ListUsersOutput, ListUsersUseCase } from '../usecases/user/ListUsersUseCase';
+import {
+  ChangeOwnPasswordOutput,
+  ChangeOwnPasswordUseCase,
+} from '../usecases/user/ChangeOwnPasswordUseCase';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -41,6 +49,7 @@ export class UserController {
     private readonly listUsersUseCase: ListUsersUseCase,
     private readonly updateUserUseCase: UpdateUserUseCase,
     private readonly softDeleteUserUseCase: SoftDeleteUserUseCase,
+    private readonly changeOwnPasswordUseCase: ChangeOwnPasswordUseCase,
   ) {}
 
   @Get()
@@ -74,6 +83,26 @@ export class UserController {
     body: CreateUserDTO,
   ): Promise<CreateUserOutput> {
     return this.createUserUseCase.execute(body);
+  }
+
+  @Patch('me/password')
+  async changeOwnPassword(
+    @Req() req: Request & { user: JwtPayload },
+    @Body(
+      new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        forbidNonWhitelisted: true,
+      }),
+    )
+    body: ChangeOwnPasswordDTO,
+  ): Promise<ChangeOwnPasswordOutput> {
+    return this.changeOwnPasswordUseCase.execute({
+      userId: req.user.sub,
+      currentPassword: body.currentPassword,
+      newPassword: body.newPassword,
+      confirmNewPassword: body.confirmNewPassword,
+    });
   }
 
   @Patch(':id')
@@ -118,4 +147,3 @@ export class UserController {
     });
   }
 }
-
