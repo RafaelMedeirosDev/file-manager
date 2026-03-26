@@ -96,6 +96,13 @@ export function UsersPage() {
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
+
   const [searchName, setSearchName] = useState('');
   const [searchEmail, setSearchEmail] = useState('');
 
@@ -218,6 +225,31 @@ export function UsersPage() {
     }
   }
 
+  async function handleChangeOwnPassword(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    setPasswordError(null);
+    setPasswordSuccess(null);
+    setChangingPassword(true);
+
+    try {
+      await api.patch('/users/me/password', {
+        currentPassword,
+        newPassword,
+        confirmNewPassword,
+      });
+
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmNewPassword('');
+      setPasswordSuccess('Senha atualizada com sucesso.');
+    } catch (err: any) {
+      setPasswordError(getApiErrorMessage(err, 'Erro ao atualizar senha.'));
+    } finally {
+      setChangingPassword(false);
+    }
+  }
+
   async function handleSoftDeleteUser(userId: string, userName: string) {
     const confirmed = window.confirm(
       `Deseja realmente excluir o usuario \"${userName}\"?`,
@@ -245,7 +277,53 @@ export function UsersPage() {
       <h1 className="app-page-title">Usuarios</h1>
       <p className="app-page-subtitle">Painel administrativo de contas e perfis.</p>
 
-      <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      <form
+        className="mt-4 grid gap-2 rounded-xl border border-slate-200 p-3 sm:grid-cols-2 lg:grid-cols-4"
+        onSubmit={handleChangeOwnPassword}
+      >
+        <input
+          className="app-input"
+          type="password"
+          value={currentPassword}
+          onChange={(event) => setCurrentPassword(event.target.value)}
+          placeholder="Senha atual"
+          minLength={6}
+          maxLength={255}
+          required
+        />
+        <input
+          className="app-input"
+          type="password"
+          value={newPassword}
+          onChange={(event) => setNewPassword(event.target.value)}
+          placeholder="Nova senha"
+          minLength={6}
+          maxLength={255}
+          required
+        />
+        <input
+          className="app-input"
+          type="password"
+          value={confirmNewPassword}
+          onChange={(event) => setConfirmNewPassword(event.target.value)}
+          placeholder="Confirmar nova senha"
+          minLength={6}
+          maxLength={255}
+          required
+        />
+        <button type="submit" className="btn-primary" disabled={changingPassword}>
+          {changingPassword ? 'Atualizando...' : 'Redefinir minha senha'}
+        </button>
+      </form>
+
+      {passwordError ? (
+        <p className="mt-3 text-sm font-medium text-rose-600">{passwordError}</p>
+      ) : null}
+      {passwordSuccess ? (
+        <p className="mt-3 text-sm font-medium text-emerald-600">{passwordSuccess}</p>
+      ) : null}
+
+      <div className="mt-5 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         <input
           className="app-input"
           value={searchName}
