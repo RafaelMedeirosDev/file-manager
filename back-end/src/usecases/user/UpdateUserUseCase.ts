@@ -1,9 +1,7 @@
-import {
-  BadRequestException,
+import { BadRequestException,
   ConflictException,
   Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+  NotFoundException, Logger } from '@nestjs/common';
 import { ROLE } from '@prisma/client';
 import { hash } from 'bcrypt';
 import { UserRepository } from '../../repositories/UserRepository';
@@ -26,11 +24,13 @@ export type UpdateUserOutput = {
 
 @Injectable()
 export class UpdateUserUseCase {
+  private readonly logger = new Logger(UpdateUserUseCase.name);
   private static readonly SALT_ROUNDS = 10;
 
   constructor(private readonly userRepository: UserRepository) {}
 
   async execute(input: UpdateUserInput): Promise<UpdateUserOutput> {
+    this.logger.log('[UpdateUserUseCase] Execute started');
     if (!input.email && !input.password) {
       throw new BadRequestException(ErrorMessagesEnum.AT_LEAST_ONE_FIELD_REQUIRED);
     }
@@ -56,7 +56,9 @@ export class UpdateUserUseCase {
     const updatedUser = await this.userRepository.updateById(input.id, {
       email: input.email,
       password: hashedPassword,
-    });
+    });
+    this.logger.log('[UpdateUserUseCase] Execute finished');
+
 
     return {
       id: updatedUser.id,
@@ -68,3 +70,6 @@ export class UpdateUserUseCase {
     };
   }
 }
+
+
+

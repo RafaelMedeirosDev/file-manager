@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { FileRepository } from '../../repositories/FileRepository';
 import { ErrorMessagesEnum } from '../../shared/enums/ErrorMessagesEnum';
 
@@ -17,9 +17,11 @@ export type SoftDeleteFileOutput = {
 
 @Injectable()
 export class SoftDeleteFileUseCase {
+  private readonly logger = new Logger(SoftDeleteFileUseCase.name);
   constructor(private readonly fileRepository: FileRepository) {}
 
   async execute(input: SoftDeleteFileInput): Promise<SoftDeleteFileOutput> {
+    this.logger.log('[SoftDeleteFileUseCase] Execute started');
     const existingFile = await this.fileRepository.findById(input.id);
 
     if (!existingFile || existingFile.deletedAt) {
@@ -30,7 +32,9 @@ export class SoftDeleteFileUseCase {
     const deletedFile = await this.fileRepository.softDeleteById(
       input.id,
       deletedAt,
-    );
+    );
+    this.logger.log('[SoftDeleteFileUseCase] Execute finished');
+
 
     return {
       id: deletedFile.id,
@@ -42,3 +46,6 @@ export class SoftDeleteFileUseCase {
     };
   }
 }
+
+
+

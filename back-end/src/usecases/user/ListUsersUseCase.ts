@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ROLE } from '@prisma/client';
 import { UserRepository } from '../../repositories/UserRepository';
 
@@ -21,6 +21,8 @@ export type ListUsersOutput = {
 
 @Injectable()
 export class ListUsersUseCase {
+  private readonly logger = new Logger(ListUsersUseCase.name);
+
   constructor(private readonly userRepository: UserRepository) {}
 
   async execute(input?: {
@@ -29,6 +31,8 @@ export class ListUsersUseCase {
     name?: string;
     email?: string;
   }): Promise<ListUsersOutput> {
+    this.logger.log('[ListUsersUseCase] Execute started');
+
     const page = input?.page ?? 1;
     const limit = input?.limit ?? 10;
     const normalizedName = input?.name?.trim().toLowerCase();
@@ -68,6 +72,8 @@ export class ListUsersUseCase {
     const total = mappedUsers.length;
     const start = (page - 1) * limit;
     const paginatedUsers = mappedUsers.slice(start, start + limit);
+
+    this.logger.log('[ListUsersUseCase] Execute finished');
 
     return {
       data: paginatedUsers,

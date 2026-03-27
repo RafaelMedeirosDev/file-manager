@@ -1,8 +1,6 @@
-import {
-  ForbiddenException,
+import { ForbiddenException,
   Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+  NotFoundException, Logger } from '@nestjs/common';
 import { ROLE } from '@prisma/client';
 import { FileRepository } from '../../repositories/FileRepository';
 import { FolderRepository } from '../../repositories/FolderRepository';
@@ -47,12 +45,14 @@ export type GetFolderByIdOutput = {
 
 @Injectable()
 export class GetFolderByIdUseCase {
+  private readonly logger = new Logger(GetFolderByIdUseCase.name);
   constructor(
     private readonly folderRepository: FolderRepository,
     private readonly fileRepository: FileRepository,
   ) {}
 
   async execute(input: GetFolderByIdInput): Promise<GetFolderByIdOutput> {
+    this.logger.log('[GetFolderByIdUseCase] Execute started');
     const folder = await this.folderRepository.findById(input.id);
 
     if (!folder || folder.deletedAt) {
@@ -63,7 +63,9 @@ export class GetFolderByIdUseCase {
       throw new ForbiddenException(ErrorMessagesEnum.FOLDER_ACCESS_FORBIDDEN);
     }
 
-    const files = await this.fileRepository.findAll();
+    const files = await this.fileRepository.findAll();
+    this.logger.log('[GetFolderByIdUseCase] Execute finished');
+
 
     return {
       id: folder.id,
@@ -125,3 +127,6 @@ export class GetFolderByIdUseCase {
     return ownerUserId === input.requesterUserId;
   }
 }
+
+
+

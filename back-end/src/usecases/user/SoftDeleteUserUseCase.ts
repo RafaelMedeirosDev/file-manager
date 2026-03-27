@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { UserRepository } from '../../repositories/UserRepository';
 import { ErrorMessagesEnum } from '../../shared/enums/ErrorMessagesEnum';
 
@@ -15,9 +15,11 @@ export type SoftDeleteUserOutput = {
 
 @Injectable()
 export class SoftDeleteUserUseCase {
+  private readonly logger = new Logger(SoftDeleteUserUseCase.name);
   constructor(private readonly userRepository: UserRepository) {}
 
   async execute(input: SoftDeleteUserInput): Promise<SoftDeleteUserOutput> {
+    this.logger.log('[SoftDeleteUserUseCase] Execute started');
     const existingUser = await this.userRepository.findById(input.id);
 
     if (!existingUser || existingUser.deletedAt) {
@@ -28,7 +30,9 @@ export class SoftDeleteUserUseCase {
     const deletedUser = await this.userRepository.softDeleteById(
       input.id,
       deletedAt,
-    );
+    );
+    this.logger.log('[SoftDeleteUserUseCase] Execute finished');
+
 
     return {
       id: deletedUser.id,
@@ -38,3 +42,6 @@ export class SoftDeleteUserUseCase {
     };
   }
 }
+
+
+

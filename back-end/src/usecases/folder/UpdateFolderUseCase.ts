@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { FolderRepository } from '../../repositories/FolderRepository';
 import { ErrorMessagesEnum } from '../../shared/enums/ErrorMessagesEnum';
 
@@ -18,9 +18,11 @@ export type UpdateFolderOutput = {
 
 @Injectable()
 export class UpdateFolderUseCase {
+  private readonly logger = new Logger(UpdateFolderUseCase.name);
   constructor(private readonly folderRepository: FolderRepository) {}
 
   async execute(input: UpdateFolderInput): Promise<UpdateFolderOutput> {
+    this.logger.log('[UpdateFolderUseCase] Execute started');
     const existingFolder = await this.folderRepository.findById(input.id);
 
     if (!existingFolder || existingFolder.deletedAt) {
@@ -40,7 +42,9 @@ export class UpdateFolderUseCase {
 
     const updatedFolder = await this.folderRepository.updateById(input.id, {
       name: input.name,
-    });
+    });
+    this.logger.log('[UpdateFolderUseCase] Execute finished');
+
 
     return {
       id: updatedFolder.id,
@@ -52,3 +56,6 @@ export class UpdateFolderUseCase {
     };
   }
 }
+
+
+

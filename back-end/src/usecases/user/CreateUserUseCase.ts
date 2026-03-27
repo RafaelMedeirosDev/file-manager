@@ -1,4 +1,4 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, Logger } from '@nestjs/common';
 import { ROLE } from '@prisma/client';
 import { hash } from 'bcrypt';
 import { ErrorMessagesEnum } from '../../shared/enums/ErrorMessagesEnum';
@@ -21,11 +21,13 @@ export type CreateUserOutput = {
 
 @Injectable()
 export class CreateUserUseCase {
+  private readonly logger = new Logger(CreateUserUseCase.name);
   private static readonly SALT_ROUNDS = 10;
 
   constructor(private readonly userRepository: UserRepository) {}
 
   async execute(input: CreateUserInput): Promise<CreateUserOutput> {
+    this.logger.log('[CreateUserUseCase] Execute started');
     const existingUser = await this.userRepository.findByEmail(input.email);
 
     if (existingUser) {
@@ -42,7 +44,9 @@ export class CreateUserUseCase {
       email: input.email,
       password: hashedPassword,
       role: ROLE.USER,
-    });
+    });
+    this.logger.log('[CreateUserUseCase] Execute finished');
+
 
     return {
       id: user.id,
@@ -54,3 +58,6 @@ export class CreateUserUseCase {
     };
   }
 }
+
+
+

@@ -1,8 +1,6 @@
-import {
-  ForbiddenException,
+import { ForbiddenException,
   Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+  NotFoundException, Logger } from '@nestjs/common';
 import { ROLE } from '@prisma/client';
 import { FileRepository } from '../../repositories/FileRepository';
 import { ErrorMessagesEnum } from '../../shared/enums/ErrorMessagesEnum';
@@ -44,9 +42,11 @@ export type GetFileByIdOutput = {
 
 @Injectable()
 export class GetFileByIdUseCase {
+  private readonly logger = new Logger(GetFileByIdUseCase.name);
   constructor(private readonly fileRepository: FileRepository) {}
 
   async execute(input: GetFileByIdInput): Promise<GetFileByIdOutput> {
+    this.logger.log('[GetFileByIdUseCase] Execute started');
     const file = await this.fileRepository.findById(input.id);
 
     if (!file || file.deletedAt) {
@@ -55,7 +55,9 @@ export class GetFileByIdUseCase {
 
     if (!this.canAccessResource(file.userId, input)) {
       throw new ForbiddenException(ErrorMessagesEnum.FILE_ACCESS_FORBIDDEN);
-    }
+    }
+    this.logger.log('[GetFileByIdUseCase] Execute finished');
+
 
     return {
       id: file.id,
@@ -113,3 +115,6 @@ export class GetFileByIdUseCase {
     return ownerUserId === input.requesterUserId;
   }
 }
+
+
+
