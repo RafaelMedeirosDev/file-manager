@@ -1,11 +1,9 @@
-import {
-  BadGatewayException,
+import { BadGatewayException,
   BadRequestException,
   ForbiddenException,
   GatewayTimeoutException,
   Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+  NotFoundException, Logger } from '@nestjs/common';
 import { Readable } from 'node:stream';
 import { ROLE } from '@prisma/client';
 import { FileRepository } from '../../repositories/FileRepository';
@@ -26,6 +24,7 @@ export type DownloadFileOutput = {
 
 @Injectable()
 export class DownloadFileUseCase {
+  private readonly logger = new Logger(DownloadFileUseCase.name);
   private static readonly DOWNLOAD_TIMEOUT_MS = 15_000;
   private static readonly MIME_BY_EXTENSION: Record<string, string> = {
     xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -43,6 +42,7 @@ export class DownloadFileUseCase {
   constructor(private readonly fileRepository: FileRepository) {}
 
   async execute(input: DownloadFileInput): Promise<DownloadFileOutput> {
+    this.logger.log('[DownloadFileUseCase] Execute started');
     const file = await this.fileRepository.findById(input.id);
 
     if (!file || file.deletedAt) {
@@ -99,7 +99,9 @@ export class DownloadFileUseCase {
     const contentType =
       !upstreamContentType || upstreamContentType === 'application/octet-stream'
         ? fallbackContentType
-        : upstreamContentType;
+        : upstreamContentType;
+    this.logger.log('[DownloadFileUseCase] Execute finished');
+
 
     return {
       stream: Readable.fromWeb(upstream.body as any),
@@ -109,3 +111,6 @@ export class DownloadFileUseCase {
     };
   }
 }
+
+
+

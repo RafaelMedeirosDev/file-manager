@@ -1,9 +1,7 @@
-import {
-  BadRequestException,
+import { BadRequestException,
   Injectable,
   NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+  UnauthorizedException, Logger } from '@nestjs/common';
 import { compare, hash } from 'bcrypt';
 import { UserRepository } from '../../repositories/UserRepository';
 import { ErrorMessagesEnum } from '../../shared/enums/ErrorMessagesEnum';
@@ -23,11 +21,13 @@ export type ChangeOwnPasswordOutput = {
 
 @Injectable()
 export class ChangeOwnPasswordUseCase {
+  private readonly logger = new Logger(ChangeOwnPasswordUseCase.name);
   private static readonly SALT_ROUNDS = 10;
 
   constructor(private readonly userRepository: UserRepository) {}
 
   async execute(input: ChangeOwnPasswordInput): Promise<ChangeOwnPasswordOutput> {
+    this.logger.log('[ChangeOwnPasswordUseCase] Execute started');
     const user = await this.userRepository.findById(input.userId);
 
     if (!user || user.deletedAt) {
@@ -63,6 +63,8 @@ export class ChangeOwnPasswordUseCase {
     const updatedUser = await this.userRepository.updateById(user.id, {
       password: hashedPassword,
     });
+    this.logger.log('[ChangeOwnPasswordUseCase] Execute finished');
+
 
     return {
       id: updatedUser.id,
@@ -71,3 +73,6 @@ export class ChangeOwnPasswordUseCase {
     };
   }
 }
+
+
+

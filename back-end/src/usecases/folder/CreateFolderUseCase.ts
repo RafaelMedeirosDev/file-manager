@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { FolderRepository } from '../../repositories/FolderRepository';
 import { UserRepository } from '../../repositories/UserRepository';
 import { ErrorMessagesEnum } from '../../shared/enums/ErrorMessagesEnum';
@@ -20,12 +20,14 @@ export type CreateFolderOutput = {
 
 @Injectable()
 export class CreateFolderUseCase {
+  private readonly logger = new Logger(CreateFolderUseCase.name);
   constructor(
     private readonly userRepository: UserRepository,
     private readonly folderRepository: FolderRepository,
   ) {}
 
   async execute(input: CreateFolderInput): Promise<CreateFolderOutput> {
+    this.logger.log('[CreateFolderUseCase] Execute started');
     const user = await this.userRepository.findById(input.userId);
 
     if (!user || user.deletedAt) {
@@ -54,7 +56,9 @@ export class CreateFolderUseCase {
       name: input.name,
       userId: input.userId,
       folderId: input.folderId,
-    });
+    });
+    this.logger.log('[CreateFolderUseCase] Execute finished');
+
 
     return {
       id: folder.id,
@@ -66,3 +70,6 @@ export class CreateFolderUseCase {
     };
   }
 }
+
+
+

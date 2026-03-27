@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { FileRepository } from '../../repositories/FileRepository';
 import { FolderRepository } from '../../repositories/FolderRepository';
 import { UserRepository } from '../../repositories/UserRepository';
@@ -25,6 +25,7 @@ export type CreateFileOutput = {
 
 @Injectable()
 export class CreateFileUseCase {
+  private readonly logger = new Logger(CreateFileUseCase.name);
   constructor(
     private readonly userRepository: UserRepository,
     private readonly folderRepository: FolderRepository,
@@ -32,6 +33,7 @@ export class CreateFileUseCase {
   ) {}
 
   async execute(input: CreateFileInput): Promise<CreateFileOutput> {
+    this.logger.log('[CreateFileUseCase] Execute started');
     const user = await this.userRepository.findById(input.userId);
 
     if (!user || user.deletedAt) {
@@ -56,7 +58,9 @@ export class CreateFileUseCase {
       folderId: input.folderId,
       extension: input.extension,
       url: input.url,
-    });
+    });
+    this.logger.log('[CreateFileUseCase] Execute finished');
+
 
     return {
       id: file.id,
@@ -70,3 +74,6 @@ export class CreateFileUseCase {
     };
   }
 }
+
+
+

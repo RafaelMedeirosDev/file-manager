@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ROLE } from '@prisma/client';
 import { FileRepository } from '../../repositories/FileRepository';
 
@@ -23,6 +23,8 @@ export type ListFilesOutput = {
 
 @Injectable()
 export class ListFilesUseCase {
+  private readonly logger = new Logger(ListFilesUseCase.name);
+
   constructor(private readonly fileRepository: FileRepository) {}
 
   async execute(input: {
@@ -32,6 +34,8 @@ export class ListFilesUseCase {
     page?: number;
     limit?: number;
   }): Promise<ListFilesOutput> {
+    this.logger.log('[ListFilesUseCase] Execute started');
+
     const page = input.page ?? 1;
     const limit = input.limit ?? 10;
 
@@ -61,6 +65,8 @@ export class ListFilesUseCase {
     const start = (page - 1) * limit;
     const paginatedFiles = sortedFiles.slice(start, start + limit);
 
+    this.logger.log('[ListFilesUseCase] Execute finished');
+
     return {
       data: paginatedFiles.map((file) => ({
         id: file.id,
@@ -81,3 +87,4 @@ export class ListFilesUseCase {
     };
   }
 }
+

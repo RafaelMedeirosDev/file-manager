@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ROLE } from '@prisma/client';
 import { FolderRepository } from '../../repositories/FolderRepository';
 import { ErrorMessagesEnum } from '../../shared/enums/ErrorMessagesEnum';
@@ -34,6 +34,8 @@ export type ListFoldersOutput = {
 
 @Injectable()
 export class ListFoldersUseCase {
+  private readonly logger = new Logger(ListFoldersUseCase.name);
+
   constructor(private readonly folderRepository: FolderRepository) {}
 
   async execute(input: {
@@ -44,6 +46,8 @@ export class ListFoldersUseCase {
     page?: number;
     limit?: number;
   }): Promise<ListFoldersOutput> {
+    this.logger.log('[ListFoldersUseCase] Execute started');
+
     if (input.folderId && input.rootsOnly) {
       throw new BadRequestException(ErrorMessagesEnum.INVALID_FOLDER_LIST_FILTER);
     }
@@ -76,6 +80,8 @@ export class ListFoldersUseCase {
     const total = sortedFolders.length;
     const start = (page - 1) * limit;
     const paginatedFolders = sortedFolders.slice(start, start + limit);
+
+    this.logger.log('[ListFoldersUseCase] Execute finished');
 
     return {
       data: paginatedFolders.map((folder) => ({
