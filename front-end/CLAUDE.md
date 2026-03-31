@@ -1,0 +1,138 @@
+# CLAUDE.md
+
+## Stack
+- React 18 + Vite + TypeScript
+- Tailwind CSS (classes customizadas em styles.css: app-card, btn-primary, app-input, etc.)
+- React Router v6
+- Axios (instância em src/shared/lib/api.ts)
+- SEM React Query por enquanto — estado local com useState/useCallback
+
+## Arquitetura (Feature-Based)
+src/
+├── features/{feature}/
+│   ├── components/   → UI pura, só recebe props
+│   ├── hooks/        → lógica, estado, chamadas via service
+│   └── services/     → APENAS chamadas HTTP, sem estado
+├── shared/
+│   ├── types/        → interfaces e types globais
+│   ├── utils/        → funções puras reutilizáveis
+│   └── lib/          → instância axios
+└── pages/            → montam features, sem lógica própria
+
+## Regras obrigatórias
+1. Chamadas HTTP SEMPRE em services/ — nunca direto nas pages ou hooks
+2. Lógica e estado SEMPRE em hooks/ — nunca dentro de componentes
+3. Componentes recebem props e renderizam — sem api.get() dentro
+4. Types globais ficam em shared/types/ — nunca redeclarar o mesmo type
+5. Funções utilitárias reutilizáveis ficam em shared/utils/
+6. Nunca usar `any` — tipar corretamente
+7. Classes CSS customizadas já existem em styles.css — usar antes de criar novas
+
+## Backend (já pronto)
+- Base URL: http://localhost:3001
+- Auth: Bearer token no header Authorization
+- Paginação: { data: T[], meta: { page, limit, total, hasNextPage } }
+- Soft delete: registros têm deletedAt
+- Roles: ADMIN (tudo) | USER (listar + download)
+
+## Endpoints principais
+- POST /auth/login
+- GET/POST/PATCH/DELETE /users
+- PATCH /users/me/password
+- GET/POST/PATCH/DELETE /folders
+- GET/POST/PATCH/DELETE /files
+- GET /files/:id/download
+```
+
+---
+
+## 🚀 A Sequência de Trabalho com Claude Code
+
+### Etapa 1 — Criar a infraestrutura shared (sem quebrar nada)
+```
+Leia o CLAUDE.md. Vamos começar pela infraestrutura shared.
+
+Crie APENAS src/shared/types/index.ts com os types globais
+que estão duplicados nas pages: FileItem, FolderItem, UserItem,
+FolderDetails, FolderChild, ListResponse<T>, PaginatedMeta.
+
+Não crie mais nenhum arquivo. Explique cada type e por que
+ele deve ser compartilhado em vez de redeclarado por arquivo.
+```
+
+### Etapa 2 — Criar os utils compartilhados
+```
+Types aprovados. Agora crie APENAS src/shared/utils/apiUtils.ts com:
+- getApiErrorMessage(error, fallback): string
+- normalizePaginatedResponse<T>(payload, page, limit): PaginatedResult<T>
+
+Essas funções existem copiadas em FoldersPage, FilesPage e UsersPage.
+Explique por que isso é um problema e como centralizar resolve.
+```
+
+### Etapa 3 — Criar o primeiro service
+```
+Agora crie APENAS src/features/folders/services/foldersService.ts
+
+Ele deve ter funções para todos os endpoints de /folders:
+list, getById, create, update, softDelete.
+
+Use a instância axios de src/shared/lib/api.ts.
+Use os types de src/shared/types/index.ts.
+Sem lógica de estado — só HTTP.
+```
+
+### Etapa 4 — Extrair o hook de useFolders
+```
+Service aprovado. Agora crie APENAS
+src/features/folders/hooks/useFolders.ts
+
+Extraia deste hook TODA a lógica que hoje está no FoldersPage:
+- estado de folders, loading, error, paginação
+- IntersectionObserver para scroll infinito
+- handleCreateFolder
+- handleSoftDeleteFolder
+
+A FoldersPage vai virar só JSX que usa este hook.
+Explique o que sai da Page e o que entra no hook.
+```
+
+### Etapa 5 — Limpar a Page
+```
+Hook aprovado. Agora refatore FoldersPage.tsx para que ela:
+- Importe e use useFolders()
+- Contenha APENAS JSX
+- Não tenha nenhum useState ou useEffect próprio
+- Não faça nenhuma chamada api.get() direta
+
+Mostre antes e depois da quantidade de linhas.
+```
+
+---
+
+## ⚡ Regras de Ouro para usar o Claude Code neste projeto
+
+**Sempre comece a sessão assim:**
+```
+Leia o CLAUDE.md antes de qualquer coisa.
+```
+
+**Quando não entender algo, pergunte assim:**
+```
+Antes de criarmos o hook useFiles, me explica:
+- Por que o hook não deve chamar api.get() diretamente?
+- Qual é a diferença entre o que o service faz e o que o hook faz?
+- O que acontece se eu colocar essa lógica direto no componente?
+```
+
+**Quando o Claude criar mais do que pediu:**
+```
+Você criou mais arquivos do que eu pedi.
+Apague tudo que não foi solicitado e vamos fazer um arquivo por vez.
+```
+
+**Para revisar se seguiu a arquitetura:**
+```
+Revise todos os arquivos da feature folders e me diz
+se algum está violando as regras do CLAUDE.md.
+Liste os problemas antes de corrigir qualquer coisa.
