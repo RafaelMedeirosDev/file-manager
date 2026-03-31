@@ -5,16 +5,21 @@ module.exports = {
     extend: {
       colors: {
         brand: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          900: '#1e3a8a',
+          50:  '#e5f3fb',
+          100: '#cce4f7',
+          200: '#99c9ef',
+          300: '#66aee7',
+          500: '#0078D4',
+          600: '#0067b8',
+          700: '#005a9e',
+          900: '#003a6e',
         },
       },
       boxShadow: {
-        soft: '0 18px 50px rgba(37, 99, 235, 0.15)',
+        soft: '0 2px 8px rgba(0,0,0,0.08)',
+      },
+      fontSize: {
+        '2xs': ['11px', '16px'],
       },
     },
   },
