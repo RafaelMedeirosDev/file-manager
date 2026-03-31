@@ -5,76 +5,96 @@
 @layer base {
   :root {
     --app-surface: #ffffff;
-    --app-border: #dbe5f3;
+    --app-border: #e0e0e0;
+    --win-blue: #0078D4;
+    --win-blue-light: #cce4f7;
+    --win-sidebar: #f3f3f3;
   }
 
   body {
     @apply m-0 min-h-screen text-slate-800 antialiased;
-    font-family: 'Manrope', 'Segoe UI', sans-serif;
-    background:
-      radial-gradient(1200px 700px at 5% -10%, #dbeafe 0%, transparent 55%),
-      radial-gradient(1000px 600px at 95% 0%, #e0e7ff 0%, transparent 50%),
-      linear-gradient(180deg, #f8fbff 0%, #f3f7fd 100%);
+    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    background-color: #f0f0f0;
+  }
+
+  * {
+    box-sizing: border-box;
   }
 }
 
 @layer components {
+  /* ── Cards ─────────────────────────────────── */
   .app-card {
-    @apply rounded-2xl border bg-white/90 shadow-[0_10px_30px_rgba(15,23,42,0.06)] backdrop-blur-sm;
+    @apply rounded-lg border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.08)];
     border-color: var(--app-border);
   }
 
+  /* ── Typography ─────────────────────────────── */
   .app-section-title {
-    @apply text-xs font-bold uppercase tracking-[0.14em] text-slate-500;
+    @apply text-[11px] font-semibold uppercase tracking-widest text-slate-400;
   }
 
   .app-page-title {
-    @apply text-3xl font-extrabold tracking-tight text-slate-900;
+    @apply text-xl font-semibold text-slate-900;
   }
 
   .app-page-subtitle {
-    @apply mt-1 text-sm text-slate-500;
+    @apply mt-0.5 text-sm text-slate-500;
   }
 
+  .app-divider {
+    @apply my-4 border-t border-[#e8e8e8];
+  }
+
+  /* ── Inputs ─────────────────────────────────── */
   .app-input {
-    @apply w-full rounded-xl border bg-white px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20;
-    border-color: #cdd9ea;
+    @apply w-full rounded border bg-white px-3 py-1.5 text-sm outline-none transition
+      placeholder:text-slate-400
+      focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10;
+    border-color: #d0d0d0;
   }
 
+  /* ── Buttons ─────────────────────────────────── */
   .btn-primary {
-    @apply rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex items-center justify-center rounded bg-brand-500 px-4 py-1.5 text-sm font-medium text-white transition
+      hover:bg-brand-600 active:scale-[0.98]
+      disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .btn-secondary {
-    @apply rounded-xl border px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100;
-    border-color: #cdd9ea;
-    background: rgba(255, 255, 255, 0.8);
+    @apply inline-flex items-center justify-center rounded border bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition
+      hover:bg-slate-50 active:scale-[0.98];
+    border-color: #d0d0d0;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center rounded border border-rose-200 bg-white px-3 py-1.5 text-sm font-medium text-rose-600 transition
+      hover:bg-rose-50 active:scale-[0.98]
+      disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .download-btn {
-    @apply rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-700;
+    @apply inline-flex items-center justify-center rounded bg-brand-500 px-3 py-1 text-xs font-medium text-white transition
+      hover:bg-brand-600 active:scale-[0.98]
+      disabled:opacity-60 disabled:cursor-not-allowed;
   }
 
+  /* ── List items ──────────────────────────────── */
   .app-list-item {
-    @apply flex flex-col gap-2 rounded-xl border p-3 text-sm transition sm:flex-row sm:items-center sm:justify-between;
-    border-color: #dbe5f3;
-    background: rgba(255, 255, 255, 0.9);
+    @apply flex flex-col gap-2 rounded border bg-white px-4 py-2.5 text-sm transition
+      hover:border-brand-200 hover:bg-[#f5f9fd]
+      sm:flex-row sm:items-center sm:justify-between;
+    border-color: var(--app-border);
   }
 
-  .app-metric {
-    @apply app-card p-4;
-  }
-
-  .app-metric-label {
-    @apply text-xs font-semibold uppercase tracking-[0.12em] text-slate-500;
-  }
-
-  .app-metric-value {
-    @apply mt-2 text-2xl font-bold text-slate-900;
-  }
-
+  /* ── Chips / badges ─────────────────────────── */
   .app-chip {
-    @apply inline-flex w-fit rounded-full border border-brand-100 bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700;
+    @apply inline-flex w-fit items-center rounded border border-brand-200 bg-brand-50
+      px-2 py-0.5 text-xs font-medium text-brand-700;
+  }
+
+  .app-chip-dark {
+    @apply inline-flex w-fit items-center rounded bg-white/10
+      px-2 py-0.5 text-xs font-medium text-slate-400;
   }
 }
-

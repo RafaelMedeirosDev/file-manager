@@ -1,60 +1,73 @@
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { Sidebar } from '../../components/Sidebar';
 
-function navLinkClass({ isActive }: { isActive: boolean }) {
-  return `rounded-xl px-3 py-2.5 text-sm font-semibold transition ${
-    isActive
-      ? 'bg-white text-slate-900 shadow-sm'
-      : 'text-slate-300 hover:bg-white/10 hover:text-white'
+const navLinkClass = ({ isActive }: { isActive: boolean }) =>
+  `rounded px-3 py-1 text-[13px] font-medium transition-colors duration-100 ${
+    isActive ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/[0.07] hover:text-slate-200'
   }`;
-}
 
 export function AppLayout() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  function handleLogout() {
+    logout();
+    navigate('/login');
+  }
 
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-[280px_1fr]">
-      <aside className="border-b border-slate-800/40 bg-[linear-gradient(180deg,#0f172a_0%,#152545_100%)] p-4 text-slate-100 lg:min-h-screen lg:border-b-0 lg:border-r lg:border-slate-800/60 lg:flex lg:flex-col">
-        <div className="mb-6">
-          <Link to="/" className="text-2xl font-extrabold tracking-tight text-white">
-            File Manager
-          </Link>
-        </div>
+    <div className="flex h-screen flex-col overflow-hidden">
 
-        <nav className="mb-6 flex flex-wrap gap-2 lg:flex-col">
-          {user?.role === 'ADMIN' ? (
-            <NavLink to="/users" className={navLinkClass}>
-              Usuarios
-            </NavLink>
-          ) : null}
-          <NavLink to="/folders" className={navLinkClass}>
-            Pastas
-          </NavLink>
-          <NavLink to="/files" className={navLinkClass}>
-            Arquivos
-          </NavLink>
-        </nav>
+      {/* ── Navbar ────────────────────────────────────── */}
+      <header className="flex h-11 flex-shrink-0 items-center gap-1 border-b border-black/20 bg-[#1f1f1f] px-4">
 
-        <button type="button" className="btn-primary w-full bg-rose-500 hover:bg-rose-600 lg:mt-auto" onClick={logout}>
-          Sair
-        </button>
-      </aside>
+        <Link to="/" className="mr-3 text-[14px] font-semibold tracking-tight text-white">
+          File Manager
+        </Link>
 
-      <main className="p-4 lg:p-6">
-        <header className="app-card mb-4 border-brand-100/70 p-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-base font-bold text-slate-900">{user?.name}</p>
-              <p className="text-sm text-slate-500">{user?.email}</p>
-            </div>
-            <span className="app-chip">{user?.role}</span>
+        {/* Nav links — condicionais por role */}
+        {user?.role === 'ADMIN' && (
+          <>
+            <NavLink to="/users" className={navLinkClass}>Usuários</NavLink>
+            <NavLink to="/folders" className={navLinkClass}>Pastas</NavLink>
+          </>
+        )}
+        {user?.role === 'USER' && (
+          <NavLink to="/folders" className={navLinkClass}>Pastas</NavLink>
+        )}
+
+        {/* Lado direito: info do usuário + Sair */}
+        <div className="ml-auto flex items-center gap-3">
+          <div className="hidden sm:flex flex-col items-end leading-none">
+            <span className="text-[13px] font-medium text-slate-200">{user?.name}</span>
+            <span className="mt-0.5 text-[11px] text-slate-500">{user?.email}</span>
           </div>
-        </header>
+          <span className="app-chip-dark">{user?.role}</span>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="rounded px-3 py-1 text-[13px] font-medium text-slate-400 transition hover:bg-white/[0.07] hover:text-white"
+          >
+            Sair
+          </button>
+        </div>
+      </header>
 
-        <section className="app-card p-4 lg:p-5">
-          <Outlet />
-        </section>
-      </main>
+      {/* ── Body ──────────────────────────────────────── */}
+      <div className="flex flex-1 overflow-hidden">
+
+        {/* Sidebar */}
+        <Sidebar />
+
+        {/* Área de conteúdo */}
+        <main className="flex flex-1 flex-col overflow-auto bg-white">
+          <div className="flex-1 p-5">
+            <Outlet />
+          </div>
+        </main>
+
+      </div>
     </div>
   );
 }
