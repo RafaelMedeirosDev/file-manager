@@ -11,12 +11,16 @@ import {
   Req,
   Res,
   StreamableFile,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
   ValidationPipe,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import type { Request, Response } from 'express';
 import { ROLE } from '@prisma/client';
 import { CreateFileDTO } from '../shared/dto/file/CreateFileDTO';
+import { UploadFileDTO } from '../shared/dto/file/UploadFileDTO';
 import { ListFilesQueryDTO } from '../shared/dto/file/ListFilesQueryDTO';
 import {
   UpdateFileDTO,
@@ -39,6 +43,10 @@ import {
 } from '../usecases/file/ListFilesUseCase';
 import { DownloadFileUseCase } from '../usecases/file/DownloadFileUseCase';
 import {
+  UploadFileOutput,
+  UploadFileUseCase,
+} from '../usecases/file/UploadFileUseCase';
+import {
   SoftDeleteFileOutput,
   SoftDeleteFileUseCase,
 } from '../usecases/file/SoftDeleteFileUseCase';
@@ -58,7 +66,36 @@ export class FileController {
     private readonly downloadFileUseCase: DownloadFileUseCase,
     private readonly updateFileUseCase: UpdateFileUseCase,
     private readonly softDeleteFileUseCase: SoftDeleteFileUseCase,
+    private readonly uploadFileUseCase: UploadFileUseCase,
   ) {}
+
+  @Post('upload')
+  @Roles(ROLE.USER, ROLE.ADMIN)
+  @UseInterceptors(FileInterceptor('file'))
+  async upload(
+    @UploadedFile() file: Express.Multer.File,
+    @Body(
+      new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        forbidNonWhitelisted: true,
+      }),
+    )
+    body: UploadFileDTO,
+    @Req() req: Request & { user: JwtPayload },
+  ): Promise<UploadFileOutput> {
+    const extension = file.originalname.split('.').pop()?.toLowerCase() ?? '';
+
+    return this.uploadFileUseCase.execute({
+      buffer: file.buffer,
+      name: body.name,
+      requesterId: req.user.sub,
+      requesterRole: req.user.role,
+      folderId: body.folderId,
+      extension,
+      mimeType: file.mimetype,
+    });
+  }
 
   @Get()
   @Roles(ROLE.USER, ROLE.ADMIN)
