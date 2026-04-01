@@ -1,57 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { api } from '../services/api';
-
-// ── Types ────────────────────────────────────────────────
-
-type FileNode = {
-  id: string;
-  name: string;
-  extension: string;
-};
-
-type FolderNode = {
-  id: string;
-  name: string;
-  children: FolderNode[];
-  files: FileNode[];
-  isLoaded: boolean;
-};
-
-type ApiFolderItem = { id: string; name: string };
-type ApiFileItem   = { id: string; name: string; extension: string };
-type ApiFolderDetail = {
-  id: string;
-  name: string;
-  children: ApiFolderItem[];
-  files: ApiFileItem[];
-};
-
-// ── Tree helpers ─────────────────────────────────────────
-
-function updateNodeInTree(
-  nodes: FolderNode[],
-  targetId: string,
-  children: FolderNode[],
-  files: FileNode[],
-): FolderNode[] {
-  return nodes.map((node) => {
-    if (node.id === targetId) return { ...node, children, files, isLoaded: true };
-    return {
-      ...node,
-      children: updateNodeInTree(node.children, targetId, children, files),
-    };
-  });
-}
-
-function findNode(nodes: FolderNode[], id: string): FolderNode | null {
-  for (const node of nodes) {
-    if (node.id === id) return node;
-    const found = findNode(node.children, id);
-    if (found) return found;
-  }
-  return null;
-}
+import { useSidebar } from '../features/folders/hooks/useSidebar';
+import type { FolderNode, FileNode } from '../features/folders/hooks/useSidebar';
 
 // ── Icons ────────────────────────────────────────────────
 
@@ -75,7 +24,7 @@ function FolderFilledIcon({ active }: { active: boolean }) {
       fill="currentColor"
       className={`h-4 w-4 flex-shrink-0 ${active ? 'text-brand-500' : 'text-amber-400'}`}
     >
-      <path d="M10 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8l-2-2z" />
+      <path d="M10 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0-2-2h-8l-2-2z" />
     </svg>
   );
 }
@@ -84,11 +33,11 @@ function FileNodeIcon({ extension }: { extension: string }) {
   const ext = extension.toLowerCase();
 
   const color =
-    ext === 'pdf'                          ? 'text-rose-500'   :
-    ['jpg','jpeg','png','gif','webp','svg'].includes(ext) ? 'text-violet-500' :
-    ['xls','xlsx','csv'].includes(ext)     ? 'text-emerald-600':
-    ['doc','docx','txt','md'].includes(ext)? 'text-sky-600'    :
-                                             'text-slate-400';
+    ext === 'pdf'                                        ? 'text-rose-500'    :
+    ['jpg','jpeg','png','gif','webp','svg'].includes(ext) ? 'text-violet-500'  :
+    ['xls','xlsx','csv'].includes(ext)                   ? 'text-emerald-600' :
+    ['doc','docx','txt','md'].includes(ext)              ? 'text-sky-600'     :
+                                                           'text-slate-400';
 
   return (
     <svg
@@ -134,7 +83,7 @@ type TreeItemProps = {
   depth: number;
   isExpanded: boolean;
   isActive: boolean;
-  onToggle: (id: string) => void;
+  onToggle: (id: string) => Promise<void>;
   onNavigate: (id: string) => void;
   children?: React.ReactNode;
 };
@@ -169,9 +118,7 @@ function TreeItem({ node, depth, isExpanded, isActive, onToggle, onNavigate, chi
 
       {isExpanded && (
         <div>
-          {/* Subpastas */}
           {children}
-          {/* Arquivos da pasta */}
           {node.files.map((file) => (
             <FileTreeItem key={file.id} file={file} depth={depth} />
           ))}
@@ -186,50 +133,10 @@ function TreeItem({ node, depth, isExpanded, isActive, onToggle, onNavigate, chi
 export function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
-
-  const [roots, setRoots] = useState<FolderNode[]>([]);
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(true);
+  const { roots, expanded, loading, handleToggle } = useSidebar();
 
   const activeFolderId = location.pathname.match(/^\/folders\/([^/]+)/)?.[1];
   const isFoldersRoot  = location.pathname === '/folders';
-
-  useEffect(() => {
-    api
-      .get('/folders', { params: { rootsOnly: true, limit: 100 } })
-      .then(({ data }) => {
-        const items: ApiFolderItem[] = Array.isArray(data) ? data : (data.data ?? []);
-        setRoots(
-          items.map((f) => ({ id: f.id, name: f.name, children: [], files: [], isLoaded: false })),
-        );
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
-
-  const loadChildren = useCallback(async (folderId: string) => {
-    const { data } = await api.get<ApiFolderDetail>(`/folders/${folderId}`);
-
-    const children: FolderNode[] = (data.children ?? []).map((c) => ({
-      id: c.id, name: c.name, children: [], files: [], isLoaded: false,
-    }));
-
-    const files: FileNode[] = (data.files ?? []).map((f) => ({
-      id: f.id, name: f.name, extension: f.extension,
-    }));
-
-    setRoots((prev) => updateNodeInTree(prev, folderId, children, files));
-  }, []);
-
-  async function handleToggle(folderId: string) {
-    if (expanded.has(folderId)) {
-      setExpanded((prev) => { const next = new Set(prev); next.delete(folderId); return next; });
-    } else {
-      setExpanded((prev) => new Set(prev).add(folderId));
-      const node = findNode(roots, folderId);
-      if (node && !node.isLoaded) await loadChildren(folderId);
-    }
-  }
 
   function renderNodes(nodes: FolderNode[], depth = 0): React.ReactNode {
     return nodes.map((node) => (
@@ -251,7 +158,6 @@ export function Sidebar() {
     <aside className="flex w-56 flex-shrink-0 flex-col overflow-hidden border-r border-[#e0e0e0] bg-[#f3f3f3]">
       <div className="flex-1 overflow-y-auto py-2 px-1.5">
 
-        {/* Início */}
         <button
           type="button"
           onClick={() => navigate('/folders')}
@@ -272,14 +178,12 @@ export function Sidebar() {
           Início
         </button>
 
-        {/* Label */}
         <div className="mb-1 mt-2 px-2">
           <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
             Pastas
           </span>
         </div>
 
-        {/* Tree */}
         {loading ? (
           <p className="px-3 py-2 text-xs text-slate-400">Carregando...</p>
         ) : roots.length === 0 ? (
