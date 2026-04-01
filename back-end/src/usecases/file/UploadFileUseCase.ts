@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
+import { ROLE } from '@prisma/client';
 import { r2Client } from '../../shared/lib/r2Client';
 import { env } from '../../config/env';
 import { FileRepository } from '../../repositories/FileRepository';
@@ -16,7 +17,8 @@ import { ErrorMessagesEnum } from '../../shared/enums/ErrorMessagesEnum';
 export type UploadFileInput = {
   buffer: Buffer;
   name: string;
-  userId: string;
+  requesterId: string;
+  requesterRole: ROLE;
   folderId: string;
   extension: string;
   mimeType: string;
@@ -46,13 +48,6 @@ export class UploadFileUseCase {
   async execute(input: UploadFileInput): Promise<UploadFileOutput> {
     this.logger.log('[UploadFileUseCase] Execute started');
 
-    // ── Validação: usuário existe e não foi deletado ─────
-    const user = await this.userRepository.findById(input.userId);
-
-    if (!user || user.deletedAt) {
-      throw new NotFoundException(ErrorMessagesEnum.USER_NOT_FOUND);
-    }
-
     // ── Validação: pasta existe e não foi deletada ───────
     const folder = await this.folderRepository.findById(input.folderId);
 
@@ -60,11 +55,24 @@ export class UploadFileUseCase {
       throw new NotFoundException(ErrorMessagesEnum.FOLDER_NOT_FOUND);
     }
 
-    // ── Validação: pasta pertence ao usuário ─────────────
-    if (folder.userId !== input.userId) {
+    // ── Resolve o dono do arquivo ────────────────────────
+    // ADMIN pode fazer upload em qualquer pasta — o dono é o dono da pasta.
+    // USER só pode fazer upload nas próprias pastas.
+    const isAdmin = input.requesterRole === ROLE.ADMIN;
+
+    if (!isAdmin && folder.userId !== input.requesterId) {
       throw new BadRequestException(
         ErrorMessagesEnum.FOLDER_DOES_NOT_BELONG_TO_USER,
       );
+    }
+
+    const fileOwnerId = isAdmin ? folder.userId : input.requesterId;
+
+    // ── Validação: dono existe e não foi deletado ────────
+    const owner = await this.userRepository.findById(fileOwnerId);
+
+    if (!owner || owner.deletedAt) {
+      throw new NotFoundException(ErrorMessagesEnum.USER_NOT_FOUND);
     }
 
     // ── Upload para o R2 ─────────────────────────────────
@@ -86,7 +94,7 @@ export class UploadFileUseCase {
 
     const file = await this.fileRepository.create({
       name: input.name,
-      userId: input.userId,
+      userId: fileOwnerId,
       folderId: input.folderId,
       extension: input.extension,
       url,

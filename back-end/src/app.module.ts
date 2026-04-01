@@ -25,6 +25,7 @@ import { UpdateFileUseCase } from './usecases/file/UpdateFileUseCase';
 import { SoftDeleteFileUseCase } from './usecases/file/SoftDeleteFileUseCase';
 import { GetFileByIdUseCase } from './usecases/file/GetFileByIdUseCase';
 import { DownloadFileUseCase } from './usecases/file/DownloadFileUseCase';
+import { UploadFileUseCase } from './usecases/file/UploadFileUseCase';
 import { RolesGuard } from './auth/roles.guard';
 
 @Module({
@@ -52,6 +53,7 @@ import { RolesGuard } from './auth/roles.guard';
     UserRepository,
     FolderRepository,
     FileRepository,
+    UploadFileUseCase,
   ],
 })
 export class AppModule {}
