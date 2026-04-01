@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { getApiErrorMessage, normalizePaginatedResponse } from '../../../shared/utils/apiUtils';
-import type { FileItem, FolderOption, ListResponse, UserOption } from '../../../shared/types';
+import type { FileItem, FolderOption, UserOption } from '../../../shared/types';
 import { filesService } from '../services/filesService';
-import { api } from '../../../services/api';
+import { foldersService } from '../../folders/services/foldersService';
+import { usersService } from '../../users/services/usersService';
 
 // ── Types internos do hook ───────────────────────────────
 
@@ -203,10 +204,8 @@ export function useFiles(): UseFilesReturn {
       let hasMore = true;
       const all: FolderOption[] = [];
       while (hasMore) {
-        const { data } = await api.get<ListResponse<FolderOption> | FolderOption[]>('/folders', {
-          params: { page, limit: pageLimit },
-        });
-        const parsed = normalizePaginatedResponse<FolderOption>(data, page, pageLimit);
+        const raw = await foldersService.list({ page, limit: pageLimit });
+        const parsed = normalizePaginatedResponse<FolderOption>(raw, page, pageLimit);
         all.push(...parsed.items);
         hasMore = parsed.isLegacyArray ? false : parsed.meta.hasNextPage;
         page += 1;
@@ -220,10 +219,8 @@ export function useFiles(): UseFilesReturn {
       let hasMore = true;
       const all: UserOption[] = [];
       while (hasMore) {
-        const { data } = await api.get<ListResponse<UserOption> | UserOption[]>('/users', {
-          params: { page, limit: pageLimit },
-        });
-        const parsed = normalizePaginatedResponse<UserOption>(data, page, pageLimit);
+        const raw = await usersService.list({ page, limit: pageLimit });
+        const parsed = normalizePaginatedResponse<UserOption>(raw, page, pageLimit);
         all.push(...parsed.items);
         hasMore = parsed.isLegacyArray ? false : parsed.meta.hasNextPage;
         page += 1;

@@ -3,8 +3,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import { getApiErrorMessage, normalizePaginatedResponse } from '../../../shared/utils/apiUtils';
 import type { FolderItem, UserOption } from '../../../shared/types';
 import { foldersService } from '../services/foldersService';
-import { api } from '../../../services/api';
-import type { ListResponse } from '../../../shared/types';
+import { usersService } from '../../users/services/usersService';
 
 // ── Types internos do hook ───────────────────────────────
 
@@ -161,10 +160,8 @@ export function useFolders(): UseFoldersReturn {
       const allUsers: UserOption[] = [];
 
       while (hasMore) {
-        const { data } = await api.get<ListResponse<UserOption> | UserOption[]>('/users', {
-          params: { page, limit: pageLimit },
-        });
-        const parsed = normalizePaginatedResponse<UserOption>(data, page, pageLimit);
+        const raw = await usersService.list({ page, limit: pageLimit });
+        const parsed = normalizePaginatedResponse<UserOption>(raw, page, pageLimit);
         allUsers.push(...parsed.items);
         hasMore = parsed.isLegacyArray ? false : parsed.meta.hasNextPage;
         page += 1;
