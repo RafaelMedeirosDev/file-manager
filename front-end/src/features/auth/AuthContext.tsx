@@ -5,8 +5,8 @@ import {
   useState,
   type PropsWithChildren,
 } from 'react';
-import { authService } from '../services/authService';
-import type { AuthUser, LoginPayload } from '../types/auth';
+import { authService } from './services/authService';
+import type { AuthUser, LoginPayload } from '../../types/auth';
 
 type Session = {
   accessToken: string;

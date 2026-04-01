@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../features/auth/hooks/useAuth';
 import { Sidebar } from '../../components/Sidebar';
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
