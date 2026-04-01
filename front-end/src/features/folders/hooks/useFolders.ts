@@ -39,7 +39,7 @@ type UseFoldersReturn = {
   handleSoftDeleteFolder: (folderId: string, folderName: string) => Promise<void>;
 
   // Ref para scroll infinito
-  sentinelRef: React.RefObject<HTMLDivElement | null>;
+  sentinelRef: React.RefObject<HTMLDivElement>;
 };
 
 // ── Hook ────────────────────────────────────────────────
@@ -65,7 +65,7 @@ export function useFolders(): UseFoldersReturn {
   const [filterUserId, setFilterUserId] = useState('');
 
   const [reloadKey, setReloadKey] = useState(0);
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   // ── Dados derivados ──────────────────────────────────
 
