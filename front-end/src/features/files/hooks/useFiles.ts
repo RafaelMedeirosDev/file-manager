@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useAuth } from '../../../hooks/useAuth';
+import { useAuth } from '../../auth/hooks/useAuth';
 import { getApiErrorMessage, normalizePaginatedResponse } from '../../../shared/utils/apiUtils';
 import type { FileItem, FolderOption, UserOption } from '../../../shared/types';
 import { filesService } from '../services/filesService';

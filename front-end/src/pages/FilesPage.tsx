@@ -1,4 +1,4 @@
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../features/auth/hooks/useAuth';
 import { FileIcon } from '../components/Icons';
 import { useFiles } from '../features/files/hooks/useFiles';
 

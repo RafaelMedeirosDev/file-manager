@@ -1,32 +1,7 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { useLogin } from '../features/auth/hooks/useLogin';
 
 export function LoginPage() {
-  const { login } = useAuth();
-  const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    try {
-      await login({ email, password });
-      navigate('/');
-    } catch (err: any) {
-      const apiMessage = err?.response?.data?.message;
-      setError(
-        typeof apiMessage === 'string' ? apiMessage : 'Não foi possível autenticar.',
-      );
-    } finally {
-      setLoading(false);
-    }
-  }
+  const { email, setEmail, password, setPassword, error, loading, handleSubmit } = useLogin();
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4">

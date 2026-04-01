@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../features/auth/hooks/useAuth';
 import { FileIcon, FolderIcon } from '../components/Icons';
 import { useFolderDetails } from '../features/folders/hooks/useFolderDetails';
 
