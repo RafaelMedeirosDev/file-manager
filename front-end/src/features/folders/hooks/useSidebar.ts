@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useAuth } from '../../auth/hooks/useAuth';
+import { useSidebarContext } from '../contexts/SidebarContext';
 import { foldersService } from '../services/foldersService';
 import { folderDetailsService } from '../services/folderDetailsService';
+import { usersService } from '../../users/services/usersService';
+import type { UserOption } from '../../../shared/types';
 
 // ── Types internos ───────────────────────────────────────
 
@@ -13,6 +17,7 @@ export type FileNode = {
 export type FolderNode = {
   id: string;
   name: string;
+  userId: string;
   children: FolderNode[];
   files: FileNode[];
   isLoaded: boolean;
@@ -35,6 +40,17 @@ function updateNodeInTree(
   });
 }
 
+function findNodeInMap(
+  map: Map<string, FolderNode[]>,
+  id: string,
+): FolderNode | null {
+  for (const nodes of map.values()) {
+    const found = findNode(nodes, id);
+    if (found) return found;
+  }
+  return null;
+}
+
 function findNode(nodes: FolderNode[], id: string): FolderNode | null {
   for (const node of nodes) {
     if (node.id === id) return node;
@@ -47,7 +63,16 @@ function findNode(nodes: FolderNode[], id: string): FolderNode | null {
 // ── Return type ──────────────────────────────────────────
 
 export type UseSidebarReturn = {
+  // USER: lista plana de pastas raiz
   roots: FolderNode[];
+
+  // ADMIN: usuários + pastas agrupadas por userId
+  users: UserOption[];
+  foldersByUserId: Map<string, FolderNode[]>;
+  expandedUsers: Set<string>;
+  handleToggleUser: (userId: string) => void;
+
+  // Compartilhado
   expanded: Set<string>;
   loading: boolean;
   handleToggle: (folderId: string) => Promise<void>;
@@ -56,24 +81,69 @@ export type UseSidebarReturn = {
 // ── Hook ────────────────────────────────────────────────
 
 export function useSidebar(): UseSidebarReturn {
+  const { user } = useAuth();
+  const { sidebarVersion } = useSidebarContext();
+  const isAdmin = user?.role === 'ADMIN';
+
+  // ── Estado USER ──────────────────────────────────────
   const [roots, setRoots] = useState<FolderNode[]>([]);
+
+  // ── Estado ADMIN ─────────────────────────────────────
+  const [users, setUsers] = useState<UserOption[]>([]);
+  const [foldersByUserId, setFoldersByUserId] = useState<Map<string, FolderNode[]>>(new Map());
+  const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
+
+  // ── Estado compartilhado ─────────────────────────────
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
-  // ── Carga inicial das pastas raiz ────────────────────
+  // ── Carga inicial (re-executa quando sidebarVersion muda) ──
 
   useEffect(() => {
-    foldersService
-      .list({ rootsOnly: true, limit: 100 })
-      .then((raw) => {
-        const items = Array.isArray(raw) ? raw : raw.data;
-        setRoots(
-          items.map((f) => ({ id: f.id, name: f.name, children: [], files: [], isLoaded: false })),
-        );
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+    setLoading(true);
+
+    if (isAdmin) {
+      // ADMIN: busca usuários + todas as pastas raiz e agrupa por userId
+      Promise.all([
+        usersService.list({ limit: 100 }),
+        foldersService.list({ rootsOnly: true, limit: 500 }),
+      ])
+        .then(([usersRaw, foldersRaw]) => {
+          const userItems = Array.isArray(usersRaw) ? usersRaw : usersRaw.data;
+          const folderItems = Array.isArray(foldersRaw) ? foldersRaw : foldersRaw.data;
+
+          setUsers(
+            userItems.map((u) => ({ id: u.id, name: u.name, email: u.email })),
+          );
+
+          const grouped = new Map<string, FolderNode[]>();
+          for (const u of userItems) grouped.set(u.id, []);
+
+          for (const f of folderItems) {
+            const list = grouped.get(f.userId);
+            if (list) {
+              list.push({ id: f.id, name: f.name, userId: f.userId, children: [], files: [], isLoaded: false });
+            }
+          }
+
+          setFoldersByUserId(grouped);
+        })
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    } else {
+      // USER: só suas próprias pastas raiz
+      foldersService
+        .list({ rootsOnly: true, limit: 100 })
+        .then((raw) => {
+          const items = Array.isArray(raw) ? raw : raw.data;
+          setRoots(
+            items.map((f) => ({ id: f.id, name: f.name, userId: f.userId, children: [], files: [], isLoaded: false })),
+          );
+        })
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    }
+  }, [isAdmin, sidebarVersion]);
 
   // ── Lazy load de filhos + arquivos ───────────────────
 
@@ -83,6 +153,7 @@ export function useSidebar(): UseSidebarReturn {
     const children: FolderNode[] = (data.children ?? []).map((c) => ({
       id: c.id,
       name: c.name,
+      userId: c.userId,
       children: [],
       files: [],
       isLoaded: false,
@@ -94,10 +165,20 @@ export function useSidebar(): UseSidebarReturn {
       extension: f.extension,
     }));
 
-    setRoots((prev) => updateNodeInTree(prev, folderId, children, files));
-  }, []);
+    if (isAdmin) {
+      setFoldersByUserId((prev) => {
+        const next = new Map(prev);
+        for (const [userId, nodes] of next) {
+          next.set(userId, updateNodeInTree(nodes, folderId, children, files));
+        }
+        return next;
+      });
+    } else {
+      setRoots((prev) => updateNodeInTree(prev, folderId, children, files));
+    }
+  }, [isAdmin]);
 
-  // ── Toggle expand/collapse ───────────────────────────
+  // ── Toggle expand/collapse de pasta ─────────────────
 
   const handleToggle = useCallback(async (folderId: string) => {
     if (expanded.has(folderId)) {
@@ -108,10 +189,37 @@ export function useSidebar(): UseSidebarReturn {
       });
     } else {
       setExpanded((prev) => new Set(prev).add(folderId));
-      const node = findNode(roots, folderId);
+
+      const node = isAdmin
+        ? findNodeInMap(foldersByUserId, folderId)
+        : findNode(roots, folderId);
+
       if (node && !node.isLoaded) await loadChildren(folderId);
     }
-  }, [expanded, roots, loadChildren]);
+  }, [expanded, roots, foldersByUserId, isAdmin, loadChildren]);
 
-  return { roots, expanded, loading, handleToggle };
+  // ── Toggle expand/collapse de usuário (ADMIN) ────────
+
+  const handleToggleUser = useCallback((userId: string) => {
+    setExpandedUsers((prev) => {
+      const next = new Set(prev);
+      if (next.has(userId)) {
+        next.delete(userId);
+      } else {
+        next.add(userId);
+      }
+      return next;
+    });
+  }, []);
+
+  return {
+    roots,
+    users,
+    foldersByUserId,
+    expandedUsers,
+    handleToggleUser,
+    expanded,
+    loading,
+    handleToggle,
+  };
 }
