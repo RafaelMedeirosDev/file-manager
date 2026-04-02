@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "files" ALTER COLUMN "name" SET DATA TYPE VARCHAR(255);

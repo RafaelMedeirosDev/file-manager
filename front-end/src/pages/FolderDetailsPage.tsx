@@ -15,12 +15,18 @@ export function FolderDetailsPage() {
     actionError,
     creatingFolder,
     downloadingFileId,
+    uploadingFile,
     newFolderName,
     setNewFolderName,
     searchTerm,
     setSearchTerm,
+    uploadFile,
+    setUploadFile,
+    uploadFileName,
+    setUploadFileName,
     handleCreateSubFolder,
     handleDownload,
+    handleUpload,
   } = useFolderDetails();
 
   return (
@@ -72,6 +78,34 @@ export function FolderDetailsPage() {
               />
               <button type="submit" className="btn-primary" disabled={creatingFolder}>
                 {creatingFolder ? 'Criando...' : 'Criar pasta'}
+              </button>
+            </form>
+          ) : null}
+
+          {user?.role === 'ADMIN' ? (
+            <form className="mt-3 grid gap-2 sm:grid-cols-[auto_1fr_auto]" onSubmit={handleUpload}>
+              <input
+                type="file"
+                className="app-input"
+                onChange={(event) => {
+                  const file = event.target.files?.[0] ?? null;
+                  setUploadFile(file);
+                  if (file) {
+                    const nameWithoutExt = file.name.replace(/\.[^.]+$/, '');
+                    setUploadFileName(nameWithoutExt);
+                  }
+                }}
+                required
+              />
+              <input
+                className="app-input"
+                placeholder="Nome do arquivo"
+                value={uploadFileName}
+                onChange={(event) => setUploadFileName(event.target.value)}
+                required
+              />
+              <button type="submit" className="btn-primary" disabled={uploadingFile || !uploadFile}>
+                {uploadingFile ? 'Enviando...' : 'Fazer upload'}
               </button>
             </form>
           ) : null}
