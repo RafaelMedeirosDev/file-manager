@@ -27,10 +27,13 @@ import { GetFileByIdUseCase } from './usecases/file/GetFileByIdUseCase';
 import { DownloadFileUseCase } from './usecases/file/DownloadFileUseCase';
 import { UploadFileUseCase } from './usecases/file/UploadFileUseCase';
 import { RolesGuard } from './auth/roles.guard';
+import { ExamController } from './controllers/ExamController';
+import { ExamRepository } from './repositories/ExamRepository';
+import { CreateExamUseCase } from './usecases/exam/CreateExamUseCase';
 
 @Module({
   imports: [PrismaModule, AuthModule],
-  controllers: [AppController, UserController, FolderController, FileController],
+  controllers: [AppController, UserController, FolderController, FileController, ExamController],
   providers: [
     AppService,
     CreateUserUseCase,
@@ -53,6 +56,8 @@ import { RolesGuard } from './auth/roles.guard';
     UserRepository,
     FolderRepository,
     FileRepository,
+    ExamRepository,
+    CreateExamUseCase,
     UploadFileUseCase,
   ],
 })

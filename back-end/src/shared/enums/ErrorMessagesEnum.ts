@@ -16,6 +16,8 @@ export enum ErrorMessagesEnum {
   INVALID_CURRENT_PASSWORD = 'Senha atual invalida',
   PASSWORD_CONFIRMATION_DOES_NOT_MATCH = 'Confirmacao de nova senha nao confere',
   NEW_PASSWORD_MUST_BE_DIFFERENT = 'A nova senha deve ser diferente da senha atual',
+  EXAM_NOT_FOUND = 'Exame nao encontrado',
+  EXAM_CODE_ALREADY_REGISTERED = 'Ja existe um exame ativo com este codigo',
 }
 
 
