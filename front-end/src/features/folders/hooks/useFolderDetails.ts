@@ -18,8 +18,9 @@ type UseFolderDetailsReturn = {
   actionError: string | null;
   creatingFolder: boolean;
   downloadingFileId: string | null;
+  uploadingFile: boolean;
 
-  // Formulário de criação
+  // Formulário de criação de subpasta
   newFolderName: string;
   setNewFolderName: (name: string) => void;
 
@@ -27,9 +28,16 @@ type UseFolderDetailsReturn = {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
 
+  // Formulário de upload
+  uploadFile: File | null;
+  setUploadFile: (file: File | null) => void;
+  uploadFileName: string;
+  setUploadFileName: (name: string) => void;
+
   // Ações
   handleCreateSubFolder: (event: React.FormEvent<HTMLFormElement>) => Promise<void>;
   handleDownload: (fileId: string, fileName: string, extension: string) => Promise<void>;
+  handleUpload: (event: React.FormEvent<HTMLFormElement>) => Promise<void>;
 };
 
 // ── Hook ────────────────────────────────────────────────
@@ -46,6 +54,9 @@ export function useFolderDetails(): UseFolderDetailsReturn {
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadFileName, setUploadFileName] = useState('');
+  const [uploadingFile, setUploadingFile] = useState(false);
 
   // ── Fetch da pasta ───────────────────────────────────
 
@@ -126,6 +137,29 @@ export function useFolderDetails(): UseFolderDetailsReturn {
     }
   }
 
+  async function handleUpload(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!id || !uploadFile) return;
+
+    setActionError(null);
+    setUploadingFile(true);
+
+    try {
+      await folderDetailsService.uploadFile({
+        file: uploadFile,
+        name: uploadFileName,
+        folderId: id,
+      });
+      setUploadFile(null);
+      setUploadFileName('');
+      await fetchFolder();
+    } catch (err) {
+      setActionError(getApiErrorMessage(err, 'Não foi possível fazer o upload do arquivo.'));
+    } finally {
+      setUploadingFile(false);
+    }
+  }
+
   async function handleDownload(fileId: string, fileName: string, extension: string) {
     setActionError(null);
     setDownloadingFileId(fileId);
@@ -157,11 +191,17 @@ export function useFolderDetails(): UseFolderDetailsReturn {
     actionError,
     creatingFolder,
     downloadingFileId,
+    uploadingFile,
     newFolderName,
     setNewFolderName,
     searchTerm,
     setSearchTerm,
+    uploadFile,
+    setUploadFile,
+    uploadFileName,
+    setUploadFileName,
     handleCreateSubFolder,
     handleDownload,
+    handleUpload,
   };
 }
