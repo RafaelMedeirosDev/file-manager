@@ -31,6 +31,7 @@ export type FolderDetails = {
   name: string;
   userId: string;
   folderId: string | null;
+  ancestors: Array<{ id: string; name: string }>;
   parent: FolderChild | null;
   children: FolderChild[];
   files: FileItem[];
