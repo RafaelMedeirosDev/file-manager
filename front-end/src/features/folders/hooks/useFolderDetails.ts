@@ -46,7 +46,7 @@ type UseFolderDetailsReturn = {
 export function useFolderDetails(): UseFolderDetailsReturn {
   const { user } = useAuth();
   const { id } = useParams<{ id: string }>();
-  const { refreshSidebar } = useSidebarContext();
+  const { refreshSidebar, expandToFolder, expandUser } = useSidebarContext();
 
   const [folder, setFolder] = useState<FolderDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -69,12 +69,14 @@ export function useFolderDetails(): UseFolderDetailsReturn {
     try {
       const data = await folderDetailsService.getById(id);
       setFolder(data);
+      expandToFolder([...data.ancestors.map((a) => a.id), data.id]);
+      expandUser(data.userId);
     } catch (err) {
       setError(getApiErrorMessage(err, 'Erro ao carregar pasta.'));
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, expandToFolder, expandUser]);
 
   // ── Reset ao mudar de pasta ──────────────────────────
 

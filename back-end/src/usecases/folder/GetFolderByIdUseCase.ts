@@ -17,6 +17,7 @@ export type GetFolderByIdOutput = {
   name: string;
   userId: string;
   folderId: string | null;
+  ancestors: Array<{ id: string; name: string }>;
   parent: {
     id: string;
     name: string;
@@ -63,15 +64,27 @@ export class GetFolderByIdUseCase {
       throw new ForbiddenException(ErrorMessagesEnum.FOLDER_ACCESS_FORBIDDEN);
     }
 
-    const files = await this.fileRepository.findAll();
-    this.logger.log('[GetFolderByIdUseCase] Execute finished');
+    const files = await this.fileRepository.findAll();
 
+    // ── Ancestors: sobe a hierarquia até a raiz ──────────
+    const ancestors: Array<{ id: string; name: string }> = [];
+    let currentParentId = folder.folderId;
+
+    while (currentParentId) {
+      const ancestor = await this.folderRepository.findById(currentParentId);
+      if (!ancestor || ancestor.deletedAt) break;
+      ancestors.unshift({ id: ancestor.id, name: ancestor.name });
+      currentParentId = ancestor.folderId;
+    }
+
+    this.logger.log('[GetFolderByIdUseCase] Execute finished');
 
     return {
       id: folder.id,
       name: folder.name,
       userId: folder.userId,
       folderId: folder.folderId,
+      ancestors,
       parent:
         folder.parent &&
         !folder.parent.deletedAt &&
