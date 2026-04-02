@@ -4,7 +4,8 @@ import { useSidebarContext } from '../contexts/SidebarContext';
 import { foldersService } from '../services/foldersService';
 import { folderDetailsService } from '../services/folderDetailsService';
 import { usersService } from '../../users/services/usersService';
-import type { UserOption } from '../../../shared/types';
+import { normalizePaginatedResponse } from '../../../shared/utils/apiUtils';
+import type { FolderItem, UserOption } from '../../../shared/types';
 
 // ── Types internos ───────────────────────────────────────
 
@@ -22,6 +23,24 @@ export type FolderNode = {
   files: FileNode[];
   isLoaded: boolean;
 };
+
+// ── Paginação: busca todas as páginas de pastas raiz ─────
+
+async function fetchAllRootFolders(): Promise<FolderItem[]> {
+  const all: FolderItem[] = [];
+  let page = 1;
+  let hasNextPage = true;
+
+  while (hasNextPage) {
+    const raw = await foldersService.list({ rootsOnly: true, limit: 100, page });
+    const { items, meta } = normalizePaginatedResponse<FolderItem>(raw, page, 100);
+    all.push(...items);
+    hasNextPage = meta.hasNextPage;
+    page += 1;
+  }
+
+  return all;
+}
 
 // ── Tree helpers ─────────────────────────────────────────
 
@@ -106,11 +125,10 @@ export function useSidebar(): UseSidebarReturn {
       // ADMIN: busca usuários + todas as pastas raiz e agrupa por userId
       Promise.all([
         usersService.list({ limit: 100 }),
-        foldersService.list({ rootsOnly: true, limit: 500 }),
+        fetchAllRootFolders(),
       ])
-        .then(([usersRaw, foldersRaw]) => {
+        .then(([usersRaw, folderItems]) => {
           const userItems = Array.isArray(usersRaw) ? usersRaw : usersRaw.data;
-          const folderItems = Array.isArray(foldersRaw) ? foldersRaw : foldersRaw.data;
 
           setUsers(
             userItems.map((u) => ({ id: u.id, name: u.name, email: u.email })),
