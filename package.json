@@ -2,9 +2,21 @@
   "name": "file-manager",
   "private": true,
   "scripts": {
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "format": "turbo run format",
+    "test": "turbo run test",
+    "test:e2e": "turbo run test:e2e",
+    "dev": "turbo run dev start:dev",
+    "prisma:generate": "turbo run prisma:generate",
+    "prisma:migrate:dev": "turbo run prisma:migrate:dev",
+    "prisma:migrate:deploy": "turbo run prisma:migrate:deploy",
     "start:dev": "pnpm --dir back-end start:dev",
     "start:front": "pnpm --dir front-end dev",
     "build:back": "pnpm --dir back-end build",
     "build:front": "pnpm --dir front-end build"
+  },
+  "devDependencies": {
+    "turbo": "^2.9.3"
   }
 }
