@@ -4,6 +4,7 @@ import { useAuth } from '../../auth/hooks/useAuth';
 import { getApiErrorMessage } from '../../../shared/utils/apiUtils';
 import type { ExplorerEntry, FolderDetails } from '../../../shared/types';
 import { folderDetailsService } from '../services/folderDetailsService';
+import { useSidebarContext } from '../contexts/SidebarContext';
 
 // ── Types internos do hook ───────────────────────────────
 
@@ -45,6 +46,7 @@ type UseFolderDetailsReturn = {
 export function useFolderDetails(): UseFolderDetailsReturn {
   const { user } = useAuth();
   const { id } = useParams<{ id: string }>();
+  const { refreshSidebar } = useSidebarContext();
 
   const [folder, setFolder] = useState<FolderDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -129,6 +131,7 @@ export function useFolderDetails(): UseFolderDetailsReturn {
       const ownerId = user.role === 'ADMIN' ? folder.userId : user.id;
       await folderDetailsService.createSubFolder({ name: newFolderName, userId: ownerId, folderId: id });
       setNewFolderName('');
+      refreshSidebar();
       await fetchFolder();
     } catch (err) {
       setActionError(getApiErrorMessage(err, 'Não foi possível criar a pasta.'));

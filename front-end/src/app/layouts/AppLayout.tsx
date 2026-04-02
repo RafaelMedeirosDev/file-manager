@@ -1,6 +1,7 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { Sidebar } from '../../components/Sidebar';
+import { SidebarProvider } from '../../features/folders/contexts/SidebarContext';
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `rounded px-3 py-1 text-[13px] font-medium transition-colors duration-100 ${
@@ -17,6 +18,7 @@ export function AppLayout() {
   }
 
   return (
+    <SidebarProvider>
     <div className="flex h-screen flex-col overflow-hidden">
 
       {/* ── Navbar ────────────────────────────────────── */}
@@ -69,5 +71,6 @@ export function AppLayout() {
 
       </div>
     </div>
+    </SidebarProvider>
   );
 }
