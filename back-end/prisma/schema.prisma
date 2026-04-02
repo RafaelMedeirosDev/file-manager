@@ -12,6 +12,17 @@ enum ROLE {
   USER
 }
 
+enum ExamCategory {
+  THROMBOPHILIA
+  MICROBIOLOGY
+  ENDOCRINE_METABOLIC
+  IMMUNOLOGY
+  OBSTETRIC_MARKERS
+  IMAGING
+  BIOCHEMISTRY
+  HEMATOLOGY
+}
+
 model User {
   id        String   @id @default(uuid()) @db.Uuid
   name      String   @db.VarChar(50)
@@ -60,4 +71,16 @@ model File {
   folder Folder? @relation(fields: [folderId], references: [id])
 
   @@map("files")
+}
+
+model Exam {
+  id        String       @id @default(uuid()) @db.Uuid
+  name      String       @db.VarChar(255)
+  code      String       @unique @db.VarChar(50)
+  category  ExamCategory
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @default(now()) @updatedAt @map("updated_at")
+  deletedAt DateTime?    @map("deleted_at")
+
+  @@map("exams")
 }
