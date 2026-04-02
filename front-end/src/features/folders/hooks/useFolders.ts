@@ -4,6 +4,7 @@ import { getApiErrorMessage, normalizePaginatedResponse } from '../../../shared/
 import type { FolderItem, UserOption } from '../../../shared/types';
 import { foldersService } from '../services/foldersService';
 import { usersService } from '../../users/services/usersService';
+import { useSidebarContext } from '../contexts/SidebarContext';
 
 // ── Types internos do hook ───────────────────────────────
 
@@ -45,6 +46,7 @@ type UseFoldersReturn = {
 
 export function useFolders(): UseFoldersReturn {
   const { user } = useAuth();
+  const { refreshSidebar } = useSidebarContext();
 
   const [folders, setFolders] = useState<FolderItem[]>([]);
   const [usersOptions, setUsersOptions] = useState<UserOption[]>([]);
@@ -206,6 +208,7 @@ export function useFolders(): UseFoldersReturn {
       });
       setNewFolderName('');
       setReloadKey((prev) => prev + 1);
+      refreshSidebar();
     } catch (err) {
       setCreateError(getApiErrorMessage(err, 'Erro ao criar pasta.'));
     } finally {
