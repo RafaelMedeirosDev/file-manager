@@ -93,6 +93,9 @@ User  (id, name, email, password, role: ADMIN|USER, deletedAt)
 Exam  (id, name, code: unique, category: ExamCategory, deletedAt)
   ExamCategory: THROMBOPHILIA | MICROBIOLOGY | ENDOCRINE_METABOLIC | IMMUNOLOGY
               | OBSTETRIC_MARKERS | IMAGING | BIOCHEMISTRY | HEMATOLOGY
+
+ExamRequest  (id, userId, indication, deletedAt)
+  └─ exams: Exam[]  (many-to-many — join table _ExamToExamRequest)
 ```
 
 Folders are hierarchical (self-referencing `folderId`). Files are stored in Cloudflare R2; `url` is the public R2 URL.
