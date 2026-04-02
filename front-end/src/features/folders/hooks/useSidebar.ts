@@ -101,7 +101,7 @@ export type UseSidebarReturn = {
 
 export function useSidebar(): UseSidebarReturn {
   const { user } = useAuth();
-  const { sidebarVersion } = useSidebarContext();
+  const { sidebarVersion, expandedFolderIds, expandToFolder, collapseFolder } = useSidebarContext();
   const isAdmin = user?.role === 'ADMIN';
 
   // ── Estado USER ──────────────────────────────────────
@@ -112,8 +112,6 @@ export function useSidebar(): UseSidebarReturn {
   const [foldersByUserId, setFoldersByUserId] = useState<Map<string, FolderNode[]>>(new Map());
   const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
 
-  // ── Estado compartilhado ─────────────────────────────
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
   // ── Carga inicial (re-executa quando sidebarVersion muda) ──
@@ -122,7 +120,6 @@ export function useSidebar(): UseSidebarReturn {
     setLoading(true);
 
     if (isAdmin) {
-      // ADMIN: busca usuários + todas as pastas raiz e agrupa por userId
       Promise.all([
         usersService.list({ limit: 100 }),
         fetchAllRootFolders(),
@@ -149,7 +146,6 @@ export function useSidebar(): UseSidebarReturn {
         .catch(() => {})
         .finally(() => setLoading(false));
     } else {
-      // USER: só suas próprias pastas raiz
       foldersService
         .list({ rootsOnly: true, limit: 100 })
         .then((raw) => {
@@ -199,14 +195,10 @@ export function useSidebar(): UseSidebarReturn {
   // ── Toggle expand/collapse de pasta ─────────────────
 
   const handleToggle = useCallback(async (folderId: string) => {
-    if (expanded.has(folderId)) {
-      setExpanded((prev) => {
-        const next = new Set(prev);
-        next.delete(folderId);
-        return next;
-      });
+    if (expandedFolderIds.has(folderId)) {
+      collapseFolder(folderId);
     } else {
-      setExpanded((prev) => new Set(prev).add(folderId));
+      expandToFolder([folderId]);
 
       const node = isAdmin
         ? findNodeInMap(foldersByUserId, folderId)
@@ -214,7 +206,7 @@ export function useSidebar(): UseSidebarReturn {
 
       if (node && !node.isLoaded) await loadChildren(folderId);
     }
-  }, [expanded, roots, foldersByUserId, isAdmin, loadChildren]);
+  }, [expandedFolderIds, expandToFolder, collapseFolder, roots, foldersByUserId, isAdmin, loadChildren]);
 
   // ── Toggle expand/collapse de usuário (ADMIN) ────────
 
@@ -236,7 +228,7 @@ export function useSidebar(): UseSidebarReturn {
     foldersByUserId,
     expandedUsers,
     handleToggleUser,
-    expanded,
+    expanded: expandedFolderIds,
     loading,
     handleToggle,
   };

@@ -8,6 +8,7 @@ type SidebarContextValue = {
   refreshSidebar: () => void;
   expandedFolderIds: Set<string>;
   expandToFolder: (ancestorIds: string[]) => void;
+  collapseFolder: (folderId: string) => void;
 };
 
 // ── Context ──────────────────────────────────────────────
@@ -32,9 +33,17 @@ export function SidebarProvider({ children }: PropsWithChildren) {
     });
   }, []);
 
+  const collapseFolder = useCallback((folderId: string) => {
+    setExpandedFolderIds((prev) => {
+      const next = new Set(prev);
+      next.delete(folderId);
+      return next;
+    });
+  }, []);
+
   const value = useMemo<SidebarContextValue>(
-    () => ({ sidebarVersion, refreshSidebar, expandedFolderIds, expandToFolder }),
-    [sidebarVersion, refreshSidebar, expandedFolderIds, expandToFolder],
+    () => ({ sidebarVersion, refreshSidebar, expandedFolderIds, expandToFolder, collapseFolder }),
+    [sidebarVersion, refreshSidebar, expandedFolderIds, expandToFolder, collapseFolder],
   );
 
   return (
