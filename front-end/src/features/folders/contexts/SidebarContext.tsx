@@ -6,6 +6,8 @@ import type { PropsWithChildren } from 'react';
 type SidebarContextValue = {
   sidebarVersion: number;
   refreshSidebar: () => void;
+  expandedFolderIds: Set<string>;
+  expandToFolder: (ancestorIds: string[]) => void;
 };
 
 // ── Context ──────────────────────────────────────────────
@@ -16,14 +18,23 @@ const SidebarContext = createContext<SidebarContextValue | null>(null);
 
 export function SidebarProvider({ children }: PropsWithChildren) {
   const [sidebarVersion, setSidebarVersion] = useState(0);
+  const [expandedFolderIds, setExpandedFolderIds] = useState<Set<string>>(new Set());
 
   const refreshSidebar = useCallback(() => {
     setSidebarVersion((v) => v + 1);
   }, []);
 
+  const expandToFolder = useCallback((ancestorIds: string[]) => {
+    setExpandedFolderIds((prev) => {
+      const next = new Set(prev);
+      for (const id of ancestorIds) next.add(id);
+      return next;
+    });
+  }, []);
+
   const value = useMemo<SidebarContextValue>(
-    () => ({ sidebarVersion, refreshSidebar }),
-    [sidebarVersion, refreshSidebar],
+    () => ({ sidebarVersion, refreshSidebar, expandedFolderIds, expandToFolder }),
+    [sidebarVersion, refreshSidebar, expandedFolderIds, expandToFolder],
   );
 
   return (
