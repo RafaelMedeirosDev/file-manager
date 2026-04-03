@@ -6,6 +6,7 @@ import { FolderController } from './controllers/FolderController';
 import { FileController } from './controllers/FileController';
 import { AuthModule } from './auth/auth.module';
 import { CreateUserUseCase } from './usecases/user/CreateUserUseCase';
+import { CreateUserWithFoldersUseCase } from './usecases/user/CreateUserWithFoldersUseCase';
 import { PrismaModule } from './database/prisma.module';
 import { UserRepository } from './repositories/UserRepository';
 import { UpdateUserUseCase } from './usecases/user/UpdateUserUseCase';
@@ -41,6 +42,7 @@ import { CreateExamRequestUseCase } from './usecases/exam-request/CreateExamRequ
   providers: [
     AppService,
     CreateUserUseCase,
+    CreateUserWithFoldersUseCase,
     ListUsersUseCase,
     UpdateUserUseCase,
     SoftDeleteUserUseCase,

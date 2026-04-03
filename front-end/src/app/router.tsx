@@ -7,6 +7,7 @@ import { FoldersPage } from '../pages/FoldersPage';
 import { HomeRedirectPage } from '../pages/HomeRedirectPage';
 import { LoginPage } from '../pages/LoginPage';
 import { UsersPage } from '../pages/UsersPage';
+import { CreateUserPage } from '../pages/CreateUserPage';
 
 export const router = createBrowserRouter([
   {
@@ -32,7 +33,10 @@ export const router = createBrowserRouter([
     children: [
       {
         element: <AppLayout />,
-        children: [{ path: '/users', element: <UsersPage /> }],
+        children: [
+          { path: '/users',     element: <UsersPage />       },
+          { path: '/users/new', element: <CreateUserPage />  },
+        ],
       },
     ],
   },

@@ -98,3 +98,173 @@
       px-2 py-0.5 text-xs font-medium text-slate-400;
   }
 }
+
+/* ── Login page spinner ── */
+@keyframes lp-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ════════════════════════════════════════════════
+   SHELL & PAGE LAYOUT SYSTEM
+   ════════════════════════════════════════════════ */
+
+:root {
+  --shell-sidebar: #0d1e35;
+  --shell-topbar:  #ffffff;
+  --shell-content: #f0f4f8;
+  --shell-border:  #e8ecf0;
+}
+
+/* ── Page layout helpers ── */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 28px 28px 0;
+}
+.page-title {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: -0.03em;
+  color: #0d1e35;
+  margin: 0;
+}
+.page-subtitle {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 400;
+  font-size: 13px;
+  color: #64748b;
+  margin: 4px 0 0 0;
+}
+.page-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 28px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--shell-border);
+  margin-top: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.page-toolbar-left  { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.page-toolbar-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.page-content { padding: 20px 28px 40px; }
+
+/* ── Admin expand panel (below toolbar) ── */
+.page-expand-panel {
+  background: #ffffff;
+  border-bottom: 1px solid var(--shell-border);
+  padding: 16px 28px;
+}
+
+/* ── Sidebar tree items (dark theme) ── */
+.sb-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.55);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  border-left: 2px solid transparent;
+  text-align: left;
+  width: 100%;
+  background: none;
+  border-top: none;
+  border-right: none;
+  border-bottom: none;
+}
+.sb-item:hover  { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.85); }
+.sb-item.active {
+  background: rgba(0,120,212,0.15);
+  color: #ffffff;
+  border-left-color: #0078D4;
+}
+
+.sb-section-label {
+  font-family: 'Manrope', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.28);
+  padding: 4px 10px;
+  margin: 8px 0 2px 0;
+  display: block;
+}
+
+/* ── Metric card ── */
+.metric-card {
+  background: #ffffff;
+  border: 1px solid var(--shell-border);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.metric-label {
+  font-family: 'Manrope', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin: 0 0 10px 0;
+}
+.metric-value {
+  font-family: 'Manrope', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #0d1e35;
+  margin: 0;
+}
+.metric-value.sm { font-size: 15px; font-weight: 700; }
+
+/* ── Nav card (dashboard shortcuts) ── */
+.nav-card {
+  background: #ffffff;
+  border: 1px solid var(--shell-border);
+  border-radius: 8px;
+  padding: 20px;
+  text-decoration: none;
+  display: block;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.nav-card:hover {
+  border-color: #0078D4;
+  box-shadow: 0 4px 16px rgba(0,120,212,0.12);
+  transform: translateY(-2px);
+}
+.nav-card-section {
+  font-family: 'Manrope', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #0078D4;
+  margin: 0 0 8px 0;
+}
+.nav-card-title {
+  font-family: 'Manrope', sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #0d1e35;
+  margin: 0 0 4px 0;
+}
+.nav-card-desc {
+  font-family: 'Manrope', sans-serif;
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0;
+}

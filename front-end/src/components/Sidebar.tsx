@@ -11,7 +11,11 @@ function ChevronIcon({ expanded }: { expanded: boolean }) {
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 24 24"
       fill="currentColor"
-      className={`h-3 w-3 flex-shrink-0 transition-transform duration-150 ${expanded ? 'rotate-90' : ''}`}
+      style={{
+        width: 12, height: 12, flexShrink: 0, transition: 'transform 150ms',
+        transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
+        color: 'rgba(255,255,255,0.3)',
+      }}
     >
       <path d="M10 6L16 12L10 18V6Z" />
     </svg>
@@ -23,21 +27,26 @@ function FolderFilledIcon({ active }: { active: boolean }) {
     <svg
       viewBox="0 0 24 24"
       fill="currentColor"
-      className={`h-4 w-4 flex-shrink-0 ${active ? 'text-brand-500' : 'text-amber-400'}`}
+      style={{ width: 15, height: 15, flexShrink: 0, color: active ? '#0078D4' : 'rgba(255,200,80,0.75)' }}
     >
-      <path d="M10 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0-2-2h-8l-2-2z" />
+      <path d="M10 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8l-2-2z" />
     </svg>
   );
 }
 
 function UserIcon() {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className="h-4 w-4 flex-shrink-0 text-slate-400"
-    >
+    <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: 15, height: 15, flexShrink: 0, color: 'rgba(255,255,255,0.3)' }}>
       <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
+    </svg>
+  );
+}
+
+function HomeIcon({ active }: { active: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor"
+      style={{ width: 15, height: 15, flexShrink: 0, color: active ? '#0078D4' : 'rgba(255,255,255,0.4)' }}>
+      <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
     </svg>
   );
 }
@@ -46,21 +55,17 @@ function FileNodeIcon({ extension }: { extension: string }) {
   const ext = extension.toLowerCase();
 
   const color =
-    ext === 'pdf'                                        ? 'text-rose-500'    :
-    ['jpg','jpeg','png','gif','webp','svg'].includes(ext) ? 'text-violet-500'  :
-    ['xls','xlsx','csv'].includes(ext)                   ? 'text-emerald-600' :
-    ['doc','docx','txt','md'].includes(ext)              ? 'text-sky-600'     :
-                                                           'text-slate-400';
+    ext === 'pdf'                                         ? 'rgba(251,113,133,0.8)'  :
+    ['jpg','jpeg','png','gif','webp','svg'].includes(ext) ? 'rgba(167,139,250,0.8)'  :
+    ['xls','xlsx','csv'].includes(ext)                   ? 'rgba(52,211,153,0.8)'   :
+    ['doc','docx','txt','md'].includes(ext)              ? 'rgba(56,189,248,0.8)'   :
+                                                           'rgba(255,255,255,0.3)';
 
   return (
     <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={`h-[14px] w-[14px] flex-shrink-0 ${color}`}
+      viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"
+      style={{ width: 13, height: 13, flexShrink: 0, color }}
     >
       <path d="M7.8 3h7.4L20 7.8v11.4A1.8 1.8 0 0 1 18.2 21H7.8A1.8 1.8 0 0 1 6 19.2V4.8A1.8 1.8 0 0 1 7.8 3z" />
       <path d="M15.2 3v4.8H20" />
@@ -68,22 +73,48 @@ function FileNodeIcon({ extension }: { extension: string }) {
   );
 }
 
+// ── Dot grid overlay ─────────────────────────────────────
+
+function DotGridPattern() {
+  return (
+    <svg aria-hidden="true" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.15, pointerEvents: 'none' }}>
+      <defs>
+        <pattern id="sb-dots" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
+          <circle cx="1.5" cy="1.5" r="1.5" fill="#0078D4" />
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#sb-dots)" />
+    </svg>
+  );
+}
+
+// ── Tree item styles ─────────────────────────────────────
+
+const treeItemBase: React.CSSProperties = {
+  display: 'flex', alignItems: 'center', borderRadius: 3,
+  transition: 'background 75ms',
+  borderLeft: '2px solid transparent',
+};
+
+function treeItemStyle(isActive: boolean): React.CSSProperties {
+  return {
+    ...treeItemBase,
+    background: isActive ? 'rgba(0,120,212,0.14)' : 'transparent',
+    borderLeftColor: isActive ? '#0078D4' : 'transparent',
+    color: isActive ? '#ffffff' : 'rgba(255,255,255,0.6)',
+  };
+}
+
 // ── Tree components ──────────────────────────────────────
 
-type FileTreeItemProps = {
-  file: FileNode;
-  depth: number;
-};
+type FileTreeItemProps = { file: FileNode; depth: number };
 
 function FileTreeItem({ file, depth }: FileTreeItemProps) {
   return (
-    <div
-      className="flex items-center rounded-[3px] text-slate-600 transition-colors duration-75 hover:bg-black/[0.04]"
-      style={{ paddingLeft: `${4 + depth * 14 + 20}px`, paddingRight: '6px' }}
-    >
-      <div className="flex flex-1 items-center gap-1.5 overflow-hidden py-[3px] text-[12px]">
+    <div style={{ paddingLeft: `${4 + depth * 14 + 20}px`, paddingRight: 6 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 0', fontSize: 12 }}>
         <FileNodeIcon extension={file.extension} />
-        <span className="truncate text-slate-500">
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'rgba(255,255,255,0.38)', fontSize: 12 }}>
           {file.name}.{file.extension}
         </span>
       </div>
@@ -105,15 +136,14 @@ function TreeItem({ node, depth, isExpanded, isActive, onToggle, onNavigate, chi
   return (
     <div>
       <div
-        className={`flex items-center rounded-[3px] transition-colors duration-75 ${
-          isActive ? 'bg-[#cce4f7] text-[#003a6e]' : 'text-slate-700 hover:bg-black/[0.05]'
-        }`}
-        style={{ paddingLeft: `${4 + depth * 14}px`, paddingRight: '6px' }}
+        style={{ ...treeItemStyle(isActive), paddingLeft: `${4 + depth * 14}px`, paddingRight: 6 }}
+        onMouseEnter={(e) => { if (!isActive) (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.06)'; }}
+        onMouseLeave={(e) => { if (!isActive) (e.currentTarget as HTMLDivElement).style.background = 'transparent'; }}
       >
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); void onToggle(node.id); }}
-          className="flex h-6 w-5 flex-shrink-0 items-center justify-center text-slate-400 hover:text-slate-600"
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 20, height: 24, flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
           aria-label={isExpanded ? 'Recolher' : 'Expandir'}
         >
           <ChevronIcon expanded={isExpanded} />
@@ -122,10 +152,12 @@ function TreeItem({ node, depth, isExpanded, isActive, onToggle, onNavigate, chi
         <button
           type="button"
           onClick={() => onNavigate(node.id)}
-          className="flex flex-1 items-center gap-1.5 overflow-hidden py-[3px] text-left text-[13px]"
+          style={{ display: 'flex', flex: 1, alignItems: 'center', gap: 6, padding: '3px 0', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', overflow: 'hidden', fontSize: 13, color: 'inherit' }}
         >
           <FolderFilledIcon active={isActive} />
-          <span className="truncate">{node.name}</span>
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'Manrope, sans-serif', fontWeight: isActive ? 600 : 400 }}>
+            {node.name}
+          </span>
         </button>
       </div>
 
@@ -148,14 +180,8 @@ export function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const {
-    roots,
-    users,
-    foldersByUserId,
-    expandedUsers,
-    handleToggleUser,
-    expanded,
-    loading,
-    handleToggle,
+    roots, users, foldersByUserId, expandedUsers, handleToggleUser,
+    expanded, loading, handleToggle,
   } = useSidebar();
 
   const activeFolderId = location.pathname.match(/^\/folders\/([^/]+)/)?.[1];
@@ -179,61 +205,52 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="flex w-56 flex-shrink-0 flex-col overflow-hidden border-r border-[#e0e0e0] bg-[#f3f3f3]">
-      <div className="flex-1 overflow-y-auto py-2 px-1.5">
+    <aside style={{
+      width: 240,
+      flexShrink: 0,
+      background: 'var(--shell-sidebar)',
+      position: 'relative',
+      overflow: 'hidden',
+      display: 'flex',
+      flexDirection: 'column',
+      borderRight: 'none',
+    }}>
+      <DotGridPattern />
+      <div style={{ position: 'relative', zIndex: 1, flex: 1, overflowY: 'auto', padding: '12px 8px' }}>
 
-        {/* ── USER: botão Início + suas pastas ─────────── */}
+        {/* ── USER: Início + folder tree ── */}
         {!isAdmin && (
           <>
             <button
               type="button"
               onClick={() => navigate('/folders')}
-              className={`mb-1 flex w-full items-center gap-2 rounded-[3px] px-2 py-1.5 text-[13px] font-medium transition-colors duration-75 ${
-                isFoldersRoot
-                  ? 'bg-[#cce4f7] text-[#003a6e]'
-                  : 'text-slate-600 hover:bg-black/[0.05]'
-              }`}
+              className={`sb-item${isFoldersRoot ? ' active' : ''}`}
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className={`h-4 w-4 flex-shrink-0 ${isFoldersRoot ? 'text-brand-500' : 'text-slate-400'}`}
-              >
-                <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
-              </svg>
+              <HomeIcon active={isFoldersRoot} />
               Início
             </button>
 
-            <div className="mb-1 mt-2 px-2">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                Pastas
-              </span>
-            </div>
+            <span className="sb-section-label">Pastas</span>
 
             {loading ? (
-              <p className="px-3 py-2 text-xs text-slate-400">Carregando...</p>
+              <p style={{ padding: '8px 10px', fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>Carregando...</p>
             ) : roots.length === 0 ? (
-              <p className="px-3 py-2 text-xs text-slate-400">Nenhuma pasta.</p>
+              <p style={{ padding: '8px 10px', fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>Nenhuma pasta.</p>
             ) : (
               renderNodes(roots)
             )}
           </>
         )}
 
-        {/* ── ADMIN: acordeão de usuários ───────────────── */}
+        {/* ── ADMIN: user accordion ── */}
         {isAdmin && (
           <>
-            <div className="mb-1 px-2">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                Usuários
-              </span>
-            </div>
+            <span className="sb-section-label">Usuários</span>
 
             {loading ? (
-              <p className="px-3 py-2 text-xs text-slate-400">Carregando...</p>
+              <p style={{ padding: '8px 10px', fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>Carregando...</p>
             ) : users.length === 0 ? (
-              <p className="px-3 py-2 text-xs text-slate-400">Nenhum usuário.</p>
+              <p style={{ padding: '8px 10px', fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>Nenhum usuário.</p>
             ) : (
               users.map((u) => {
                 const isExpanded = expandedUsers.has(u.id);
@@ -241,22 +258,23 @@ export function Sidebar() {
 
                 return (
                   <div key={u.id}>
-                    {/* Cabeçalho do acordeão */}
                     <button
                       type="button"
                       onClick={() => handleToggleUser(u.id)}
-                      className="flex w-full items-center gap-1.5 rounded-[3px] px-2 py-1.5 text-left text-[13px] text-slate-700 transition-colors duration-75 hover:bg-black/[0.05]"
+                      className="sb-item"
+                      style={{ paddingLeft: 8 }}
                     >
                       <ChevronIcon expanded={isExpanded} />
                       <UserIcon />
-                      <span className="truncate">{u.name}</span>
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, textAlign: 'left' }}>
+                        {u.name}
+                      </span>
                     </button>
 
-                    {/* Pastas raiz do usuário */}
                     {isExpanded && (
-                      <div className="pb-1">
+                      <div style={{ paddingBottom: 4 }}>
                         {userFolders.length === 0 ? (
-                          <p className="px-6 py-1 text-[12px] text-slate-400">Sem pastas.</p>
+                          <p style={{ padding: '4px 24px', fontSize: 12, color: 'rgba(255,255,255,0.25)' }}>Sem pastas.</p>
                         ) : (
                           renderNodes(userFolders, 1)
                         )}
