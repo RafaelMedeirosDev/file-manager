@@ -6,6 +6,7 @@ import type { ListResponse, UserItem } from '../../../shared/types';
 export type ListUsersParams = {
   page?: number;
   limit?: number;
+  search?: string;
   name?: string;
   email?: string;
 };

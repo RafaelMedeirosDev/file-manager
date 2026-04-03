@@ -28,6 +28,7 @@ export class ListUsersUseCase {
   async execute(input?: {
     page?: number;
     limit?: number;
+    search?: string;
     name?: string;
     email?: string;
   }): Promise<ListUsersOutput> {
@@ -35,6 +36,7 @@ export class ListUsersUseCase {
 
     const page = input?.page ?? 1;
     const limit = input?.limit ?? 10;
+    const normalizedSearch = input?.search?.trim().toLowerCase();
     const normalizedName = input?.name?.trim().toLowerCase();
     const normalizedEmail = input?.email?.trim().toLowerCase();
 
@@ -42,6 +44,14 @@ export class ListUsersUseCase {
 
     const filteredUsers = users.filter((user) => {
       if (user.deletedAt) {
+        return false;
+      }
+
+      if (
+        normalizedSearch &&
+        !user.name.toLowerCase().includes(normalizedSearch) &&
+        !user.email.toLowerCase().includes(normalizedSearch)
+      ) {
         return false;
       }
 

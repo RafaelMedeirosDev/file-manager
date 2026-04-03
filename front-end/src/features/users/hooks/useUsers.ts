@@ -8,6 +8,7 @@ import { usersService } from '../services/usersService';
 type UseUsersReturn = {
   // Dados
   users: UserItem[];
+  totalUsers: number;
 
   // Estados de lista
   loading: boolean;
@@ -16,16 +17,7 @@ type UseUsersReturn = {
 
   // Estados de ação
   actionError: string | null;
-  creatingUser: boolean;
   deletingUserId: string | null;
-
-  // Formulário de criação
-  newUserName: string;
-  setNewUserName: (v: string) => void;
-  newUserEmail: string;
-  setNewUserEmail: (v: string) => void;
-  newUserPassword: string;
-  setNewUserPassword: (v: string) => void;
 
   // Formulário de senha
   currentPassword: string;
@@ -39,13 +31,10 @@ type UseUsersReturn = {
   passwordSuccess: string | null;
 
   // Filtros de busca
-  searchName: string;
-  setSearchName: (v: string) => void;
-  searchEmail: string;
-  setSearchEmail: (v: string) => void;
+  searchTerm: string;
+  setSearchTerm: (v: string) => void;
 
   // Ações
-  handleCreateUser: (event: React.FormEvent<HTMLFormElement>) => Promise<void>;
   handleSoftDeleteUser: (userId: string, userName: string) => Promise<void>;
   handleChangeOwnPassword: (event: React.FormEvent<HTMLFormElement>) => Promise<void>;
 
@@ -57,16 +46,13 @@ type UseUsersReturn = {
 
 export function useUsers(): UseUsersReturn {
   const [users, setUsers] = useState<UserItem[]>([]);
+  const [totalUsers, setTotalUsers] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasNextPage, setHasNextPage] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
-  const [newUserName, setNewUserName] = useState('');
-  const [newUserEmail, setNewUserEmail] = useState('');
-  const [newUserPassword, setNewUserPassword] = useState('');
-  const [creatingUser, setCreatingUser] = useState(false);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -77,37 +63,62 @@ export function useUsers(): UseUsersReturn {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
 
-  const [searchName, setSearchName] = useState('');
-  const [searchEmail, setSearchEmail] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const requestIdRef = useRef(0);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm.trim());
+    }, 300);
+
+    return () => window.clearTimeout(timeout);
+  }, [searchTerm]);
 
   // ── Carregamento de uma página ───────────────────────
 
   const loadUsersPage = useCallback(
     async (page: number, append: boolean) => {
       const params: Record<string, string | number> = { page, limit: 10 };
-      if (searchName.trim()) params.name = searchName.trim();
-      if (searchEmail.trim()) params.email = searchEmail.trim();
+      const requestId = ++requestIdRef.current;
 
-      const raw = await usersService.list(params);
-      const parsed = normalizePaginatedResponse<UserItem>(raw, page, 10);
+      if (debouncedSearchTerm) params.search = debouncedSearchTerm;
 
-      setUsers((prev) => {
-        if (!append) return parsed.items;
-        const existingIds = new Set(prev.map((u) => u.id));
-        const merged = [...prev];
-        for (const item of parsed.items) {
-          if (!existingIds.has(item.id)) merged.push(item);
+      try {
+        const raw = await usersService.list(params);
+        const parsed = normalizePaginatedResponse<UserItem>(raw, page, 10);
+
+        if (requestId !== requestIdRef.current) {
+          return;
         }
-        return merged;
-      });
 
-      setCurrentPage(parsed.meta.page);
-      setHasNextPage(parsed.isLegacyArray ? false : parsed.meta.hasNextPage);
+        setUsers((prev) => {
+          if (!append) return parsed.items;
+          const existingIds = new Set(prev.map((user) => user.id));
+          const merged = [...prev];
+
+          for (const item of parsed.items) {
+            if (!existingIds.has(item.id)) merged.push(item);
+          }
+
+          return merged;
+        });
+
+        setTotalUsers(parsed.meta.total);
+        setCurrentPage(parsed.meta.page);
+        setHasNextPage(parsed.isLegacyArray ? false : parsed.meta.hasNextPage);
+      } catch (err) {
+        if (requestId !== requestIdRef.current) {
+          return;
+        }
+
+        throw err;
+      }
     },
-    [searchName, searchEmail],
+    [debouncedSearchTerm],
   );
 
   // ── Primeira carga ───────────────────────────────────
@@ -115,7 +126,13 @@ export function useUsers(): UseUsersReturn {
   useEffect(() => {
     async function fetchFirstPage() {
       setLoading(true);
+      setLoadingMore(false);
       setError(null);
+      setUsers([]);
+      setTotalUsers(0);
+      setCurrentPage(0);
+      setHasNextPage(false);
+
       try {
         await loadUsersPage(1, false);
       } catch (err) {
@@ -148,27 +165,6 @@ export function useUsers(): UseUsersReturn {
   }, [currentPage, hasNextPage, loading, loadingMore, loadUsersPage]);
 
   // ── Ações ────────────────────────────────────────────
-
-  async function handleCreateUser(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setActionError(null);
-    setCreatingUser(true);
-    try {
-      await usersService.create({
-        name: newUserName,
-        email: newUserEmail,
-        password: newUserPassword,
-      });
-      setNewUserName('');
-      setNewUserEmail('');
-      setNewUserPassword('');
-      setReloadKey((prev) => prev + 1);
-    } catch (err) {
-      setActionError(getApiErrorMessage(err, 'Erro ao criar usuário.'));
-    } finally {
-      setCreatingUser(false);
-    }
-  }
 
   async function handleChangeOwnPassword(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -208,18 +204,12 @@ export function useUsers(): UseUsersReturn {
 
   return {
     users,
+    totalUsers,
     loading,
     loadingMore,
     error,
     actionError,
-    creatingUser,
     deletingUserId,
-    newUserName,
-    setNewUserName,
-    newUserEmail,
-    setNewUserEmail,
-    newUserPassword,
-    setNewUserPassword,
     currentPassword,
     setCurrentPassword,
     newPassword,
@@ -229,11 +219,8 @@ export function useUsers(): UseUsersReturn {
     changingPassword,
     passwordError,
     passwordSuccess,
-    searchName,
-    setSearchName,
-    searchEmail,
-    setSearchEmail,
-    handleCreateUser,
+    searchTerm,
+    setSearchTerm,
     handleSoftDeleteUser,
     handleChangeOwnPassword,
     sentinelRef,

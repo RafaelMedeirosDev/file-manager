@@ -8,6 +8,14 @@ export class ListUsersQueryDTO {
   @Transform(({ value }) =>
     typeof value === 'string' ? value.trim() : value,
   )
+  search?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
   name?: string;
 
   @IsOptional()
