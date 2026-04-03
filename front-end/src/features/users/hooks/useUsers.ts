@@ -19,24 +19,12 @@ type UseUsersReturn = {
   actionError: string | null;
   deletingUserId: string | null;
 
-  // Formulário de senha
-  currentPassword: string;
-  setCurrentPassword: (v: string) => void;
-  newPassword: string;
-  setNewPassword: (v: string) => void;
-  confirmNewPassword: string;
-  setConfirmNewPassword: (v: string) => void;
-  changingPassword: boolean;
-  passwordError: string | null;
-  passwordSuccess: string | null;
-
   // Filtros de busca
   searchTerm: string;
   setSearchTerm: (v: string) => void;
 
   // Ações
   handleSoftDeleteUser: (userId: string, userName: string) => Promise<void>;
-  handleChangeOwnPassword: (event: React.FormEvent<HTMLFormElement>) => Promise<void>;
 
   // Ref para scroll infinito
   sentinelRef: React.RefObject<HTMLDivElement>;
@@ -55,13 +43,6 @@ export function useUsers(): UseUsersReturn {
 
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
-
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmNewPassword, setConfirmNewPassword] = useState('');
-  const [changingPassword, setChangingPassword] = useState(false);
-  const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
@@ -166,24 +147,6 @@ export function useUsers(): UseUsersReturn {
 
   // ── Ações ────────────────────────────────────────────
 
-  async function handleChangeOwnPassword(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setPasswordError(null);
-    setPasswordSuccess(null);
-    setChangingPassword(true);
-    try {
-      await usersService.changeOwnPassword({ currentPassword, newPassword, confirmNewPassword });
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmNewPassword('');
-      setPasswordSuccess('Senha atualizada com sucesso.');
-    } catch (err) {
-      setPasswordError(getApiErrorMessage(err, 'Erro ao atualizar senha.'));
-    } finally {
-      setChangingPassword(false);
-    }
-  }
-
   async function handleSoftDeleteUser(userId: string, userName: string) {
     const confirmed = window.confirm(`Deseja realmente excluir o usuário "${userName}"?`);
     if (!confirmed) return;
@@ -210,19 +173,9 @@ export function useUsers(): UseUsersReturn {
     error,
     actionError,
     deletingUserId,
-    currentPassword,
-    setCurrentPassword,
-    newPassword,
-    setNewPassword,
-    confirmNewPassword,
-    setConfirmNewPassword,
-    changingPassword,
-    passwordError,
-    passwordSuccess,
     searchTerm,
     setSearchTerm,
     handleSoftDeleteUser,
-    handleChangeOwnPassword,
     sentinelRef,
   };
 }
