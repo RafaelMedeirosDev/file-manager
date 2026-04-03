@@ -6,6 +6,24 @@ import { foldersService } from '../services/foldersService';
 import { usersService } from '../../users/services/usersService';
 import { useSidebarContext } from '../contexts/SidebarContext';
 
+// ── Busca todas as páginas de pastas raiz ────────────────
+
+async function fetchAllRootFolders(): Promise<FolderItem[]> {
+  const all: FolderItem[] = [];
+  let page = 1;
+  let hasMore = true;
+
+  while (hasMore) {
+    const raw = await foldersService.list({ rootsOnly: true, page, limit: 100 });
+    const parsed = normalizePaginatedResponse<FolderItem>(raw, page, 100);
+    all.push(...parsed.items);
+    hasMore = parsed.isLegacyArray ? false : parsed.meta.hasNextPage;
+    page += 1;
+  }
+
+  return all;
+}
+
 // ── Types internos do hook ───────────────────────────────
 
 type UseFoldersReturn = {
@@ -46,15 +64,13 @@ type UseFoldersReturn = {
 
 export function useFolders(): UseFoldersReturn {
   const { user } = useAuth();
-  const { refreshSidebar } = useSidebarContext();
+  const { refreshSidebar, selectedUserId, setSelectedUserId } = useSidebarContext();
 
   const [folders, setFolders] = useState<FolderItem[]>([]);
   const [usersOptions, setUsersOptions] = useState<UserOption[]>([]);
 
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasNextPage, setHasNextPage] = useState(false);
-  const [currentPage, setCurrentPage] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [loadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [newFolderName, setNewFolderName] = useState('');
@@ -63,7 +79,11 @@ export function useFolders(): UseFoldersReturn {
   const [deletingFolderId, setDeletingFolderId] = useState<string | null>(null);
   const [selectedDeleteFolderId, setSelectedDeleteFolderId] = useState('');
   const [selectedCreateUserId, setSelectedCreateUserId] = useState('');
-  const [filterUserId, setFilterUserId] = useState('');
+  // filterUserId é alias para selectedUserId do contexto (para compat com FoldersPage até Etapa 4)
+  const filterUserId = selectedUserId ?? '';
+  const setFilterUserId = useCallback((id: string) => {
+    setSelectedUserId(id || null);
+  }, [setSelectedUserId]);
 
   const [reloadKey, setReloadKey] = useState(0);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -76,9 +96,9 @@ export function useFolders(): UseFoldersReturn {
   );
 
   const visibleFolders = useMemo(() => {
-    if (!filterUserId) return folders;
-    return folders.filter((f) => f.userId === filterUserId);
-  }, [folders, filterUserId]);
+    if (!selectedUserId) return [];
+    return folders.filter((f) => f.userId === selectedUserId);
+  }, [folders, selectedUserId]);
 
   const folderById = useMemo(
     () => new Map(folders.map((f) => [f.id, f])),
@@ -93,62 +113,29 @@ export function useFolders(): UseFoldersReturn {
     if (!exists) setSelectedDeleteFolderId('');
   }, [selectedDeleteFolderId, visibleFolders]);
 
-  // ── Carregamento de uma página ───────────────────────
-
-  const loadFoldersPage = useCallback(async (page: number, append: boolean) => {
-    const raw = await foldersService.list({ rootsOnly: true, page, limit: 10 });
-    const parsed = normalizePaginatedResponse<FolderItem>(raw, page, 10);
-
-    setFolders((prev) => {
-      if (!append) return parsed.items;
-      const existingIds = new Set(prev.map((f) => f.id));
-      const merged = [...prev];
-      for (const item of parsed.items) {
-        if (!existingIds.has(item.id)) merged.push(item);
-      }
-      return merged;
-    });
-
-    setCurrentPage(parsed.meta.page);
-    setHasNextPage(parsed.isLegacyArray ? false : parsed.meta.hasNextPage);
-  }, []);
-
-  // ── Primeira carga ───────────────────────────────────
+  // ── Carga de pastas (depende de selectedUserId) ──────────
 
   useEffect(() => {
-    async function fetchFirstPage() {
+    if (!selectedUserId) {
+      setFolders([]);
+      return;
+    }
+
+    async function fetchFolders() {
       setLoading(true);
       setError(null);
       try {
-        await loadFoldersPage(1, false);
+        const all = await fetchAllRootFolders();
+        setFolders(all);
       } catch (err) {
         setError(getApiErrorMessage(err, 'Erro ao carregar pastas.'));
       } finally {
         setLoading(false);
       }
     }
-    void fetchFirstPage();
-  }, [reloadKey, loadFoldersPage]);
 
-  // ── Scroll infinito ──────────────────────────────────
-
-  useEffect(() => {
-    if (!sentinelRef.current || loading || loadingMore || !hasNextPage) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (!entries[0]?.isIntersecting) return;
-        setLoadingMore(true);
-        void loadFoldersPage(currentPage + 1, true)
-          .catch((err) => setError(getApiErrorMessage(err, 'Erro ao carregar mais pastas.')))
-          .finally(() => setLoadingMore(false));
-      },
-      { rootMargin: '180px' },
-    );
-
-    observer.observe(sentinelRef.current);
-    return () => observer.disconnect();
-  }, [currentPage, hasNextPage, loading, loadingMore, loadFoldersPage]);
+    void fetchFolders();
+  }, [reloadKey, selectedUserId]);
 
   // ── Carga de usuários (só ADMIN) ─────────────────────
 
