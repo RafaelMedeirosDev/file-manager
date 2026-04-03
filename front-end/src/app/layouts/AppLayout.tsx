@@ -90,13 +90,11 @@ export function AppLayout() {
               <>
                 <TopNavLink to="/users"   label="Usuários" />
                 <TopNavLink to="/folders" label="Pastas"   />
-                <TopNavLink to="/files"   label="Arquivos" />
               </>
             )}
             {user?.role === 'USER' && (
               <>
                 <TopNavLink to="/folders" label="Pastas"   />
-                <TopNavLink to="/files"   label="Arquivos" />
               </>
             )}
           </nav>
