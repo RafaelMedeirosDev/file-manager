@@ -24,6 +24,8 @@ src/
 ├── shared/
 │   ├── dto/           → validação de entrada separada por domínio
 │   │   ├── auth/
+│   │   ├── exam/
+│   │   ├── exam-request/
 │   │   ├── file/
 │   │   ├── folder/
 │   │   └── user/
@@ -31,6 +33,8 @@ src/
 │   ├── interceptors/  → HttpLoggingInterceptor
 │   └── lib/           → r2Client.ts (S3Client para Cloudflare R2)
 └── usecases/          → lógica de negócio separada por domínio
+    ├── exam/
+    ├── exam-request/
     ├── file/
     ├── folder/
     └── user/
@@ -112,6 +116,13 @@ src/
 - PATCH  /files/:id          → atualiza folderId/url
 - DELETE /files/:id          → soft delete
 
+### Exams (GET: ambos | POST: ADMIN)
+- GET  /exams  → lista paginada com filtros name/code/category
+- POST /exams  → cria exame (ADMIN only)
+
+### ExamRequests (POST: ambos)
+- POST /exam-requests → cria solicitação de exame (USER e ADMIN)
+
 ## Cloudflare R2
 - SDK: @aws-sdk/client-s3 (compatível com API S3)
 - Client: src/shared/lib/r2Client.ts
@@ -124,6 +135,41 @@ src/
 DATABASE_URL, DATABASE_SCHEMA, JWT_SECRET, PORT, NODE_ENV,
 R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY,
 R2_BUCKET_NAME, R2_ENDPOINT, R2_PUBLIC_URL
+
+## Padrão de paginação
+
+Todas as rotas de listagem seguem este padrão:
+
+### QueryDTO
+```ts
+@IsOptional() @Transform(parseInt) @IsInt() @Min(1) page?: number;         // default 1
+@IsOptional() @Transform(parseInt) @IsInt() @Min(1) @Max(100) limit?: number; // default 10
+// + filtros opcionais do domínio (name, code, category, etc.)
+```
+
+### UseCase
+```ts
+const page = input?.page ?? 1;
+const limit = input?.limit ?? 10;
+const all = await this.repository.findAll();
+const filtered = all.filter(item => !item.deletedAt && /* filtros */);
+const sorted = [...filtered].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }));
+const total = sorted.length;
+const start = (page - 1) * limit;
+return {
+  data: sorted.slice(start, start + limit).map(/* shape */),
+  meta: { page, limit, total, hasNextPage: start + limit < total },
+};
+```
+
+### Repository
+`findAll()` retorna todos os registros sem filtro — sem `skip`/`take` no Prisma.
+Toda filtragem e paginação ocorre em memória no UseCase.
+
+### Output shape (padrão obrigatório)
+```ts
+{ data: T[], meta: { page: number, limit: number, total: number, hasNextPage: boolean } }
+```
 
 ## Padrão de erro
 Sempre usar ErrorMessagesEnum para mensagens de erro.

@@ -100,6 +100,13 @@ ExamRequest  (id, userId, indication, deletedAt)
 
 Folders are hierarchical (self-referencing `folderId`). Files are stored in Cloudflare R2; `url` is the public R2 URL.
 
+## Pagination Pattern (Backend)
+
+All list routes return `{ data: T[], meta: { page, limit, total, hasNextPage } }`.
+- QueryDTO: `page?` (default 1), `limit?` (default 10, max 100) + domain filters
+- Filtering and pagination happen **in-memory in the UseCase** — repositories expose `findAll()` with no skip/take
+- Sorted by `name` using `localeCompare('pt-BR', { sensitivity: 'base' })`
+
 ## Environment Setup
 
 Copy `.env.example` → `.env` in each sub-directory before running.

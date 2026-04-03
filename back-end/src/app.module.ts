@@ -30,6 +30,7 @@ import { RolesGuard } from './auth/roles.guard';
 import { ExamController } from './controllers/ExamController';
 import { ExamRepository } from './repositories/ExamRepository';
 import { CreateExamUseCase } from './usecases/exam/CreateExamUseCase';
+import { ListExamsUseCase } from './usecases/exam/ListExamsUseCase';
 import { ExamRequestController } from './controllers/ExamRequestController';
 import { ExamRequestRepository } from './repositories/ExamRequestRepository';
 import { CreateExamRequestUseCase } from './usecases/exam-request/CreateExamRequestUseCase';
@@ -61,6 +62,7 @@ import { CreateExamRequestUseCase } from './usecases/exam-request/CreateExamRequ
     FileRepository,
     ExamRepository,
     CreateExamUseCase,
+    ListExamsUseCase,
     ExamRequestRepository,
     CreateExamRequestUseCase,
     UploadFileUseCase,

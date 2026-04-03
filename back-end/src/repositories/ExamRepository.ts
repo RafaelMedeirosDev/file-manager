@@ -20,6 +20,10 @@ export class ExamRepository {
     return this.prisma.exam.findUnique({ where: { id } });
   }
 
+  findAll(): Promise<Exam[]> {
+    return this.prisma.exam.findMany();
+  }
+
   findManyBy(where: Prisma.ExamWhereInput): Promise<Exam[]> {
     return this.prisma.exam.findMany({ where });
   }
