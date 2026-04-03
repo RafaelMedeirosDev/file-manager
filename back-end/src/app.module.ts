@@ -30,10 +30,13 @@ import { RolesGuard } from './auth/roles.guard';
 import { ExamController } from './controllers/ExamController';
 import { ExamRepository } from './repositories/ExamRepository';
 import { CreateExamUseCase } from './usecases/exam/CreateExamUseCase';
+import { ExamRequestController } from './controllers/ExamRequestController';
+import { ExamRequestRepository } from './repositories/ExamRequestRepository';
+import { CreateExamRequestUseCase } from './usecases/exam-request/CreateExamRequestUseCase';
 
 @Module({
   imports: [PrismaModule, AuthModule],
-  controllers: [AppController, UserController, FolderController, FileController, ExamController],
+  controllers: [AppController, UserController, FolderController, FileController, ExamController, ExamRequestController],
   providers: [
     AppService,
     CreateUserUseCase,
@@ -58,6 +61,8 @@ import { CreateExamUseCase } from './usecases/exam/CreateExamUseCase';
     FileRepository,
     ExamRepository,
     CreateExamUseCase,
+    ExamRequestRepository,
+    CreateExamRequestUseCase,
     UploadFileUseCase,
   ],
 })

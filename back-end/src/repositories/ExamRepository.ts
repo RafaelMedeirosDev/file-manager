@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Exam, ExamCategory } from '@prisma/client';
+import { Exam, ExamCategory, Prisma } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
 
 @Injectable()
@@ -14,5 +14,13 @@ export class ExamRepository {
     return this.prisma.exam.findFirst({
       where: { code, deletedAt: null },
     });
+  }
+
+  findById(id: string): Promise<Exam | null> {
+    return this.prisma.exam.findUnique({ where: { id } });
+  }
+
+  findManyBy(where: Prisma.ExamWhereInput): Promise<Exam[]> {
+    return this.prisma.exam.findMany({ where });
   }
 }

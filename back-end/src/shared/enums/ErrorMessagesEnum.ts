@@ -18,6 +18,7 @@ export enum ErrorMessagesEnum {
   NEW_PASSWORD_MUST_BE_DIFFERENT = 'A nova senha deve ser diferente da senha atual',
   EXAM_NOT_FOUND = 'Exame nao encontrado',
   EXAM_CODE_ALREADY_REGISTERED = 'Ja existe um exame ativo com este codigo',
+  EXAM_REQUEST_NOT_FOUND = 'Solicitacao de exame nao encontrada',
 }
 
 
