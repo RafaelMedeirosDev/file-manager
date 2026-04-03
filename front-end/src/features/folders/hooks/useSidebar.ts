@@ -101,7 +101,7 @@ export type UseSidebarReturn = {
 
 export function useSidebar(): UseSidebarReturn {
   const { user } = useAuth();
-  const { sidebarVersion, expandedFolderIds, expandToFolder, collapseFolder, expandedUsers, toggleUser } = useSidebarContext();
+  const { sidebarVersion, expandedFolderIds, expandToFolder, collapseFolder, expandedUsers, toggleUser, setSelectedUserId } = useSidebarContext();
   const isAdmin = user?.role === 'ADMIN';
 
   // ── Estado USER ──────────────────────────────────────
@@ -226,12 +226,18 @@ export function useSidebar(): UseSidebarReturn {
 
   // ── Toggle expand/collapse de usuário (ADMIN) ────────
 
+  const handleToggleUser = useCallback((userId: string) => {
+    const isExpanding = !expandedUsers.has(userId);
+    toggleUser(userId);
+    setSelectedUserId(isExpanding ? userId : null);
+  }, [expandedUsers, toggleUser, setSelectedUserId]);
+
   return {
     roots,
     users,
     foldersByUserId,
     expandedUsers,
-    handleToggleUser: toggleUser,
+    handleToggleUser,
     expanded: expandedFolderIds,
     loading,
     handleToggle,
