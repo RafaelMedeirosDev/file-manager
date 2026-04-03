@@ -12,6 +12,17 @@ enum ROLE {
   USER
 }
 
+enum ExamCategory {
+  THROMBOPHILIA
+  MICROBIOLOGY
+  ENDOCRINE_METABOLIC
+  IMMUNOLOGY
+  OBSTETRIC_MARKERS
+  IMAGING
+  BIOCHEMISTRY
+  HEMATOLOGY
+}
+
 model User {
   id        String   @id @default(uuid()) @db.Uuid
   name      String   @db.VarChar(50)
@@ -22,8 +33,9 @@ model User {
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
 
-  folders Folder[]
-  files   File[]
+  folders      Folder[]
+  files        File[]
+  examRequests ExamRequest[]
 
   @@map("users")
 }
@@ -60,4 +72,32 @@ model File {
   folder Folder? @relation(fields: [folderId], references: [id])
 
   @@map("files")
+}
+
+model Exam {
+  id        String       @id @default(uuid()) @db.Uuid
+  name      String       @db.VarChar(255)
+  code      String       @unique @db.VarChar(50)
+  category  ExamCategory
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @default(now()) @updatedAt @map("updated_at")
+  deletedAt DateTime?    @map("deleted_at")
+
+  examRequests ExamRequest[]
+
+  @@map("exams")
+}
+
+model ExamRequest {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @db.Uuid @map("user_id")
+  indication String    @db.Text
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @default(now()) @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+
+  user  User   @relation(fields: [userId], references: [id])
+  exams Exam[]
+
+  @@map("exam_requests")
 }

@@ -14,6 +14,7 @@ export type CreateUserPayload = {
   name: string;
   email: string;
   password: string;
+  folders?: string[];
 };
 
 export type ChangeOwnPasswordPayload = {

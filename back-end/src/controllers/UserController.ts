@@ -23,9 +23,9 @@ import { UpdateUserBodyDTO } from '../shared/dto/user/UpdateUserBodyDTO';
 import { UpdateUserParamsDTO } from '../shared/dto/user/UpdateUserParamsDTO';
 import { ChangeOwnPasswordDTO } from '../shared/dto/user/ChangeOwnPasswordDTO';
 import {
-  CreateUserOutput,
-  CreateUserUseCase,
-} from '../usecases/user/CreateUserUseCase';
+  CreateUserWithFoldersOutput,
+  CreateUserWithFoldersUseCase,
+} from '../usecases/user/CreateUserWithFoldersUseCase';
 import {
   UpdateUserOutput,
   UpdateUserUseCase,
@@ -45,7 +45,7 @@ import {
 @Roles(ROLE.ADMIN)
 export class UserController {
   constructor(
-    private readonly createUserUseCase: CreateUserUseCase,
+    private readonly createUserWithFoldersUseCase: CreateUserWithFoldersUseCase,
     private readonly listUsersUseCase: ListUsersUseCase,
     private readonly updateUserUseCase: UpdateUserUseCase,
     private readonly softDeleteUserUseCase: SoftDeleteUserUseCase,
@@ -81,8 +81,13 @@ export class UserController {
       }),
     )
     body: CreateUserDTO,
-  ): Promise<CreateUserOutput> {
-    return this.createUserUseCase.execute(body);
+  ): Promise<CreateUserWithFoldersOutput> {
+    return this.createUserWithFoldersUseCase.execute({
+      name: body.name,
+      email: body.email,
+      password: body.password,
+      folders: body.folders,
+    });
   }
 
   @Patch('me/password')

@@ -32,6 +32,9 @@ Thumbs.db
 # pnpm local store/cache
 .pnpm-store/
 
+# turborepo cache
+.turbo/
+
 # tests / temp
 .tmp/
 tmp/

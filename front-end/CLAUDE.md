@@ -42,7 +42,32 @@ src/
 - GET/POST/PATCH/DELETE /folders
 - GET/POST/PATCH/DELETE /files
 - GET /files/:id/download
+- GET /exams, POST /exams
+- POST /exam-requests
+
+## Login Page Layout Pattern — "Control Room"
+
+`src/pages/LoginPage.tsx` uses a **split-screen layout** as the established SaaS design pattern for this project.
+
 ```
+┌─────────────────────────────┬──────────────────────┐
+│  Dark Navy panel (60%)      │  White form (40%)     │
+│  · Dot-grid SVG background  │  · 4px brand-blue bar │
+│  · Ghost "FM" watermark     │  · Wordmark + tagline │
+│  · Brand mark + headline    │  · Field section label│
+│  · Feature rows (table-row) │  · app-input fields   │
+│  · Green status bar         │  · btn-primary submit │
+└─────────────────────────────┴──────────────────────┘
+Mobile (≤768px): stacks vertically, feature rows hidden.
+```
+
+**Key conventions:**
+- All component styles live in an inline `<style>` tag inside the component — prefixed `lp-` to avoid collisions
+- Animations use `cubic-bezier(0.22, 1, 0.36, 1)` ("snap into place") with staggered `animation-delay`
+- Reuses `app-input` and `btn-primary` from `styles.css` — never duplicates them
+- The ghost watermark (`FM`, 260px, Manrope 800, 6% opacity) is a deliberate brand detail — do not remove
+- `@keyframes lp-spin` lives in `styles.css` (global) — all other `@keyframes` are inline
+- Apply this same split-screen pattern to any future full-page auth/onboarding screens
 
 ---
 
@@ -136,3 +161,17 @@ Apague tudo que não foi solicitado e vamos fazer um arquivo por vez.
 Revise todos os arquivos da feature folders e me diz
 se algum está violando as regras do CLAUDE.md.
 Liste os problemas antes de corrigir qualquer coisa.
+```
+
+## Skills (Plugin: boss-skills)
+
+> Este projeto usa o plugin `boss-skills`. As skills são **OBRIGATÓRIAS** — não opcionais.
+> Claude **DEVE** invocar a skill correspondente antes de escrever qualquer código.
+> Nunca pule uma skill — elas definem os padrões de código e arquitetura do time.
+>
+> **Auto-ativação:** skills de engenharia ativam automaticamente por contexto (arquivo criado/modificado ou keyword detectada).
+> **Skills disponíveis:** `eng-test`, `eng-solid`, `eng-dto`, `frontend-design`, `claudemd-sync`.
+> **Após criar qualquer arquivo:** `eng-test` é mandatório.
+> **Ao criar/modificar DTOs:** `eng-dto` é mandatório.
+> **Ao criar/revisar UI:** `frontend-design` é mandatório.
+> **Ao revisar SOLID:** `eng-solid` é mandatório.

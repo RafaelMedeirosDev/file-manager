@@ -6,6 +6,7 @@ import { FolderController } from './controllers/FolderController';
 import { FileController } from './controllers/FileController';
 import { AuthModule } from './auth/auth.module';
 import { CreateUserUseCase } from './usecases/user/CreateUserUseCase';
+import { CreateUserWithFoldersUseCase } from './usecases/user/CreateUserWithFoldersUseCase';
 import { PrismaModule } from './database/prisma.module';
 import { UserRepository } from './repositories/UserRepository';
 import { UpdateUserUseCase } from './usecases/user/UpdateUserUseCase';
@@ -27,13 +28,21 @@ import { GetFileByIdUseCase } from './usecases/file/GetFileByIdUseCase';
 import { DownloadFileUseCase } from './usecases/file/DownloadFileUseCase';
 import { UploadFileUseCase } from './usecases/file/UploadFileUseCase';
 import { RolesGuard } from './auth/roles.guard';
+import { ExamController } from './controllers/ExamController';
+import { ExamRepository } from './repositories/ExamRepository';
+import { CreateExamUseCase } from './usecases/exam/CreateExamUseCase';
+import { ListExamsUseCase } from './usecases/exam/ListExamsUseCase';
+import { ExamRequestController } from './controllers/ExamRequestController';
+import { ExamRequestRepository } from './repositories/ExamRequestRepository';
+import { CreateExamRequestUseCase } from './usecases/exam-request/CreateExamRequestUseCase';
 
 @Module({
   imports: [PrismaModule, AuthModule],
-  controllers: [AppController, UserController, FolderController, FileController],
+  controllers: [AppController, UserController, FolderController, FileController, ExamController, ExamRequestController],
   providers: [
     AppService,
     CreateUserUseCase,
+    CreateUserWithFoldersUseCase,
     ListUsersUseCase,
     UpdateUserUseCase,
     SoftDeleteUserUseCase,
@@ -53,6 +62,11 @@ import { RolesGuard } from './auth/roles.guard';
     UserRepository,
     FolderRepository,
     FileRepository,
+    ExamRepository,
+    CreateExamUseCase,
+    ListExamsUseCase,
+    ExamRequestRepository,
+    CreateExamRequestUseCase,
     UploadFileUseCase,
   ],
 })
