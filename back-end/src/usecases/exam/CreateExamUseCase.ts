@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, Logger } from '@nestjs/common';
-import { ExamCategory } from '@prisma/client';
+import { ExamCategory } from '@file-manager/shared';
 import { ExamRepository } from '../../repositories/ExamRepository';
 import { ErrorMessagesEnum } from '../../shared/enums/ErrorMessagesEnum';
 
@@ -30,6 +30,7 @@ export class CreateExamUseCase {
     const existing = await this.examRepository.findByCode(input.code);
 
     if (existing) {
+      this.logger.warn('[CreateExamUseCase] Exam code already registered', { code: input.code });
       throw new ConflictException(
         ErrorMessagesEnum.EXAM_CODE_ALREADY_REGISTERED,
       );

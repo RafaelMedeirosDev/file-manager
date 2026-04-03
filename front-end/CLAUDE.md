@@ -14,6 +14,7 @@ src/
 │   ├── hooks/        → lógica, estado, chamadas via service
 │   └── services/     → APENAS chamadas HTTP, sem estado
 ├── shared/
+│   ├── components/   → primitivos de UI reutilizáveis (ex: Modal)
 │   ├── types/        → interfaces e types globais
 │   ├── utils/        → funções puras reutilizáveis
 │   └── lib/          → instância axios
@@ -68,6 +69,37 @@ Mobile (≤768px): stacks vertically, feature rows hidden.
 - The ghost watermark (`FM`, 260px, Manrope 800, 6% opacity) is a deliberate brand detail — do not remove
 - `@keyframes lp-spin` lives in `styles.css` (global) — all other `@keyframes` are inline
 - Apply this same split-screen pattern to any future full-page auth/onboarding screens
+
+## Users Page Layout Pattern — "Data Table"
+
+`src/pages/UsersPage.tsx` uses a **data table layout** as the established SaaS pattern for team/user management.
+
+```
+┌─ Usuários ─────────────────────── [Minha senha] [+ Novo] ─┐
+│  Gerencie contas, permissões e acesso ao workspace.        │
+├────────────────────────────────────────────────────────────┤
+│  🔍 Buscar por nome ou email...               N usuários   │  ← .users-panel
+├────────────────────────────────────────────────────────────┤
+│  USUÁRIO                         FUNÇÃO                    │  ← .users-table-head
+├────────────────────────────────────────────────────────────┤
+│▌ [AC] Ana Costa                  ██ Administrador          │  ← .user-row (hover reveals delete)
+│       ana.costa@empresa.com                                │
+│  [BL] Bruno Lima                 ░░ Usuário   [Excluir] ←  │
+│  [CM] Carla Mendes               ░░ Usuário               │
+└────────────────────────────────────────────────────────────┘
+Mobile (≤640px): table head hidden, row collapses to 2-col grid, delete always visible.
+```
+
+**Key conventions:**
+- All users live inside a single `.users-panel` (white rounded card) — no individual cards per row
+- `.user-row` uses CSS grid `1fr 160px 100px`; left blue accent (`::before`) appears on hover
+- Avatar colors generated from `name.charCodeAt(0) % 8` → 8 palette classes (`.av-blue`, `.av-indigo`, etc.)
+- Avatar shape: `border-radius: 10px` squares, not circles
+- Role badges: `.users-badge-admin` (filled blue) vs `.users-badge-user` (ghost/outline)
+- Delete button `.users-btn-delete` is `opacity: 0` by default, revealed on `.user-row:hover`
+- Rows animate in with staggered `animation-delay` via `users-row-in` keyframe
+- Password change uses `<Modal>` from `src/shared/components/Modal.tsx` + `useChangePassword` hook — not an inline panel
+- Search bar is integrated inside `.users-panel`, not a separate sticky toolbar
 
 ---
 

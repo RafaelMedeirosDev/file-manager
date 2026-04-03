@@ -8,9 +8,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Monorepo Structure
 
-pnpm workspace with two apps:
+pnpm workspace with three packages:
 - `back-end/` — NestJS 11 REST API (port 3001)
 - `front-end/` — React 18 + Vite SPA (port 5173)
+- `shared/` — `@file-manager/shared`: shared enums, types, and API contracts (compiled to `shared/dist/` before use)
 
 ## Commands
 
@@ -35,6 +36,25 @@ pnpm start:front              # frontend dev server
 pnpm build:back               # build backend → back-end/dist/
 pnpm build:front              # build frontend → front-end/dist/
 ```
+
+### Shared (`shared/`)
+```bash
+pnpm --dir shared build   # compile shared/src → shared/dist/ (must run before back-end build)
+```
+
+> **Build order:** `shared` → `back-end`. Turborepo's `"dependsOn": ["^build"]` handles this automatically via `pnpm build`. Run `pnpm --dir shared build` manually when iterating on shared types.
+
+### Shared package contents
+| Export | Description |
+|---|---|
+| `ErrorMessagesEnum` | All API error message strings |
+| `ExamCategory` | Exam category const + type (mirrors Prisma enum) |
+| `Role` | `ADMIN \| USER` const + type |
+| `PaginatedMeta`, `ListResponse<T>` | Pagination API contract |
+| `UserItem`, `UserOption` | User API response shapes |
+| `FolderItem`, `FolderChild`, `FolderOption`, `FolderDetails` | Folder API response shapes |
+| `FileItem` | File API response shape |
+| `ExamItem` | Exam API response shape |
 
 ### Backend (`back-end/`)
 ```bash
@@ -81,7 +101,7 @@ Each domain (`auth`, `folders`, `files`, `users`) lives in `src/features/{featur
 
 Pages in `src/pages/` compose features — no logic or direct HTTP calls.
 
-Global types live in `src/shared/types/`. Custom Tailwind classes are defined in `src/styles.css` (`app-card`, `btn-primary`, `app-input`, etc.) — use these before creating new ones.
+Global types live in `src/shared/types/`. Reusable UI primitives (e.g. `Modal`) live in `src/shared/components/`. Custom Tailwind classes are defined in `src/styles.css` (`app-card`, `btn-primary`, `app-input`, modal system, users table layout, etc.) — use these before creating new ones.
 
 ## Database Schema
 
