@@ -12,6 +12,8 @@ type SidebarContextValue = {
   expandedUsers: Set<string>;
   expandUser: (userId: string) => void;
   toggleUser: (userId: string) => void;
+  selectedUserId: string | null;
+  setSelectedUserId: (id: string | null) => void;
 };
 
 // ── Context ──────────────────────────────────────────────
@@ -24,6 +26,7 @@ export function SidebarProvider({ children }: PropsWithChildren) {
   const [sidebarVersion, setSidebarVersion] = useState(0);
   const [expandedFolderIds, setExpandedFolderIds] = useState<Set<string>>(new Set());
   const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   const refreshSidebar = useCallback(() => {
     setSidebarVersion((v) => v + 1);
@@ -74,8 +77,10 @@ export function SidebarProvider({ children }: PropsWithChildren) {
       expandedUsers,
       expandUser,
       toggleUser,
+      selectedUserId,
+      setSelectedUserId,
     }),
-    [sidebarVersion, refreshSidebar, expandedFolderIds, expandToFolder, collapseFolder, expandedUsers, expandUser, toggleUser],
+    [sidebarVersion, refreshSidebar, expandedFolderIds, expandToFolder, collapseFolder, expandedUsers, expandUser, toggleUser, selectedUserId, setSelectedUserId],
   );
 
   return (
