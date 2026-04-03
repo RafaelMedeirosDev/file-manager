@@ -40,12 +40,6 @@ export function DashboardPage() {
             <p className="nav-card-desc">Abrir estrutura hierárquica</p>
           </Link>
 
-          <Link to="/files" className="nav-card">
-            <p className="nav-card-section">Biblioteca</p>
-            <p className="nav-card-title">Arquivos</p>
-            <p className="nav-card-desc">Filtrar e baixar documentos</p>
-          </Link>
-
           {user?.role === 'ADMIN' ? (
             <Link to="/users" className="nav-card">
               <p className="nav-card-section">Administração</p>

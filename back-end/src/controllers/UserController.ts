@@ -66,6 +66,7 @@ export class UserController {
     return this.listUsersUseCase.execute({
       page: query.page,
       limit: query.limit,
+      search: query.search,
       name: query.name,
       email: query.email,
     });

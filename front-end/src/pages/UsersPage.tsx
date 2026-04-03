@@ -3,22 +3,36 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/hooks/useAuth';
 import { useUsers } from '../features/users/hooks/useUsers';
 
+function SearchIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </svg>
+  );
+}
+
 export function UsersPage() {
   const { user } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const {
-    users, loading, loadingMore, error, actionError,
-    creatingUser, deletingUserId,
-    newUserName, setNewUserName,
-    newUserEmail, setNewUserEmail,
-    newUserPassword, setNewUserPassword,
+    users, totalUsers, loading, loadingMore, error, actionError, deletingUserId,
     currentPassword, setCurrentPassword,
     newPassword, setNewPassword,
     confirmNewPassword, setConfirmNewPassword,
     changingPassword, passwordError, passwordSuccess,
-    searchName, setSearchName,
-    searchEmail, setSearchEmail,
-    handleCreateUser, handleSoftDeleteUser, handleChangeOwnPassword,
+    searchTerm, setSearchTerm,
+    handleSoftDeleteUser, handleChangeOwnPassword,
     sentinelRef,
   } = useUsers();
 
@@ -28,42 +42,47 @@ export function UsersPage() {
   return (
     <>
       {/* Page Header */}
-      <div className="page-header">
+      <div className="page-header" style={{ paddingBottom: 4, flexWrap: 'wrap' }}>
         <div>
           <h1 className="page-title">Usuários</h1>
-          <p className="page-subtitle">Painel de contas, perfis e acessos.</p>
+          <p className="page-subtitle">Gerencie contas, permissões e acesso ao workspace.</p>
         </div>
-        <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-          <button type="button" className="btn-secondary" style={{ fontSize: 12 }}
-            onClick={() => { setShowPassword((v) => !v); setShowCreate(false); }}>
-            {showPassword ? 'Fechar' : 'Redefinir minha senha'}
+        <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
+          <button type="button" className="btn-secondary" style={{ fontSize: 12, padding: '7px 12px' }}
+            onClick={() => setShowPassword((value) => !value)}>
+            {showPassword ? 'Ocultar senha' : 'Minha senha'}
           </button>
           {isAdmin ? (
-            <button type="button" className="btn-primary" style={{ fontSize: 12 }}
+            <button type="button" className="btn-primary" style={{ fontSize: 12, padding: '7px 12px' }}
               onClick={() => navigate('/users/new')}>
-              + Novo Usuário
+              + Novo usuário
             </button>
           ) : null}
         </div>
       </div>
 
       {/* Toolbar */}
-      <div className="page-toolbar">
-        <div className="page-toolbar-left">
-          <input className="app-input" style={{ maxWidth: 180 }} value={searchName}
-            onChange={(e) => setSearchName(e.target.value)} placeholder="Buscar por nome" />
-          <input className="app-input" style={{ maxWidth: 200 }} type="email" value={searchEmail}
-            onChange={(e) => setSearchEmail(e.target.value)} placeholder="Buscar por email" />
-          {(searchName || searchEmail) ? (
-            <button type="button" className="btn-secondary" style={{ fontSize: 12 }}
-              onClick={() => { setSearchName(''); setSearchEmail(''); }}>
+      <div className="page-toolbar" style={{ marginTop: 12, flexWrap: 'wrap' }}>
+        <div className="page-toolbar-left" style={{ flex: '1 1 320px' }}>
+          <div className="users-search-field">
+            <SearchIcon />
+            <input
+              className="app-input users-search-input"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Buscar por nome ou email"
+            />
+          </div>
+          {searchTerm ? (
+            <button type="button" className="btn-secondary" style={{ fontSize: 12, padding: '7px 12px' }}
+              onClick={() => setSearchTerm('')}>
               Limpar
             </button>
           ) : null}
         </div>
         <div className="page-toolbar-right">
-          <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 12, color: '#94a3b8' }}>
-            {users.length} usuário{users.length !== 1 ? 's' : ''}
+          <span className="users-count">
+            {totalUsers} resultado{totalUsers !== 1 ? 's' : ''}
           </span>
         </div>
       </div>
@@ -71,6 +90,14 @@ export function UsersPage() {
       {/* Change password panel */}
       {showPassword ? (
         <div className="page-expand-panel">
+          <div style={{ marginBottom: 12 }}>
+            <p style={{ margin: 0, fontFamily: 'Manrope, sans-serif', fontSize: 13, fontWeight: 700, color: '#0d1e35' }}>
+              Atualizar senha
+            </p>
+            <p style={{ margin: '4px 0 0 0', fontFamily: 'Manrope, sans-serif', fontSize: 12, color: '#64748b' }}>
+              Essa alteração afeta apenas a sua conta.
+            </p>
+          </div>
           <form style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr)) auto' }}
             onSubmit={handleChangeOwnPassword}>
             <input className="app-input" type="password" value={currentPassword}
@@ -96,22 +123,31 @@ export function UsersPage() {
       <div className="page-content">
         {loading ? <p style={{ fontSize: 13, color: '#94a3b8', fontFamily: 'Manrope, sans-serif' }}>Carregando...</p> : null}
         {error ? <p style={{ fontSize: 13, color: '#e11d48', fontFamily: 'Manrope, sans-serif' }}>{error}</p> : null}
+        {actionError ? <p style={{ fontSize: 13, color: '#e11d48', fontFamily: 'Manrope, sans-serif', marginBottom: 12 }}>{actionError}</p> : null}
 
         {!loading && !error ? (
           <>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <ul className="users-list">
               {users.map((u) => (
-                <li key={u.id} className="app-list-item">
-                  <div>
-                    <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 13, fontWeight: 700, color: '#0d1e35', margin: '0 0 2px 0' }}>{u.name}</p>
-                    <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 12, color: '#94a3b8', margin: 0 }}>{u.email}</p>
+                <li key={u.id} className="users-list-item">
+                  <div className="users-list-primary">
+                    <div className="users-avatar" aria-hidden="true">
+                      {u.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="users-meta">
+                      <p className="users-name">{u.name}</p>
+                      <p className="users-email">{u.email}</p>
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
-                    <strong className="app-chip">{u.role}</strong>
+                  <div className="users-actions">
+                    <span className="users-role">
+                      {u.role === 'ADMIN' ? 'Administrador' : 'Usuário'}
+                    </span>
                     {isAdmin ? (
                       <button type="button" className="btn-danger"
                         onClick={() => handleSoftDeleteUser(u.id, u.name)}
-                        disabled={deletingUserId === u.id}>
+                        disabled={deletingUserId === u.id}
+                        style={{ fontSize: 12, padding: '7px 12px' }}>
                         {deletingUserId === u.id ? 'Excluindo...' : 'Excluir'}
                       </button>
                     ) : null}
@@ -119,7 +155,7 @@ export function UsersPage() {
                 </li>
               ))}
               {users.length === 0 ? (
-                <li style={{ border: '1px dashed #cbd5e1', borderRadius: 8, padding: 20, fontSize: 13, color: '#94a3b8', textAlign: 'center', fontFamily: 'Manrope, sans-serif' }}>
+                <li style={{ border: '1px dashed #cbd5e1', borderRadius: 12, padding: 24, fontSize: 13, color: '#94a3b8', textAlign: 'center', fontFamily: 'Manrope, sans-serif', background: '#fff' }}>
                   Nenhum usuário encontrado.
                 </li>
               ) : null}
@@ -128,7 +164,7 @@ export function UsersPage() {
             <div ref={sentinelRef} style={{ height: 40 }} />
             {loadingMore ? (
               <p style={{ textAlign: 'center', fontSize: 13, color: '#94a3b8', fontFamily: 'Manrope, sans-serif' }}>
-                Carregando mais usuários...
+                Carregando mais resultados...
               </p>
             ) : null}
           </>

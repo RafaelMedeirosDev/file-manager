@@ -1,7 +1,6 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './guards/ProtectedRoute';
 import { AppLayout } from './layouts/AppLayout';
-import { FilesPage } from '../pages/FilesPage';
 import { FolderDetailsPage } from '../pages/FolderDetailsPage';
 import { FoldersPage } from '../pages/FoldersPage';
 import { HomeRedirectPage } from '../pages/HomeRedirectPage';
@@ -23,7 +22,7 @@ export const router = createBrowserRouter([
           { path: '/', element: <HomeRedirectPage /> },
           { path: '/folders', element: <FoldersPage /> },
           { path: '/folders/:id', element: <FolderDetailsPage /> },
-          { path: '/files', element: <FilesPage /> },
+          { path: '/files', element: <Navigate to="/folders" replace /> },
         ],
       },
     ],

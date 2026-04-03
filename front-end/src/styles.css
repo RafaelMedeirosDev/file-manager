@@ -155,6 +155,147 @@
 .page-toolbar-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .page-content { padding: 20px 28px 40px; }
 
+.users-search-field {
+  position: relative;
+  flex: 1 1 320px;
+  max-width: 360px;
+}
+
+.users-search-field svg {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.users-search-input {
+  min-width: 0;
+  padding-left: 36px;
+}
+
+.users-count {
+  font-family: 'Manrope', sans-serif;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.users-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.users-list-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  background: #ffffff;
+  border: 1px solid var(--shell-border);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.users-list-item:hover {
+  border-color: #dbe4ee;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+}
+
+.users-list-primary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.users-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: #eef6ff;
+  color: #0078d4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Manrope', sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.users-meta {
+  min-width: 0;
+}
+
+.users-name {
+  margin: 0;
+  font-family: 'Manrope', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #0d1e35;
+}
+
+.users-email {
+  margin: 3px 0 0 0;
+  font-family: 'Manrope', sans-serif;
+  font-size: 12px;
+  color: #64748b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.users-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.users-role {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid #dbe4ee;
+  background: #f8fafc;
+  padding: 5px 10px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: #475569;
+}
+
+@media (max-width: 768px) {
+  .users-search-field {
+    max-width: none;
+    width: 100%;
+  }
+
+  .users-list-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .users-actions {
+    width: 100%;
+    margin-left: 0;
+    justify-content: space-between;
+  }
+
+  .users-email {
+    white-space: normal;
+    word-break: break-word;
+  }
+}
+
 /* ── Admin expand panel (below toolbar) ── */
 .page-expand-panel {
   background: #ffffff;
