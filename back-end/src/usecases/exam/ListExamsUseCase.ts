@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ExamCategory } from '@prisma/client';
+import { ExamCategory } from '@file-manager/shared';
 import { ExamRepository } from '../../repositories/ExamRepository';
 
 export type ListExamsOutput = {

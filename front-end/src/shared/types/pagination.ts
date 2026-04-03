@@ -1,15 +1,4 @@
-export type PaginatedMeta = {
-  page: number;
-  limit: number;
-  total: number;
-  hasNextPage: boolean;
-};
-
-/** Resposta paginada bruta que vem da API. */
-export type ListResponse<T> = {
-  data: T[];
-  meta: PaginatedMeta;
-};
+export type { PaginatedMeta, ListResponse } from '@file-manager/shared';
 
 /**
  * Resposta normalizada usada internamente pelos hooks.
@@ -18,6 +7,6 @@ export type ListResponse<T> = {
  */
 export type PaginatedResult<T> = {
   items: T[];
-  meta: PaginatedMeta;
+  meta: import('@file-manager/shared').PaginatedMeta;
   isLegacyArray: boolean;
 };

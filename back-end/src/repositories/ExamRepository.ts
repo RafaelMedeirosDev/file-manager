@@ -16,10 +16,6 @@ export class ExamRepository {
     });
   }
 
-  findById(id: string): Promise<Exam | null> {
-    return this.prisma.exam.findUnique({ where: { id } });
-  }
-
   findAll(): Promise<Exam[]> {
     return this.prisma.exam.findMany();
   }

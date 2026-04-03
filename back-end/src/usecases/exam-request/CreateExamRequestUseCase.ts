@@ -1,5 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { ExamCategory } from '@prisma/client';
+import { ExamCategory } from '@file-manager/shared';
 import { ExamRepository } from '../../repositories/ExamRepository';
 import { ExamRequestRepository } from '../../repositories/ExamRequestRepository';
 import { UserRepository } from '../../repositories/UserRepository';
@@ -38,6 +38,7 @@ export class CreateExamRequestUseCase {
     const user = await this.userRepository.findById(input.userId);
 
     if (!user || user.deletedAt) {
+      this.logger.warn('[CreateExamRequestUseCase] User not found', { userId: input.userId });
       throw new NotFoundException(ErrorMessagesEnum.USER_NOT_FOUND);
     }
 
@@ -47,6 +48,10 @@ export class CreateExamRequestUseCase {
     });
 
     if (exams.length !== input.examIds.length) {
+      this.logger.warn(
+        '[CreateExamRequestUseCase] One or more exams not found',
+        { examIds: input.examIds },
+      );
       throw new NotFoundException(ErrorMessagesEnum.EXAM_NOT_FOUND);
     }
 

@@ -1,3 +1,4 @@
+import path from 'path';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from 'tailwindcss';
@@ -8,6 +9,11 @@ export default defineConfig({
   css: {
     postcss: {
       plugins: [tailwindcss(), autoprefixer()],
+    },
+  },
+  resolve: {
+    alias: {
+      '@file-manager/shared': path.resolve(__dirname, '../shared/src/index.ts'),
     },
   },
   server: {
