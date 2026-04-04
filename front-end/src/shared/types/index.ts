@@ -3,4 +3,4 @@ export * from './user';
 export * from './folder';
 export * from './file';
 export * from './explorer';
-export type { ExamItem } from '@file-manager/shared';
+export type { ExamItem, ExamRequestItem } from '@file-manager/shared';

@@ -35,6 +35,9 @@ import { ListExamsUseCase } from './usecases/exam/ListExamsUseCase';
 import { ExamRequestController } from './controllers/ExamRequestController';
 import { ExamRequestRepository } from './repositories/ExamRequestRepository';
 import { CreateExamRequestUseCase } from './usecases/exam-request/CreateExamRequestUseCase';
+import { GetExamRequestByIdUseCase } from './usecases/exam-request/GetExamRequestByIdUseCase';
+import { ListExamRequestsUseCase } from './usecases/exam-request/ListExamRequestsUseCase';
+import { UpdateExamRequestUseCase } from './usecases/exam-request/UpdateExamRequestUseCase';
 
 @Module({
   imports: [PrismaModule, AuthModule],
@@ -67,6 +70,9 @@ import { CreateExamRequestUseCase } from './usecases/exam-request/CreateExamRequ
     ListExamsUseCase,
     ExamRequestRepository,
     CreateExamRequestUseCase,
+    GetExamRequestByIdUseCase,
+    ListExamRequestsUseCase,
+    UpdateExamRequestUseCase,
     UploadFileUseCase,
   ],
 })

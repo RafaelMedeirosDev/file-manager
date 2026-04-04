@@ -7,7 +7,7 @@ import { ErrorMessagesEnum } from '../../shared/enums/ErrorMessagesEnum';
 
 export type CreateExamRequestInput = {
   userId: string;
-  indication: string;
+  indication?: string;
   examIds: string[];
 };
 
@@ -57,7 +57,7 @@ export class CreateExamRequestUseCase {
 
     const examRequest = await this.examRequestRepository.create({
       userId: input.userId,
-      indication: input.indication,
+      indication: input.indication ?? '',
       examIds: input.examIds,
     });
 
