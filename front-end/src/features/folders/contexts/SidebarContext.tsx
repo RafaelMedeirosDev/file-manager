@@ -14,6 +14,7 @@ type SidebarContextValue = {
   toggleUser: (userId: string) => void;
   selectedUserId: string | null;
   setSelectedUserId: (id: string | null) => void;
+  selectUser: (id: string | null) => void;
 };
 
 // ── Context ──────────────────────────────────────────────
@@ -55,6 +56,16 @@ export function SidebarProvider({ children }: PropsWithChildren) {
     });
   }, []);
 
+  const selectUser = useCallback((id: string | null) => {
+    if (id !== null) {
+      setExpandedUsers(new Set([id]));
+      setSelectedUserId(id);
+    } else {
+      setExpandedUsers(new Set());
+      setSelectedUserId(null);
+    }
+  }, []);
+
   const toggleUser = useCallback((userId: string) => {
     setExpandedUsers((prev) => {
       const next = new Set(prev);
@@ -79,8 +90,9 @@ export function SidebarProvider({ children }: PropsWithChildren) {
       toggleUser,
       selectedUserId,
       setSelectedUserId,
+      selectUser,
     }),
-    [sidebarVersion, refreshSidebar, expandedFolderIds, expandToFolder, collapseFolder, expandedUsers, expandUser, toggleUser, selectedUserId, setSelectedUserId],
+    [sidebarVersion, refreshSidebar, expandedFolderIds, expandToFolder, collapseFolder, expandedUsers, expandUser, toggleUser, selectedUserId, setSelectedUserId, selectUser],
   );
 
   return (

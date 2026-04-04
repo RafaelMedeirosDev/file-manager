@@ -5,18 +5,35 @@ import { FolderIcon } from '../components/Icons';
 import { useFolders } from '../features/folders/hooks/useFolders';
 import { useSidebarContext } from '../features/folders/contexts/SidebarContext';
 
+// ── Avatar helpers (mesmos do UsersPage) ─────────────────
+
+const AV_CLASSES = ['av-blue', 'av-indigo', 'av-violet', 'av-green', 'av-amber', 'av-rose', 'av-teal', 'av-orange'];
+
+function avatarClass(name: string): string {
+  return AV_CLASSES[name.charCodeAt(0) % 8];
+}
+
+function avatarInitials(name: string): string {
+  const parts = name.trim().split(' ');
+  return parts.length >= 2
+    ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    : parts[0].slice(0, 2).toUpperCase();
+}
+
+// ── Page ─────────────────────────────────────────────────
+
 export function FoldersPage() {
   const { user } = useAuth();
-  const { selectedUserId, setSelectedUserId } = useSidebarContext();
+  const { selectedUserId, selectUser } = useSidebarContext();
   const [showCreate, setShowCreate] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const {
     visibleFolders, usersOptions, usersById, folderById,
-    loading, loadingMore, error, createError, creating, deletingFolderId,
+    loading, error, createError, creating, deletingFolderId,
     selectedCreateUserId, setSelectedCreateUserId,
     selectedDeleteFolderId, setSelectedDeleteFolderId,
     newFolderName, setNewFolderName,
-    handleCreateFolder, handleSoftDeleteFolder, sentinelRef,
+    handleCreateFolder, handleSoftDeleteFolder,
   } = useFolders();
 
   const isAdmin = user?.role === 'ADMIN';
@@ -41,32 +58,6 @@ export function FoldersPage() {
             </button>
           </div>
         ) : null}
-      </div>
-
-      {/* Toolbar */}
-      <div className="page-toolbar">
-        <div className="page-toolbar-left">
-          {isAdmin ? (
-            <select
-              className="app-input"
-              style={{ maxWidth: 200 }}
-              value={selectedUserId ?? ''}
-              onChange={(e) => setSelectedUserId(e.target.value || null)}
-            >
-              <option value="">Selecione um usuário</option>
-              {usersOptions.map((option) => (
-                <option key={option.id} value={option.id}>{option.name}</option>
-              ))}
-            </select>
-          ) : null}
-        </div>
-        <div className="page-toolbar-right">
-          {selectedUserId ? (
-            <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 12, color: '#94a3b8' }}>
-              {visibleFolders.length} pasta{visibleFolders.length !== 1 ? 's' : ''}
-            </span>
-          ) : null}
-        </div>
       </div>
 
       {/* Create form panel */}
@@ -115,17 +106,72 @@ export function FoldersPage() {
 
       {/* Content */}
       <div className="page-content">
-        {!selectedUserId ? (
-          <p style={{ fontSize: 13, color: '#94a3b8', fontFamily: 'Manrope, sans-serif' }}>
-            Selecione um usuário para ver as pastas.
-          </p>
-        ) : (
-          <>
-            {loading ? <p style={{ fontSize: 13, color: '#94a3b8', fontFamily: 'Manrope, sans-serif' }}>Carregando...</p> : null}
-            {error ? <p style={{ fontSize: 13, color: '#e11d48', fontFamily: 'Manrope, sans-serif' }}>{error}</p> : null}
 
-            {!loading && !error ? (
+        {/* ── Grade de usuários (ADMIN) ── */}
+        {isAdmin && usersOptions.length > 0 ? (
+          <div style={{ marginBottom: 24 }}>
+            <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#94a3b8', margin: '0 0 12px 0' }}>
+              Selecione um usuário
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+              {usersOptions.map((u) => {
+                const isSelected = selectedUserId === u.id;
+                return (
+                  <button
+                    key={u.id}
+                    type="button"
+                    onClick={() => selectUser(isSelected ? null : u.id)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      padding: '10px 14px',
+                      background: isSelected ? '#eff6ff' : '#ffffff',
+                      border: `1.5px solid ${isSelected ? '#0078D4' : 'var(--shell-border)'}`,
+                      borderRadius: 10,
+                      cursor: 'pointer',
+                      transition: 'border-color 0.12s, background 0.12s, box-shadow 0.12s',
+                      boxShadow: isSelected ? '0 0 0 3px rgba(0,120,212,0.10)' : '0 1px 3px rgba(0,0,0,0.05)',
+                      fontFamily: 'Manrope, sans-serif',
+                    }}
+                  >
+                    <div className={`users-avatar ${avatarClass(u.name)}`} style={{ width: 32, height: 32, fontSize: 12 }}>
+                      {avatarInitials(u.name)}
+                    </div>
+                    <span style={{
+                      fontSize: 13,
+                      fontWeight: isSelected ? 700 : 500,
+                      color: isSelected ? '#0078D4' : '#0d1e35',
+                      whiteSpace: 'nowrap',
+                    }}>
+                      {u.name}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
+
+        {/* ── Pastas do usuário selecionado ── */}
+        {selectedUserId ? (
+          <>
+            {loading ? (
+              <p style={{ fontSize: 13, color: '#94a3b8', fontFamily: 'Manrope, sans-serif' }}>Carregando...</p>
+            ) : error ? (
+              <p style={{ fontSize: 13, color: '#e11d48', fontFamily: 'Manrope, sans-serif' }}>{error}</p>
+            ) : (
               <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                  <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#94a3b8' }}>
+                    Pastas
+                  </span>
+                  <div style={{ flex: 1, height: 1, background: 'var(--shell-border)' }} />
+                  <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 12, color: '#94a3b8' }}>
+                    {visibleFolders.length} pasta{visibleFolders.length !== 1 ? 's' : ''}
+                  </span>
+                </div>
+
                 <ul style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 12, listStyle: 'none', padding: 0, margin: 0 }}>
                   {visibleFolders.map((folder) => {
                     const ownerName = usersById.get(folder.userId) ?? 'Usuário desconhecido';
@@ -156,17 +202,11 @@ export function FoldersPage() {
                     </li>
                   ) : null}
                 </ul>
-
-                <div ref={sentinelRef} style={{ height: 40 }} />
-                {loadingMore ? (
-                  <p style={{ textAlign: 'center', fontSize: 13, color: '#94a3b8', fontFamily: 'Manrope, sans-serif' }}>
-                    Carregando mais pastas...
-                  </p>
-                ) : null}
               </>
-            ) : null}
+            )}
           </>
-        )}
+        ) : null}
+
       </div>
     </>
   );
