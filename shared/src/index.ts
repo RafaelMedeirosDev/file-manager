@@ -13,3 +13,4 @@ export type { UserItem, UserOption } from './types/user';
 export type { FolderItem, FolderChild, FolderOption, FolderDetails } from './types/folder';
 export type { FileItem } from './types/file';
 export type { ExamItem } from './types/exam';
+export type { ExamRequestItem } from './types/exam-request';

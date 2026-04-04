@@ -1,31 +1,27 @@
 import { Transform } from 'class-transformer';
-import {
-  IsEnum,
-  IsInt,
-  IsOptional,
-  IsString,
-  Max,
-  MaxLength,
-  Min,
-} from 'class-validator';
-import { ExamCategory } from '@prisma/client';
+import { IsArray, IsISO8601, IsInt, IsOptional, IsUUID, Max, Min } from 'class-validator';
 
-export class ListExamsQueryDTO {
+export class ListExamRequestsQueryDTO {
   @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
-  name?: string;
+  @IsISO8601()
+  dateFrom?: string;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(50)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
-  code?: string;
+  @IsISO8601()
+  dateTo?: string;
 
   @IsOptional()
-  @IsEnum(ExamCategory)
-  category?: ExamCategory;
+  @IsUUID('4')
+  userId?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  @Transform(({ value }) => {
+    if (value === undefined || value === null) return undefined;
+    return Array.isArray(value) ? value : [value];
+  })
+  examIds?: string[];
 
   @IsOptional()
   @Transform(({ value }) => {

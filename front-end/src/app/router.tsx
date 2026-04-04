@@ -7,6 +7,8 @@ import { HomeRedirectPage } from '../pages/HomeRedirectPage';
 import { LoginPage } from '../pages/LoginPage';
 import { UsersPage } from '../pages/UsersPage';
 import { CreateUserPage } from '../pages/CreateUserPage';
+import { ExamRequestPage } from '../pages/ExamRequestPage';
+import { ExamRequestsPage } from '../pages/ExamRequestsPage';
 
 export const router = createBrowserRouter([
   {
@@ -33,8 +35,10 @@ export const router = createBrowserRouter([
       {
         element: <AppLayout />,
         children: [
-          { path: '/users',     element: <UsersPage />       },
-          { path: '/users/new', element: <CreateUserPage />  },
+          { path: '/users',            element: <UsersPage />       },
+          { path: '/users/new',        element: <CreateUserPage />  },
+          { path: '/exam-requests',     element: <ExamRequestsPage /> },
+          { path: '/exam-requests/new', element: <ExamRequestPage /> },
         ],
       },
     ],
