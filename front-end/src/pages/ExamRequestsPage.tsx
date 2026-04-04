@@ -773,16 +773,19 @@ type EditModalProps = {
   selectedExamIds: string[];
   submitting: boolean;
   error: string | null;
+  awaitingDownload: boolean;
   allExams: ExamItem[];
   onClose: () => void;
   onToggleExam: (id: string) => void;
   onSetIndication: (v: string) => void;
   onSubmit: () => void;
+  onDownload: () => void;
+  onSkipDownload: () => void;
 };
 
 function EditExamRequestModal({
-  isOpen, indication, selectedExamIds, submitting, error,
-  allExams, onClose, onToggleExam, onSetIndication, onSubmit,
+  isOpen, indication, selectedExamIds, submitting, error, awaitingDownload,
+  allExams, onClose, onToggleExam, onSetIndication, onSubmit, onDownload, onSkipDownload,
 }: EditModalProps) {
   if (!isOpen) return null;
 
@@ -791,7 +794,9 @@ function EditExamRequestModal({
       <div className="erm-dialog" role="dialog" aria-modal="true" aria-labelledby="erm-title">
         {/* Header */}
         <div className="erm-header">
-          <h2 className="erm-title" id="erm-title">Editar Solicitação</h2>
+          <h2 className="erm-title" id="erm-title">
+            {awaitingDownload ? 'Solicitação Atualizada' : 'Editar Solicitação'}
+          </h2>
           <button type="button" className="erm-close" onClick={onClose} aria-label="Fechar">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
@@ -801,57 +806,107 @@ function EditExamRequestModal({
           </button>
         </div>
 
-        {/* Body */}
-        <div className="erm-body">
-          {/* Indication */}
-          <div>
-            <label className="erm-field-label" htmlFor="erm-indication">Indicação</label>
-            <textarea
-              id="erm-indication"
-              className="erm-textarea"
-              placeholder="Descreva a indicação clínica (opcional)"
-              value={indication}
-              onChange={(e) => onSetIndication(e.target.value)}
-              maxLength={500}
-            />
-          </div>
-
-          {/* Exams */}
-          <div>
-            <label className="erm-field-label">Exames</label>
-            <div className="erm-exam-list">
-              {allExams.map((exam) => (
-                <label key={exam.id} className="erm-exam-item">
-                  <input
-                    type="checkbox"
-                    checked={selectedExamIds.includes(exam.id)}
-                    onChange={() => onToggleExam(exam.id)}
-                  />
-                  <span className="erm-exam-code">{exam.code}</span>
-                  <span className="erm-exam-name">{exam.name}</span>
-                </label>
-              ))}
+        {awaitingDownload ? (
+          /* ── Download prompt ── */
+          <>
+            <div className="erm-body" style={{ alignItems: 'center', textAlign: 'center', padding: '32px 22px' }}>
+              <div style={{
+                width: 52, height: 52, borderRadius: 14,
+                background: '#e8f3fb', display: 'flex', alignItems: 'center',
+                justifyContent: 'center', margin: '0 auto 16px',
+              }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                  stroke="#0078D4" strokeWidth="2" strokeLinecap="round"
+                  strokeLinejoin="round" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+              </div>
+              <p style={{
+                fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 700,
+                color: '#0d1e35', margin: '0 0 6px',
+              }}>
+                Deseja baixar a solicitação atualizada?
+              </p>
+              <p style={{
+                fontFamily: 'Manrope, sans-serif', fontSize: 12,
+                color: '#94a3b8', margin: 0,
+              }}>
+                As alterações foram salvas. Você pode baixar o PDF atualizado agora ou depois.
+              </p>
             </div>
-          </div>
+            <div className="erm-footer">
+              <button type="button" className="erm-btn-cancel" onClick={onSkipDownload}>
+                Não, obrigado
+              </button>
+              <button type="button" className="erm-btn-save" onClick={onDownload}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
+                  strokeLinejoin="round" aria-hidden="true"
+                  style={{ display: 'inline', marginRight: 5, verticalAlign: 'middle' }}>
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Baixar PDF
+              </button>
+            </div>
+          </>
+        ) : (
+          /* ── Edit form ── */
+          <>
+            <div className="erm-body">
+              {/* Indication */}
+              <div>
+                <label className="erm-field-label" htmlFor="erm-indication">Indicação</label>
+                <textarea
+                  id="erm-indication"
+                  className="erm-textarea"
+                  placeholder="Descreva a indicação clínica (opcional)"
+                  value={indication}
+                  onChange={(e) => onSetIndication(e.target.value)}
+                  maxLength={500}
+                />
+              </div>
 
-          {/* Error */}
-          {error && <p className="erm-error">{error}</p>}
-        </div>
+              {/* Exams */}
+              <div>
+                <label className="erm-field-label">Exames</label>
+                <div className="erm-exam-list">
+                  {allExams.map((exam) => (
+                    <label key={exam.id} className="erm-exam-item">
+                      <input
+                        type="checkbox"
+                        checked={selectedExamIds.includes(exam.id)}
+                        onChange={() => onToggleExam(exam.id)}
+                      />
+                      <span className="erm-exam-code">{exam.code}</span>
+                      <span className="erm-exam-name">{exam.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
 
-        {/* Footer */}
-        <div className="erm-footer">
-          <button type="button" className="erm-btn-cancel" onClick={onClose} disabled={submitting}>
-            Cancelar
-          </button>
-          <button
-            type="button"
-            className="erm-btn-save"
-            onClick={onSubmit}
-            disabled={submitting || selectedExamIds.length === 0}
-          >
-            {submitting ? 'Salvando…' : 'Salvar'}
-          </button>
-        </div>
+              {/* Error */}
+              {error && <p className="erm-error">{error}</p>}
+            </div>
+
+            <div className="erm-footer">
+              <button type="button" className="erm-btn-cancel" onClick={onClose} disabled={submitting}>
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="erm-btn-save"
+                onClick={onSubmit}
+                disabled={submitting || selectedExamIds.length === 0}
+              >
+                {submitting ? 'Salvando…' : 'Salvar'}
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -1107,11 +1162,14 @@ export function ExamRequestsPage() {
         selectedExamIds={edit.selectedExamIds}
         submitting={edit.submitting}
         error={edit.error}
+        awaitingDownload={edit.awaitingDownload}
         allExams={exams}
         onClose={edit.close}
         onToggleExam={edit.toggleExam}
         onSetIndication={edit.setIndication}
         onSubmit={edit.handleSubmit}
+        onDownload={edit.downloadAndClose}
+        onSkipDownload={edit.skipAndClose}
       />
     </>
   );
