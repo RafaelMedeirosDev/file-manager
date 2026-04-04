@@ -24,7 +24,7 @@ function avatarInitials(name: string): string {
 
 export function FoldersPage() {
   const { user } = useAuth();
-  const { selectedUserId, setSelectedUserId } = useSidebarContext();
+  const { selectedUserId, selectUser } = useSidebarContext();
   const [showCreate, setShowCreate] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const {
@@ -120,7 +120,7 @@ export function FoldersPage() {
                   <button
                     key={u.id}
                     type="button"
-                    onClick={() => setSelectedUserId(isSelected ? null : u.id)}
+                    onClick={() => selectUser(isSelected ? null : u.id)}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
