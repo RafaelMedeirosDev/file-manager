@@ -1,6 +1,11 @@
-import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  Logger,
+} from '@nestjs/common';
 import { UserRepository } from '../../repositories/UserRepository';
-import { ErrorMessagesEnum } from '../../shared/enums/ErrorMessagesEnum';
+import { ErrorMessagesEnum } from '@file-manager/shared';
 
 export type SoftDeleteUserInput = {
   id: string;
@@ -39,7 +44,6 @@ export class SoftDeleteUserUseCase {
     );
     this.logger.log('[SoftDeleteUserUseCase] Execute finished');
 
-
     return {
       id: deletedUser.id,
       name: deletedUser.name,
@@ -48,6 +52,3 @@ export class SoftDeleteUserUseCase {
     };
   }
 }
-
-
-
