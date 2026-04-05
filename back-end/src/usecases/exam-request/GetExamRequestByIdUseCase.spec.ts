@@ -3,7 +3,7 @@ import { NotFoundException } from '@nestjs/common';
 import { ExamCategory } from '@file-manager/shared';
 import { GetExamRequestByIdUseCase } from './GetExamRequestByIdUseCase';
 import { ExamRequestRepository } from '../../repositories/ExamRequestRepository';
-import { ErrorMessagesEnum } from '../../shared/enums/ErrorMessagesEnum';
+import { ErrorMessagesEnum } from '@file-manager/shared';
 
 function examRequestMock(overrides = {}) {
   return {

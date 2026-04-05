@@ -3,7 +3,7 @@ import { BadRequestException,
   NotFoundException, Logger } from '@nestjs/common';
 import { FileRepository } from '../../repositories/FileRepository';
 import { FolderRepository } from '../../repositories/FolderRepository';
-import { ErrorMessagesEnum } from '../../shared/enums/ErrorMessagesEnum';
+import { ErrorMessagesEnum } from '@file-manager/shared';
 
 export type UpdateFileInput = {
   id: string;

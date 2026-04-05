@@ -3,7 +3,7 @@ import { ForbiddenException,
   NotFoundException, Logger } from '@nestjs/common';
 import { ROLE } from '@prisma/client';
 import { FileRepository } from '../../repositories/FileRepository';
-import { ErrorMessagesEnum } from '../../shared/enums/ErrorMessagesEnum';
+import { ErrorMessagesEnum } from '@file-manager/shared';
 
 export type GetFileByIdInput = {
   id: string;

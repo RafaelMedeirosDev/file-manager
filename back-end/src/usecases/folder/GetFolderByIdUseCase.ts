@@ -4,7 +4,7 @@ import { ForbiddenException,
 import { ROLE } from '@prisma/client';
 import { FileRepository } from '../../repositories/FileRepository';
 import { FolderRepository } from '../../repositories/FolderRepository';
-import { ErrorMessagesEnum } from '../../shared/enums/ErrorMessagesEnum';
+import { ErrorMessagesEnum } from '@file-manager/shared';
 
 export type GetFolderByIdInput = {
   id: string;

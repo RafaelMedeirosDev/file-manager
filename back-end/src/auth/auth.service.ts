@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { compare } from 'bcrypt';
 import { LoginDTO } from '../shared/dto/auth/LoginDTO';
-import { ErrorMessagesEnum } from '../shared/enums/ErrorMessagesEnum';
+import { ErrorMessagesEnum } from '@file-manager/shared';
 import { UserRepository } from '../repositories/UserRepository';
 
 @Injectable()

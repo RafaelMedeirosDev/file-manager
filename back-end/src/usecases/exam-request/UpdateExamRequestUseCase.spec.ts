@@ -4,7 +4,7 @@ import { ExamCategory } from '@file-manager/shared';
 import { UpdateExamRequestUseCase } from './UpdateExamRequestUseCase';
 import { ExamRequestRepository } from '../../repositories/ExamRequestRepository';
 import { ExamRepository } from '../../repositories/ExamRepository';
-import { ErrorMessagesEnum } from '../../shared/enums/ErrorMessagesEnum';
+import { ErrorMessagesEnum } from '@file-manager/shared';
 
 function examMock(overrides = {}) {
   return {

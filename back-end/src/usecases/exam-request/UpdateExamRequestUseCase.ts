@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, Logger, NotFoundException } from '@nes
 import { ExamCategory } from '@file-manager/shared';
 import { ExamRepository } from '../../repositories/ExamRepository';
 import { ExamRequestRepository } from '../../repositories/ExamRequestRepository';
-import { ErrorMessagesEnum } from '../../shared/enums/ErrorMessagesEnum';
+import { ErrorMessagesEnum } from '@file-manager/shared';
 
 export type UpdateExamRequestInput = {
   id: string;

@@ -4,7 +4,7 @@ import { BadRequestException,
   UnauthorizedException, Logger } from '@nestjs/common';
 import { compare, hash } from 'bcrypt';
 import { UserRepository } from '../../repositories/UserRepository';
-import { ErrorMessagesEnum } from '../../shared/enums/ErrorMessagesEnum';
+import { ErrorMessagesEnum } from '@file-manager/shared';
 
 export type ChangeOwnPasswordInput = {
   userId: string;
