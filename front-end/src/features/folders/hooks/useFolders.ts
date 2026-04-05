@@ -64,7 +64,7 @@ type UseFoldersReturn = {
 
 export function useFolders(): UseFoldersReturn {
   const { user } = useAuth();
-  const { refreshSidebar, selectedUserId, setSelectedUserId } = useSidebarContext();
+  const { refreshSidebar, selectedUserId, setSelectedUserId, selectUser } = useSidebarContext();
 
   const [folders, setFolders] = useState<FolderItem[]>([]);
   const [usersOptions, setUsersOptions] = useState<UserOption[]>([]);
@@ -112,6 +112,14 @@ export function useFolders(): UseFoldersReturn {
     const exists = visibleFolders.some((f) => f.id === selectedDeleteFolderId);
     if (!exists) setSelectedDeleteFolderId('');
   }, [selectedDeleteFolderId, visibleFolders]);
+
+  // ── Auto-seleciona o próprio usuário quando role === 'USER' ──
+
+  useEffect(() => {
+    if (user?.role === 'USER' && user.id) {
+      selectUser(user.id);
+    }
+  }, [user?.role, user?.id, selectUser]);
 
   // ── Carga de pastas (depende de selectedUserId) ──────────
 
