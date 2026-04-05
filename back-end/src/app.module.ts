@@ -27,6 +27,7 @@ import { SoftDeleteFileUseCase } from './usecases/file/SoftDeleteFileUseCase';
 import { GetFileByIdUseCase } from './usecases/file/GetFileByIdUseCase';
 import { DownloadFileUseCase } from './usecases/file/DownloadFileUseCase';
 import { UploadFileUseCase } from './usecases/file/UploadFileUseCase';
+import { BulkUploadFilesUseCase } from './usecases/file/BulkUploadFilesUseCase';
 import { RolesGuard } from './auth/roles.guard';
 import { ExamController } from './controllers/ExamController';
 import { ExamRepository } from './repositories/ExamRepository';
@@ -74,6 +75,7 @@ import { UpdateExamRequestUseCase } from './usecases/exam-request/UpdateExamRequ
     ListExamRequestsUseCase,
     UpdateExamRequestUseCase,
     UploadFileUseCase,
+    BulkUploadFilesUseCase,
   ],
 })
 export class AppModule {}

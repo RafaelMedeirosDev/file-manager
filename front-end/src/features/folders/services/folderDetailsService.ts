@@ -15,6 +15,18 @@ export type UploadFilePayload = {
   folderId: string;
 };
 
+export type BulkUploadResult = {
+  name: string;
+  extension: string;
+  id?: string;
+  url?: string;
+  error?: string;
+};
+
+export type BulkUploadResponse = {
+  results: BulkUploadResult[];
+};
+
 // ── Service ──────────────────────────────────────────────
 
 export const folderDetailsService = {
@@ -43,6 +55,15 @@ export const folderDetailsService = {
     form.append('folderId', payload.folderId);
     return api
       .post<FileItem>('/files/upload', form)
+      .then((r) => r.data);
+  },
+
+  bulkUploadFiles(files: File[], folderId: string): Promise<BulkUploadResponse> {
+    const form = new FormData();
+    files.forEach((f) => form.append('files', f));
+    form.append('folderId', folderId);
+    return api
+      .post<BulkUploadResponse>('/files/bulk-upload', form)
       .then((r) => r.data);
   },
 };

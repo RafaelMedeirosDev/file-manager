@@ -277,26 +277,251 @@ const FD_STYLES = `
 .fd-btn:active:not(:disabled) { transform: scale(0.97); }
 .fd-btn:disabled { opacity: 0.5; cursor: default; }
 
+/* ── Drop zone ───────────────────────────────── */
+@keyframes fd-drop-pulse {
+  0%, 100% { border-color: #0078D4; }
+  50%       { border-color: #60b3f0; }
+}
+
+.fd-drop-zone {
+  margin: 12px 20px;
+  border: 2px dashed #d0dce8;
+  border-radius: 14px;
+  padding: 28px 20px 22px;
+  background: #fafbfd;
+  transition: border-color 0.18s, background 0.18s, transform 0.15s;
+  cursor: pointer;
+  position: relative;
+  outline: none;
+}
+
+.fd-drop-zone:focus-visible {
+  box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.18);
+}
+
+.fd-drop-zone.drag-over {
+  border-color: #0078D4;
+  background: #f0f7fe;
+  transform: scale(1.005);
+  animation: fd-drop-pulse 1.2s infinite;
+}
+
+.fd-drop-zone-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.fd-drop-icon {
+  width: 44px;
+  height: 44px;
+  background: #e8f3fb;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0078D4;
+  transition: background 0.15s, transform 0.15s;
+  margin-bottom: 2px;
+}
+
+.fd-drop-zone.drag-over .fd-drop-icon {
+  background: #0078D4;
+  color: #fff;
+  transform: scale(1.08) translateY(-2px);
+}
+
+.fd-drop-title {
+  font-family: 'DM Sans', 'Manrope', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0d1e35;
+  margin: 0;
+}
+
+.fd-drop-subtitle {
+  font-family: 'DM Sans', 'Manrope', sans-serif;
+  font-size: 11px;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.fd-drop-zone.drag-over .fd-drop-title { color: #0078D4; }
+
+/* ── Upload queue ────────────────────────────── */
+.fd-queue {
+  margin: 0 20px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fd-queue-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.fd-queue-label {
+  font-family: 'DM Sans', 'Manrope', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+@keyframes fd-item-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fd-queue-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border: 1px solid #e8f0f8;
+  border-radius: 9px;
+  padding: 9px 12px;
+  animation: fd-item-in 0.18s cubic-bezier(0.22,1,0.36,1) both;
+}
+
+.fd-queue-item.success { border-color: #bbf7d0; background: #f0fdf4; }
+.fd-queue-item.error   { border-color: #fecdd3; background: #fff1f2; }
+
+.fd-queue-file-icon {
+  width: 28px;
+  height: 28px;
+  background: #e8f3fb;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0078D4;
+  flex-shrink: 0;
+}
+
+.fd-queue-file-icon.success { background: #dcfce7; color: #16a34a; }
+.fd-queue-file-icon.error   { background: #ffe4e6; color: #e11d48; }
+
+.fd-queue-name {
+  font-family: 'DM Sans', 'Manrope', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: #0d1e35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+.fd-queue-size {
+  font-family: 'DM Sans', 'Manrope', sans-serif;
+  font-size: 10px;
+  color: #94a3b8;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.fd-queue-status {
+  font-family: 'DM Sans', 'Manrope', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.fd-queue-status.uploading { color: #0078D4; }
+.fd-queue-status.success   { color: #16a34a; }
+.fd-queue-status.error     { color: #e11d48; }
+
+.fd-queue-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #cbd5e1;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+  transition: color 0.12s, background 0.12s;
+  flex-shrink: 0;
+}
+
+.fd-queue-remove:hover { color: #e11d48; background: #fff1f2; }
+
+.fd-queue-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.fd-clear-btn {
+  background: none;
+  border: none;
+  font-family: 'DM Sans', 'Manrope', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 5px;
+  transition: color 0.12s, background 0.12s;
+}
+
+.fd-clear-btn:hover { color: #e11d48; background: #fff1f2; }
+
 @media (max-width: 680px) {
   .fd-action-panel { grid-template-columns: 1fr; }
   .fd-search-input:focus { width: 240px; }
+  .fd-drop-zone { margin: 10px 12px; }
+  .fd-queue { margin: 0 12px 12px; }
 }
 `;
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
 
 export function FolderDetailsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [showActions, setShowActions] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [dragOver, setDragOver] = useState(false);
+  const dropInputRef = useRef<HTMLInputElement>(null);
   const {
     folder, entries, loading, error, actionError,
-    creatingFolder, downloadingFileId, uploadingFile,
+    creatingFolder, downloadingFileId,
     newFolderName, setNewFolderName,
     searchTerm, setSearchTerm,
-    uploadFile, setUploadFile,
-    uploadFileName, setUploadFileName,
-    handleCreateSubFolder, handleDownload, handleUpload,
+    uploadQueue, addFilesToQueue, removeFromQueue, clearQueue,
+    handleBulkUpload, uploading,
+    handleCreateSubFolder, handleDownload,
   } = useFolderDetails();
+
+  const pendingCount = uploadQueue.filter((i) => i.status === 'pending').length;
+  const hasQueue = uploadQueue.length > 0;
+
+  function onDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDragOver(false);
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length) addFilesToQueue(files);
+  }
+
+  function onPickFiles(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length) addFilesToQueue(files);
+    e.target.value = '';
+  }
 
   const isAdmin = user?.role === 'ADMIN';
 
@@ -395,9 +620,9 @@ export function FolderDetailsPage() {
         </span>
       </div>
 
-      {/* Admin actions panel */}
+      {/* Admin actions panel — subfolder only */}
       {isAdmin && showActions && (
-        <div className="fd-action-panel">
+        <div className="fd-action-panel" style={{ gridTemplateColumns: '1fr' }}>
           {actionError && <p className="fd-error-bar">{actionError}</p>}
 
           {/* Nova Subpasta */}
@@ -421,9 +646,7 @@ export function FolderDetailsPage() {
                 required
               />
               <button type="submit" className="fd-btn" disabled={creatingFolder}>
-                {creatingFolder ? (
-                  'Criando…'
-                ) : (
+                {creatingFolder ? 'Criando…' : (
                   <>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                       strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -432,63 +655,6 @@ export function FolderDetailsPage() {
                     Criar
                   </>
                 )}
-              </button>
-            </form>
-          </div>
-
-          {/* Enviar Arquivo */}
-          <div className="fd-card">
-            <div className="fd-card-header">
-              <span className="fd-card-icon">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                  strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="17 8 12 3 7 8" />
-                  <line x1="12" y1="3" x2="12" y2="15" />
-                </svg>
-              </span>
-              <p className="fd-card-title">Enviar Arquivo</p>
-            </div>
-            <form className="fd-card-body" onSubmit={handleUpload}>
-              <div
-                className={`fd-file-zone${uploadFile ? ' has-file' : ''}`}
-                onClick={() => fileInputRef.current?.click()}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => e.key === 'Enter' && fileInputRef.current?.click()}
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0] ?? null;
-                    setUploadFile(file);
-                    if (file) setUploadFileName(file.name.replace(/\.[^.]+$/, ''));
-                  }}
-                  required
-                />
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                  strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                  style={{ color: uploadFile ? '#0078D4' : '#94a3b8', flexShrink: 0 }} aria-hidden="true">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="17 8 12 3 7 8" />
-                  <line x1="12" y1="3" x2="12" y2="15" />
-                </svg>
-                {uploadFile ? (
-                  <span className="fd-file-name">{uploadFile.name}</span>
-                ) : (
-                  <span className="fd-file-label">Escolher arquivo</span>
-                )}
-              </div>
-              <input
-                className="fd-card-input"
-                placeholder="Nome do arquivo"
-                value={uploadFileName}
-                onChange={(e) => setUploadFileName(e.target.value)}
-                required
-              />
-              <button type="submit" className="fd-btn" disabled={uploadingFile || !uploadFile}>
-                {uploadingFile ? 'Enviando…' : 'Upload'}
               </button>
             </form>
           </div>
@@ -545,6 +711,130 @@ export function FolderDetailsPage() {
           </ul>
         </div>
       </div>
+
+      {/* ── Drop zone (ADMIN only) ───────────────────────── */}
+      {isAdmin && (
+        <>
+          <div
+            className={`fd-drop-zone${dragOver ? ' drag-over' : ''}`}
+            role="button"
+            tabIndex={0}
+            aria-label="Área para soltar arquivos"
+            onClick={() => dropInputRef.current?.click()}
+            onKeyDown={(e) => e.key === 'Enter' && dropInputRef.current?.click()}
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={onDrop}
+          >
+            <input
+              ref={dropInputRef}
+              type="file"
+              multiple
+              style={{ display: 'none' }}
+              onChange={onPickFiles}
+            />
+            <div className="fd-drop-zone-inner">
+              <div className="fd-drop-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+              </div>
+              <p className="fd-drop-title">
+                {dragOver ? 'Solte os arquivos aqui' : 'Arraste arquivos ou clique para selecionar'}
+              </p>
+              <p className="fd-drop-subtitle">Múltiplos arquivos permitidos · Máximo 20 por vez</p>
+            </div>
+          </div>
+
+          {hasQueue && (
+            <div className="fd-queue">
+              <div className="fd-queue-header">
+                <span className="fd-queue-label">{uploadQueue.length} arquivo{uploadQueue.length !== 1 ? 's' : ''} na fila</span>
+              </div>
+
+              {uploadQueue.map((item) => (
+                <div key={item.localId} className={`fd-queue-item ${item.status}`}>
+                  <div className={`fd-queue-file-icon ${item.status}`}>
+                    {item.status === 'success' ? (
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    ) : item.status === 'error' ? (
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M18 6L6 18M6 6l12 12" />
+                      </svg>
+                    ) : (
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+                        <polyline points="13 2 13 9 20 9" />
+                      </svg>
+                    )}
+                  </div>
+
+                  <span className="fd-queue-name">{item.file.name}</span>
+                  <span className="fd-queue-size">{formatFileSize(item.file.size)}</span>
+
+                  {item.status === 'uploading' && (
+                    <span className="fd-queue-status uploading">Enviando…</span>
+                  )}
+                  {item.status === 'success' && (
+                    <span className="fd-queue-status success">Enviado</span>
+                  )}
+                  {item.status === 'error' && (
+                    <span className="fd-queue-status error" title={item.error}>Erro</span>
+                  )}
+
+                  {(item.status === 'pending' || item.status === 'error') && (
+                    <button
+                      type="button"
+                      className="fd-queue-remove"
+                      onClick={() => removeFromQueue(item.localId)}
+                      aria-label={`Remover ${item.file.name}`}
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M18 6L6 18M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              ))}
+
+              <div className="fd-queue-footer">
+                <button type="button" className="fd-clear-btn" onClick={clearQueue} disabled={uploading}>
+                  Limpar fila
+                </button>
+                {pendingCount > 0 && (
+                  <button
+                    type="button"
+                    className="fd-btn"
+                    onClick={handleBulkUpload}
+                    disabled={uploading}
+                  >
+                    {uploading ? 'Enviando…' : (
+                      <>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                          strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                          <polyline points="17 8 12 3 7 8" />
+                          <line x1="12" y1="3" x2="12" y2="15" />
+                        </svg>
+                        Enviar {pendingCount} arquivo{pendingCount !== 1 ? 's' : ''}
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </>
   );
 }

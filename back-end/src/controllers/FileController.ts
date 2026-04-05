@@ -12,15 +12,17 @@ import {
   Res,
   StreamableFile,
   UploadedFile,
+  UploadedFiles,
   UseGuards,
   UseInterceptors,
   ValidationPipe,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import type { Request, Response } from 'express';
 import { ROLE } from '@prisma/client';
 import { CreateFileDTO } from '../shared/dto/file/CreateFileDTO';
 import { UploadFileDTO } from '../shared/dto/file/UploadFileDTO';
+import { BulkUploadFilesDTO } from '../shared/dto/file/BulkUploadFilesDTO';
 import { ListFilesQueryDTO } from '../shared/dto/file/ListFilesQueryDTO';
 import {
   UpdateFileDTO,
@@ -47,6 +49,10 @@ import {
   UploadFileUseCase,
 } from '../usecases/file/UploadFileUseCase';
 import {
+  BulkUploadFilesOutput,
+  BulkUploadFilesUseCase,
+} from '../usecases/file/BulkUploadFilesUseCase';
+import {
   SoftDeleteFileOutput,
   SoftDeleteFileUseCase,
 } from '../usecases/file/SoftDeleteFileUseCase';
@@ -67,6 +73,7 @@ export class FileController {
     private readonly updateFileUseCase: UpdateFileUseCase,
     private readonly softDeleteFileUseCase: SoftDeleteFileUseCase,
     private readonly uploadFileUseCase: UploadFileUseCase,
+    private readonly bulkUploadFilesUseCase: BulkUploadFilesUseCase,
   ) {}
 
   @Post('upload')
@@ -94,6 +101,34 @@ export class FileController {
       folderId: body.folderId,
       extension,
       mimeType: file.mimetype,
+    });
+  }
+
+  @Post('bulk-upload')
+  @Roles(ROLE.USER, ROLE.ADMIN)
+  @UseInterceptors(FilesInterceptor('files', 20))
+  async bulkUpload(
+    @UploadedFiles() files: Express.Multer.File[],
+    @Body(
+      new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        forbidNonWhitelisted: true,
+      }),
+    )
+    body: BulkUploadFilesDTO,
+    @Req() req: Request & { user: JwtPayload },
+  ): Promise<BulkUploadFilesOutput> {
+    return this.bulkUploadFilesUseCase.execute({
+      files: files.map((f) => ({
+        buffer: f.buffer,
+        name: f.originalname.replace(/\.[^.]+$/, ''),
+        extension: f.originalname.split('.').pop()?.toLowerCase() ?? '',
+        mimeType: f.mimetype,
+      })),
+      folderId: body.folderId,
+      requesterId: req.user.sub,
+      requesterRole: req.user.role,
     });
   }
 

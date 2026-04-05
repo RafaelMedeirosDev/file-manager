@@ -6,6 +6,13 @@ import type { ExplorerEntry, FolderDetails } from '../../../shared/types';
 import { folderDetailsService } from '../services/folderDetailsService';
 import { useSidebarContext } from '../contexts/SidebarContext';
 
+export type UploadQueueItem = {
+  localId: string;
+  file: File;
+  status: 'pending' | 'uploading' | 'success' | 'error';
+  error?: string;
+};
+
 // ── Types internos do hook ───────────────────────────────
 
 type UseFolderDetailsReturn = {
@@ -19,7 +26,6 @@ type UseFolderDetailsReturn = {
   actionError: string | null;
   creatingFolder: boolean;
   downloadingFileId: string | null;
-  uploadingFile: boolean;
 
   // Formulário de criação de subpasta
   newFolderName: string;
@@ -29,16 +35,17 @@ type UseFolderDetailsReturn = {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
 
-  // Formulário de upload
-  uploadFile: File | null;
-  setUploadFile: (file: File | null) => void;
-  uploadFileName: string;
-  setUploadFileName: (name: string) => void;
+  // Upload queue
+  uploadQueue: UploadQueueItem[];
+  addFilesToQueue: (files: File[]) => void;
+  removeFromQueue: (localId: string) => void;
+  clearQueue: () => void;
+  handleBulkUpload: () => Promise<void>;
+  uploading: boolean;
 
   // Ações
   handleCreateSubFolder: (event: React.FormEvent<HTMLFormElement>) => Promise<void>;
   handleDownload: (fileId: string, fileName: string, extension: string) => Promise<void>;
-  handleUpload: (event: React.FormEvent<HTMLFormElement>) => Promise<void>;
 };
 
 // ── Hook ────────────────────────────────────────────────
@@ -56,9 +63,8 @@ export function useFolderDetails(): UseFolderDetailsReturn {
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [uploadFile, setUploadFile] = useState<File | null>(null);
-  const [uploadFileName, setUploadFileName] = useState('');
-  const [uploadingFile, setUploadingFile] = useState(false);
+  const [uploadQueue, setUploadQueue] = useState<UploadQueueItem[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   // ── Fetch da pasta ───────────────────────────────────
 
@@ -142,26 +148,69 @@ export function useFolderDetails(): UseFolderDetailsReturn {
     }
   }
 
-  async function handleUpload(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!id || !uploadFile) return;
+  const addFilesToQueue = useCallback((files: File[]) => {
+    setUploadQueue((prev) => [
+      ...prev,
+      ...files.map((file) => ({
+        localId: `${file.name}-${file.size}-${Date.now()}-${Math.random()}`,
+        file,
+        status: 'pending' as const,
+      })),
+    ]);
+  }, []);
 
+  const removeFromQueue = useCallback((localId: string) => {
+    setUploadQueue((prev) => prev.filter((item) => item.localId !== localId));
+  }, []);
+
+  const clearQueue = useCallback(() => {
+    setUploadQueue([]);
+  }, []);
+
+  async function handleBulkUpload() {
+    if (!id) return;
+    const pending = uploadQueue.filter((item) => item.status === 'pending');
+    if (pending.length === 0) return;
+
+    setUploading(true);
     setActionError(null);
-    setUploadingFile(true);
+
+    setUploadQueue((prev) =>
+      prev.map((item) =>
+        item.status === 'pending' ? { ...item, status: 'uploading' } : item,
+      ),
+    );
 
     try {
-      await folderDetailsService.uploadFile({
-        file: uploadFile,
-        name: uploadFileName,
-        folderId: id,
-      });
-      setUploadFile(null);
-      setUploadFileName('');
+      const res = await folderDetailsService.bulkUploadFiles(
+        pending.map((item) => item.file),
+        id,
+      );
+
+      setUploadQueue((prev) =>
+        prev.map((item) => {
+          const result = res.results.find(
+            (r) => r.name === item.file.name.replace(/\.[^.]+$/, ''),
+          );
+          if (!result) return item;
+          return result.error
+            ? { ...item, status: 'error', error: result.error }
+            : { ...item, status: 'success' };
+        }),
+      );
+
       await fetchFolder();
     } catch (err) {
-      setActionError(getApiErrorMessage(err, 'Não foi possível fazer o upload do arquivo.'));
+      setUploadQueue((prev) =>
+        prev.map((item) =>
+          item.status === 'uploading'
+            ? { ...item, status: 'error', error: 'Falha no envio' }
+            : item,
+        ),
+      );
+      setActionError(getApiErrorMessage(err, 'Não foi possível fazer o upload dos arquivos.'));
     } finally {
-      setUploadingFile(false);
+      setUploading(false);
     }
   }
 
@@ -196,17 +245,17 @@ export function useFolderDetails(): UseFolderDetailsReturn {
     actionError,
     creatingFolder,
     downloadingFileId,
-    uploadingFile,
     newFolderName,
     setNewFolderName,
     searchTerm,
     setSearchTerm,
-    uploadFile,
-    setUploadFile,
-    uploadFileName,
-    setUploadFileName,
+    uploadQueue,
+    addFilesToQueue,
+    removeFromQueue,
+    clearQueue,
+    handleBulkUpload,
+    uploading,
     handleCreateSubFolder,
     handleDownload,
-    handleUpload,
   };
 }
