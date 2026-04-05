@@ -26,6 +26,28 @@ function formatDate(iso: string): string {
   });
 }
 
+function formatDateTime(iso: string): string {
+  return new Date(iso).toLocaleString('pt-BR', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
+}
+
+function truncate(text: string, max: number): string {
+  return text.length > max ? text.slice(0, max) + '…' : text;
+}
+
+const EXAM_CATEGORY_LABEL: Record<string, string> = {
+  THROMBOPHILIA: 'Trombofilia',
+  MICROBIOLOGY: 'Microbiologia',
+  ENDOCRINE_METABOLIC: 'Endócrino / Metabólico',
+  IMMUNOLOGY: 'Imunologia',
+  OBSTETRIC_MARKERS: 'Marcadores Obstétricos',
+  IMAGING: 'Imagem',
+  BIOCHEMISTRY: 'Bioquímica',
+  HEMATOLOGY: 'Hematologia',
+};
+
 // ── Inline styles ─────────────────────────────────────────────────────────────
 
 const STYLES = `
@@ -411,17 +433,116 @@ const STYLES = `
   font-family: 'Manrope', sans-serif;
   font-size: 12px;
   color: #475569;
+  white-space: nowrap;
   overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  line-height: 1.5;
+  text-overflow: ellipsis;
 }
 
 .erl-cell-indication.empty {
   color: #cbd5e1;
   font-style: italic;
 }
+
+/* ── Exam overflow badge ─────────────────────── */
+.erl-exam-badge-more {
+  display: inline-flex;
+  align-items: center;
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
+  padding: 2px 7px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ── Expanded panel ──────────────────────────── */
+@keyframes erl-expand-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.erl-expand-panel {
+  background: #f7fafd;
+  border-bottom: 1px solid #e0e8f0;
+  border-top: 1px solid #e8f0f7;
+  padding: 18px 24px 20px;
+  animation: erl-expand-in 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
+  display: grid;
+  grid-template-columns: 220px 1fr 1fr;
+  gap: 20px;
+}
+
+.erl-expand-section-label {
+  font-family: 'Manrope', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin: 0 0 8px 0;
+}
+
+.erl-expand-patient-name {
+  font-family: 'Manrope', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0d1e35;
+  margin: 0 0 3px 0;
+}
+
+.erl-expand-patient-email {
+  font-family: 'Manrope', sans-serif;
+  font-size: 11px;
+  color: #64748b;
+  margin: 0 0 6px 0;
+}
+
+.erl-expand-date {
+  font-family: 'Manrope', sans-serif;
+  font-size: 11px;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.erl-expand-exams {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.erl-expand-exam-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.erl-expand-exam-name {
+  font-family: 'Manrope', sans-serif;
+  font-size: 12px;
+  color: #0d1e35;
+  font-weight: 500;
+}
+
+.erl-expand-indication {
+  font-family: 'Manrope', sans-serif;
+  font-size: 12px;
+  color: #475569;
+  line-height: 1.6;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.erl-expand-indication.empty {
+  color: #cbd5e1;
+  font-style: italic;
+}
+
+/* Row is clickable when expander is present */
+.erl-row.expandable { cursor: pointer; }
 
 /* ── Cell: date ──────────────────────────────── */
 .erl-cell-date {
@@ -773,16 +894,19 @@ type EditModalProps = {
   selectedExamIds: string[];
   submitting: boolean;
   error: string | null;
+  awaitingDownload: boolean;
   allExams: ExamItem[];
   onClose: () => void;
   onToggleExam: (id: string) => void;
   onSetIndication: (v: string) => void;
   onSubmit: () => void;
+  onDownload: () => void;
+  onSkipDownload: () => void;
 };
 
 function EditExamRequestModal({
-  isOpen, indication, selectedExamIds, submitting, error,
-  allExams, onClose, onToggleExam, onSetIndication, onSubmit,
+  isOpen, indication, selectedExamIds, submitting, error, awaitingDownload,
+  allExams, onClose, onToggleExam, onSetIndication, onSubmit, onDownload, onSkipDownload,
 }: EditModalProps) {
   if (!isOpen) return null;
 
@@ -791,7 +915,9 @@ function EditExamRequestModal({
       <div className="erm-dialog" role="dialog" aria-modal="true" aria-labelledby="erm-title">
         {/* Header */}
         <div className="erm-header">
-          <h2 className="erm-title" id="erm-title">Editar Solicitação</h2>
+          <h2 className="erm-title" id="erm-title">
+            {awaitingDownload ? 'Solicitação Atualizada' : 'Editar Solicitação'}
+          </h2>
           <button type="button" className="erm-close" onClick={onClose} aria-label="Fechar">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
@@ -801,57 +927,107 @@ function EditExamRequestModal({
           </button>
         </div>
 
-        {/* Body */}
-        <div className="erm-body">
-          {/* Indication */}
-          <div>
-            <label className="erm-field-label" htmlFor="erm-indication">Indicação</label>
-            <textarea
-              id="erm-indication"
-              className="erm-textarea"
-              placeholder="Descreva a indicação clínica (opcional)"
-              value={indication}
-              onChange={(e) => onSetIndication(e.target.value)}
-              maxLength={500}
-            />
-          </div>
-
-          {/* Exams */}
-          <div>
-            <label className="erm-field-label">Exames</label>
-            <div className="erm-exam-list">
-              {allExams.map((exam) => (
-                <label key={exam.id} className="erm-exam-item">
-                  <input
-                    type="checkbox"
-                    checked={selectedExamIds.includes(exam.id)}
-                    onChange={() => onToggleExam(exam.id)}
-                  />
-                  <span className="erm-exam-code">{exam.code}</span>
-                  <span className="erm-exam-name">{exam.name}</span>
-                </label>
-              ))}
+        {awaitingDownload ? (
+          /* ── Download prompt ── */
+          <>
+            <div className="erm-body" style={{ alignItems: 'center', textAlign: 'center', padding: '32px 22px' }}>
+              <div style={{
+                width: 52, height: 52, borderRadius: 14,
+                background: '#e8f3fb', display: 'flex', alignItems: 'center',
+                justifyContent: 'center', margin: '0 auto 16px',
+              }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                  stroke="#0078D4" strokeWidth="2" strokeLinecap="round"
+                  strokeLinejoin="round" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+              </div>
+              <p style={{
+                fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 700,
+                color: '#0d1e35', margin: '0 0 6px',
+              }}>
+                Deseja baixar a solicitação atualizada?
+              </p>
+              <p style={{
+                fontFamily: 'Manrope, sans-serif', fontSize: 12,
+                color: '#94a3b8', margin: 0,
+              }}>
+                As alterações foram salvas. Você pode baixar o PDF atualizado agora ou depois.
+              </p>
             </div>
-          </div>
+            <div className="erm-footer">
+              <button type="button" className="erm-btn-cancel" onClick={onSkipDownload}>
+                Não, obrigado
+              </button>
+              <button type="button" className="erm-btn-save" onClick={onDownload}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
+                  strokeLinejoin="round" aria-hidden="true"
+                  style={{ display: 'inline', marginRight: 5, verticalAlign: 'middle' }}>
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Baixar PDF
+              </button>
+            </div>
+          </>
+        ) : (
+          /* ── Edit form ── */
+          <>
+            <div className="erm-body">
+              {/* Indication */}
+              <div>
+                <label className="erm-field-label" htmlFor="erm-indication">Indicação</label>
+                <textarea
+                  id="erm-indication"
+                  className="erm-textarea"
+                  placeholder="Descreva a indicação clínica (opcional)"
+                  value={indication}
+                  onChange={(e) => onSetIndication(e.target.value)}
+                  maxLength={500}
+                />
+              </div>
 
-          {/* Error */}
-          {error && <p className="erm-error">{error}</p>}
-        </div>
+              {/* Exams */}
+              <div>
+                <label className="erm-field-label">Exames</label>
+                <div className="erm-exam-list">
+                  {allExams.map((exam) => (
+                    <label key={exam.id} className="erm-exam-item">
+                      <input
+                        type="checkbox"
+                        checked={selectedExamIds.includes(exam.id)}
+                        onChange={() => onToggleExam(exam.id)}
+                      />
+                      <span className="erm-exam-code">{exam.code}</span>
+                      <span className="erm-exam-name">{exam.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
 
-        {/* Footer */}
-        <div className="erm-footer">
-          <button type="button" className="erm-btn-cancel" onClick={onClose} disabled={submitting}>
-            Cancelar
-          </button>
-          <button
-            type="button"
-            className="erm-btn-save"
-            onClick={onSubmit}
-            disabled={submitting || selectedExamIds.length === 0}
-          >
-            {submitting ? 'Salvando…' : 'Salvar'}
-          </button>
-        </div>
+              {/* Error */}
+              {error && <p className="erm-error">{error}</p>}
+            </div>
+
+            <div className="erm-footer">
+              <button type="button" className="erm-btn-cancel" onClick={onClose} disabled={submitting}>
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="erm-btn-save"
+                onClick={onSubmit}
+                disabled={submitting || selectedExamIds.length === 0}
+              >
+                {submitting ? 'Salvando…' : 'Salvar'}
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -891,6 +1067,11 @@ export function ExamRequestsPage() {
 
   const [examDropOpen, setExamDropOpen] = useState(false);
   const examDropRef = useRef<HTMLDivElement>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  function toggleExpand(id: string) {
+    setExpandedId((prev) => (prev === id ? null : id));
+  }
 
   const hasFilters = dateFrom || dateTo || userId || selectedExamIds.length > 0;
 
@@ -1049,52 +1230,121 @@ export function ExamRequestsPage() {
               </p>
             </div>
           ) : (
-            requests.map((req) => (
-              <div key={req.id} className="erl-row">
-                {/* Patient */}
-                <div className="erl-cell-patient">
+            requests.map((req) => {
+              const isExpanded = expandedId === req.id;
+              const visibleExams = req.exams.slice(0, 6);
+              const hiddenCount = req.exams.length - 6;
+
+              return (
+                <div key={req.id}>
+                  {/* ── Main row ── */}
                   <div
-                    className={`users-avatar ${getAvatarColor(req.user.name)}`}
-                    aria-hidden="true"
-                    style={{ flexShrink: 0 }}
+                    className="erl-row expandable"
+                    onClick={() => toggleExpand(req.id)}
+                    aria-expanded={isExpanded}
                   >
-                    {getInitials(req.user.name)}
+                    {/* Patient */}
+                    <div className="erl-cell-patient">
+                      <div
+                        className={`users-avatar ${getAvatarColor(req.user.name)}`}
+                        aria-hidden="true"
+                        style={{ flexShrink: 0 }}
+                      >
+                        {getInitials(req.user.name)}
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <p className="erl-patient-name">{req.user.name}</p>
+                        <p className="erl-patient-email">{req.user.email}</p>
+                      </div>
+                    </div>
+
+                    {/* Exams — max 6 */}
+                    <div className="erl-cell-exams">
+                      {visibleExams.map((exam) => (
+                        <span key={exam.id} className="erl-exam-badge">{exam.code}</span>
+                      ))}
+                      {hiddenCount > 0 && (
+                        <span className="erl-exam-badge-more">+{hiddenCount}</span>
+                      )}
+                    </div>
+
+                    {/* Indication — max 25 chars */}
+                    <div className={`erl-cell-indication${!req.indication ? ' empty' : ''}`}>
+                      {req.indication ? truncate(req.indication, 25) : 'Sem indicação'}
+                    </div>
+
+                    {/* Date */}
+                    <div className="erl-cell-date">{formatDate(req.createdAt)}</div>
+
+                    {/* Actions */}
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      <button
+                        type="button"
+                        className="erl-btn-edit"
+                        onClick={(e) => { e.stopPropagation(); edit.open(req); }}
+                        title="Editar solicitação"
+                      >
+                        <EditIcon />
+                        Editar
+                      </button>
+                    </div>
                   </div>
-                  <div style={{ minWidth: 0 }}>
-                    <p className="erl-patient-name">{req.user.name}</p>
-                    <p className="erl-patient-email">{req.user.email}</p>
-                  </div>
-                </div>
 
-                {/* Exams */}
-                <div className="erl-cell-exams">
-                  {req.exams.map((exam) => (
-                    <span key={exam.id} className="erl-exam-badge">{exam.code}</span>
-                  ))}
-                </div>
+                  {/* ── Expanded panel ── */}
+                  {isExpanded && (
+                    <div className="erl-expand-panel">
+                      {/* Patient */}
+                      <div>
+                        <p className="erl-expand-section-label">Paciente</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                          <div
+                            className={`users-avatar ${getAvatarColor(req.user.name)}`}
+                            style={{ flexShrink: 0 }}
+                            aria-hidden="true"
+                          >
+                            {getInitials(req.user.name)}
+                          </div>
+                          <div>
+                            <p className="erl-expand-patient-name">{req.user.name}</p>
+                            <p className="erl-expand-patient-email">{req.user.email}</p>
+                          </div>
+                        </div>
+                        <p className="erl-expand-date">Criado em {formatDateTime(req.createdAt)}</p>
+                      </div>
 
-                {/* Indication */}
-                <div className={`erl-cell-indication${!req.indication ? ' empty' : ''}`}>
-                  {req.indication || 'Sem indicação'}
-                </div>
+                      {/* Exams — all */}
+                      <div>
+                        <p className="erl-expand-section-label">
+                          Exames ({req.exams.length})
+                        </p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          {req.exams.map((exam) => (
+                            <div key={exam.id} className="erl-expand-exam-row">
+                              <span className="erl-exam-badge">{exam.code}</span>
+                              <span className="erl-expand-exam-name">{exam.name}</span>
+                              <span style={{
+                                fontFamily: 'Manrope, sans-serif', fontSize: 10,
+                                color: '#94a3b8', marginLeft: 2,
+                              }}>
+                                {EXAM_CATEGORY_LABEL[exam.category] ?? exam.category}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
 
-                {/* Date */}
-                <div className="erl-cell-date">{formatDate(req.createdAt)}</div>
-
-                {/* Actions */}
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <button
-                    type="button"
-                    className="erl-btn-edit"
-                    onClick={() => edit.open(req)}
-                    title="Editar solicitação"
-                  >
-                    <EditIcon />
-                    Editar
-                  </button>
+                      {/* Indication — full */}
+                      <div>
+                        <p className="erl-expand-section-label">Indicação</p>
+                        <p className={`erl-expand-indication${!req.indication ? ' empty' : ''}`}>
+                          {req.indication || 'Sem indicação'}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
 
         </div>
@@ -1107,11 +1357,14 @@ export function ExamRequestsPage() {
         selectedExamIds={edit.selectedExamIds}
         submitting={edit.submitting}
         error={edit.error}
+        awaitingDownload={edit.awaitingDownload}
         allExams={exams}
         onClose={edit.close}
         onToggleExam={edit.toggleExam}
         onSetIndication={edit.setIndication}
         onSubmit={edit.handleSubmit}
+        onDownload={edit.downloadAndClose}
+        onSkipDownload={edit.skipAndClose}
       />
     </>
   );
