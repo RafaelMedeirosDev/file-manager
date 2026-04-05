@@ -1,7 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ExamCategory } from '@file-manager/shared';
 import { ExamRequestRepository } from '../../repositories/ExamRequestRepository';
-import { ErrorMessagesEnum } from '../../shared/enums/ErrorMessagesEnum';
+import { ErrorMessagesEnum } from '@file-manager/shared';
 
 export type GetExamRequestByIdInput = {
   id: string;

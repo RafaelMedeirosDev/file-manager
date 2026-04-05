@@ -7,7 +7,7 @@ import { BadGatewayException,
 import { Readable } from 'node:stream';
 import { ROLE } from '@prisma/client';
 import { FileRepository } from '../../repositories/FileRepository';
-import { ErrorMessagesEnum } from '../../shared/enums/ErrorMessagesEnum';
+import { ErrorMessagesEnum } from '@file-manager/shared';
 
 export type DownloadFileInput = {
   id: string;

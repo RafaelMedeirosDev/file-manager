@@ -5,7 +5,7 @@ import { CreateExamRequestUseCase } from './CreateExamRequestUseCase';
 import { UserRepository } from '../../repositories/UserRepository';
 import { ExamRepository } from '../../repositories/ExamRepository';
 import { ExamRequestRepository } from '../../repositories/ExamRequestRepository';
-import { ErrorMessagesEnum } from '../../shared/enums/ErrorMessagesEnum';
+import { ErrorMessagesEnum } from '@file-manager/shared';
 
 // ── Factories ─────────────────────────────────────────────────────────────────
 

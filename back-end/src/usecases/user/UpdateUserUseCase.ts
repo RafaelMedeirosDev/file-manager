@@ -1,11 +1,14 @@
-import { BadRequestException,
+import {
+  BadRequestException,
   ConflictException,
   Injectable,
-  NotFoundException, Logger } from '@nestjs/common';
+  NotFoundException,
+  Logger,
+} from '@nestjs/common';
 import { ROLE } from '@prisma/client';
 import { hash } from 'bcrypt';
 import { UserRepository } from '../../repositories/UserRepository';
-import { ErrorMessagesEnum } from '../../shared/enums/ErrorMessagesEnum';
+import { ErrorMessagesEnum } from '@file-manager/shared';
 
 export type UpdateUserInput = {
   id: string;
@@ -32,7 +35,9 @@ export class UpdateUserUseCase {
   async execute(input: UpdateUserInput): Promise<UpdateUserOutput> {
     this.logger.log('[UpdateUserUseCase] Execute started');
     if (!input.email && !input.password) {
-      throw new BadRequestException(ErrorMessagesEnum.AT_LEAST_ONE_FIELD_REQUIRED);
+      throw new BadRequestException(
+        ErrorMessagesEnum.AT_LEAST_ONE_FIELD_REQUIRED,
+      );
     }
 
     const existingUser = await this.userRepository.findById(input.id);
@@ -42,7 +47,9 @@ export class UpdateUserUseCase {
     }
 
     if (input.email) {
-      const userWithSameEmail = await this.userRepository.findByEmail(input.email);
+      const userWithSameEmail = await this.userRepository.findByEmail(
+        input.email,
+      );
 
       if (userWithSameEmail && userWithSameEmail.id !== input.id) {
         throw new ConflictException(ErrorMessagesEnum.EMAIL_ALREADY_REGISTERED);
@@ -56,9 +63,9 @@ export class UpdateUserUseCase {
     const updatedUser = await this.userRepository.updateById(input.id, {
       email: input.email,
       password: hashedPassword,
-    });
-    this.logger.log('[UpdateUserUseCase] Execute finished');
+    });
 
+    this.logger.log('[UpdateUserUseCase] Execute finished');
 
     return {
       id: updatedUser.id,
@@ -70,6 +77,3 @@ export class UpdateUserUseCase {
     };
   }
 }
-
-
-

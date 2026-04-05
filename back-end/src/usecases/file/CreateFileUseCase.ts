@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException, Logger } from '@nes
 import { FileRepository } from '../../repositories/FileRepository';
 import { FolderRepository } from '../../repositories/FolderRepository';
 import { UserRepository } from '../../repositories/UserRepository';
-import { ErrorMessagesEnum } from '../../shared/enums/ErrorMessagesEnum';
+import { ErrorMessagesEnum } from '@file-manager/shared';
 
 export type CreateFileInput = {
   name: string;

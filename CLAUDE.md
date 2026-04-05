@@ -35,6 +35,13 @@ Use this file as the global entrypoint for Claude Code in this monorepo.
 - `pnpm --dir back-end test` and `pnpm --dir back-end test:e2e` -> backend verification.
 - `pnpm --dir front-end build` -> frontend verification.
 
+## Shared package workflow
+`shared/dist/` is gitignored and must be compiled before the backend or frontend can import `@file-manager/shared`.
+
+- **Fresh clone / after `pnpm install`**: `prepare` runs `tsc` automatically — no manual step needed.
+- **After editing anything in `shared/src/`**: run `pnpm --dir shared build` to recompile before starting the dev servers or running tests.
+- **Never** import from `@file-manager/shared` relative paths (e.g. `../../shared/enums/...`). Always use the package name `@file-manager/shared`.
+
 ## Rule index
 - `.claude/rules/architecture.md` -> package boundaries, layering, and shared contracts.
 - `.claude/rules/nestjs.md` -> controllers, DTOs, use cases, modules, RBAC, and NestJS conventions.

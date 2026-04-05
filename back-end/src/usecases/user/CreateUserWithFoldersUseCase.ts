@@ -1,9 +1,9 @@
 import { ConflictException, Injectable, Logger } from '@nestjs/common';
 import { ROLE } from '@prisma/client';
 import { hash } from 'bcrypt';
-import { ErrorMessagesEnum } from '../../shared/enums/ErrorMessagesEnum';
 import { UserRepository } from '../../repositories/UserRepository';
 import { FolderRepository } from '../../repositories/FolderRepository';
+import { ErrorMessagesEnum } from '@file-manager/shared';
 
 export type CreateUserWithFoldersInput = {
   name: string;
@@ -37,7 +37,9 @@ export class CreateUserWithFoldersUseCase {
     private readonly folderRepository: FolderRepository,
   ) {}
 
-  async execute(input: CreateUserWithFoldersInput): Promise<CreateUserWithFoldersOutput> {
+  async execute(
+    input: CreateUserWithFoldersInput,
+  ): Promise<CreateUserWithFoldersOutput> {
     this.logger.log('[CreateUserWithFoldersUseCase] Execute started');
 
     const existingUser = await this.userRepository.findByEmail(input.email);

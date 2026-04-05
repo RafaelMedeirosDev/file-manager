@@ -1,7 +1,7 @@
 import { ConflictException, Injectable, Logger } from '@nestjs/common';
 import { ROLE } from '@prisma/client';
 import { hash } from 'bcrypt';
-import { ErrorMessagesEnum } from '../../shared/enums/ErrorMessagesEnum';
+import { ErrorMessagesEnum } from '@file-manager/shared';
 import { UserRepository } from '../../repositories/UserRepository';
 
 export type CreateUserInput = {

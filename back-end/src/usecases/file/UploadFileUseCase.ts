@@ -12,7 +12,7 @@ import { env } from '../../config/env';
 import { FileRepository } from '../../repositories/FileRepository';
 import { FolderRepository } from '../../repositories/FolderRepository';
 import { UserRepository } from '../../repositories/UserRepository';
-import { ErrorMessagesEnum } from '../../shared/enums/ErrorMessagesEnum';
+import { ErrorMessagesEnum } from '@file-manager/shared';
 
 export type UploadFileInput = {
   buffer: Buffer;
