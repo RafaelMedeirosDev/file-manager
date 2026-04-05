@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../features/auth/hooks/useAuth';
 import { FileIcon, FolderIcon } from '../components/Icons';
@@ -277,78 +277,74 @@ const FD_STYLES = `
 .fd-btn:active:not(:disabled) { transform: scale(0.97); }
 .fd-btn:disabled { opacity: 0.5; cursor: default; }
 
-/* ── Drop zone ───────────────────────────────── */
+/* ── Drop overlay (appears only while dragging over the window) ── */
+@keyframes fd-overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
 @keyframes fd-drop-pulse {
-  0%, 100% { border-color: #0078D4; }
-  50%       { border-color: #60b3f0; }
+  0%, 100% { border-color: #0078D4; box-shadow: 0 0 0 0 rgba(0,120,212,0.15); }
+  50%       { border-color: #60b3f0; box-shadow: 0 0 0 8px rgba(0,120,212,0); }
+}
+
+.fd-drop-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(240, 247, 254, 0.88);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fd-overlay-in 0.15s ease both;
 }
 
 .fd-drop-zone {
-  margin: 12px 20px;
-  border: 2px dashed #d0dce8;
-  border-radius: 14px;
-  padding: 28px 20px 22px;
-  background: #fafbfd;
-  transition: border-color 0.18s, background 0.18s, transform 0.15s;
+  border: 2.5px dashed #0078D4;
+  border-radius: 20px;
+  padding: 56px 80px;
+  background: #fff;
   cursor: pointer;
-  position: relative;
   outline: none;
-}
-
-.fd-drop-zone:focus-visible {
-  box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.18);
-}
-
-.fd-drop-zone.drag-over {
-  border-color: #0078D4;
-  background: #f0f7fe;
-  transform: scale(1.005);
-  animation: fd-drop-pulse 1.2s infinite;
+  animation: fd-drop-pulse 1.4s infinite;
+  box-shadow: 0 16px 48px rgba(0, 120, 212, 0.12);
 }
 
 .fd-drop-zone-inner {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   pointer-events: none;
 }
 
 .fd-drop-icon {
-  width: 44px;
-  height: 44px;
-  background: #e8f3fb;
-  border-radius: 12px;
+  width: 56px;
+  height: 56px;
+  background: #0078D4;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #0078D4;
-  transition: background 0.15s, transform 0.15s;
-  margin-bottom: 2px;
-}
-
-.fd-drop-zone.drag-over .fd-drop-icon {
-  background: #0078D4;
   color: #fff;
-  transform: scale(1.08) translateY(-2px);
+  margin-bottom: 4px;
 }
 
 .fd-drop-title {
   font-family: 'DM Sans', 'Manrope', sans-serif;
-  font-size: 13px;
-  font-weight: 700;
-  color: #0d1e35;
+  font-size: 16px;
+  font-weight: 800;
+  color: #0078D4;
   margin: 0;
 }
 
 .fd-drop-subtitle {
   font-family: 'DM Sans', 'Manrope', sans-serif;
-  font-size: 11px;
+  font-size: 12px;
   color: #94a3b8;
   margin: 0;
 }
-
-.fd-drop-zone.drag-over .fd-drop-title { color: #0078D4; }
 
 /* ── Upload queue ────────────────────────────── */
 .fd-queue {
@@ -494,9 +490,11 @@ function formatFileSize(bytes: number): string {
 export function FolderDetailsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const isAdmin = user?.role === 'ADMIN';
   const [showActions, setShowActions] = useState(false);
-  const [dragOver, setDragOver] = useState(false);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
   const dropInputRef = useRef<HTMLInputElement>(null);
+  const dragCounterRef = useRef(0);
   const {
     folder, entries, loading, error, actionError,
     creatingFolder, downloadingFileId,
@@ -510,20 +508,52 @@ export function FolderDetailsPage() {
   const pendingCount = uploadQueue.filter((i) => i.status === 'pending').length;
   const hasQueue = uploadQueue.length > 0;
 
-  function onDrop(e: React.DragEvent) {
-    e.preventDefault();
-    setDragOver(false);
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length) addFilesToQueue(files);
-  }
+  // Show drop overlay when files are dragged over the window
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    function onDragEnter(e: DragEvent) {
+      if (!e.dataTransfer?.types.includes('Files')) return;
+      dragCounterRef.current++;
+      setIsDraggingOver(true);
+    }
+
+    function onDragLeave() {
+      dragCounterRef.current--;
+      if (dragCounterRef.current <= 0) {
+        dragCounterRef.current = 0;
+        setIsDraggingOver(false);
+      }
+    }
+
+    function onDragOver(e: DragEvent) { e.preventDefault(); }
+
+    function onDrop(e: DragEvent) {
+      e.preventDefault();
+      dragCounterRef.current = 0;
+      setIsDraggingOver(false);
+      const files = Array.from(e.dataTransfer?.files ?? []);
+      if (files.length) addFilesToQueue(files);
+    }
+
+    document.addEventListener('dragenter', onDragEnter);
+    document.addEventListener('dragleave', onDragLeave);
+    document.addEventListener('dragover', onDragOver);
+    document.addEventListener('drop', onDrop);
+
+    return () => {
+      document.removeEventListener('dragenter', onDragEnter);
+      document.removeEventListener('dragleave', onDragLeave);
+      document.removeEventListener('dragover', onDragOver);
+      document.removeEventListener('drop', onDrop);
+    };
+  }, [isAdmin, addFilesToQueue]);
 
   function onPickFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     if (files.length) addFilesToQueue(files);
     e.target.value = '';
   }
-
-  const isAdmin = user?.role === 'ADMIN';
 
   if (loading) {
     return (
@@ -712,42 +742,35 @@ export function FolderDetailsPage() {
         </div>
       </div>
 
-      {/* ── Drop zone (ADMIN only) ───────────────────────── */}
+      {/* ── Drop overlay (ADMIN only, visible only while dragging) ── */}
       {isAdmin && (
         <>
-          <div
-            className={`fd-drop-zone${dragOver ? ' drag-over' : ''}`}
-            role="button"
-            tabIndex={0}
-            aria-label="Área para soltar arquivos"
-            onClick={() => dropInputRef.current?.click()}
-            onKeyDown={(e) => e.key === 'Enter' && dropInputRef.current?.click()}
-            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={onDrop}
-          >
-            <input
-              ref={dropInputRef}
-              type="file"
-              multiple
-              style={{ display: 'none' }}
-              onChange={onPickFiles}
-            />
-            <div className="fd-drop-zone-inner">
-              <div className="fd-drop-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                  strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="17 8 12 3 7 8" />
-                  <line x1="12" y1="3" x2="12" y2="15" />
-                </svg>
+          <input
+            ref={dropInputRef}
+            type="file"
+            multiple
+            style={{ display: 'none' }}
+            onChange={onPickFiles}
+          />
+
+          {isDraggingOver && (
+            <div className="fd-drop-overlay">
+              <div className="fd-drop-zone">
+                <div className="fd-drop-zone-inner">
+                  <div className="fd-drop-icon">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="17 8 12 3 7 8" />
+                      <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                  </div>
+                  <p className="fd-drop-title">Solte os arquivos aqui</p>
+                  <p className="fd-drop-subtitle">Múltiplos arquivos permitidos · Máximo 20 por vez</p>
+                </div>
               </div>
-              <p className="fd-drop-title">
-                {dragOver ? 'Solte os arquivos aqui' : 'Arraste arquivos ou clique para selecionar'}
-              </p>
-              <p className="fd-drop-subtitle">Múltiplos arquivos permitidos · Máximo 20 por vez</p>
             </div>
-          </div>
+          )}
 
           {hasQueue && (
             <div className="fd-queue">
@@ -807,9 +830,19 @@ export function FolderDetailsPage() {
               ))}
 
               <div className="fd-queue-footer">
-                <button type="button" className="fd-clear-btn" onClick={clearQueue} disabled={uploading}>
-                  Limpar fila
-                </button>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button type="button" className="fd-clear-btn" onClick={clearQueue} disabled={uploading}>
+                    Limpar fila
+                  </button>
+                  <button
+                    type="button"
+                    className="fd-clear-btn"
+                    onClick={() => dropInputRef.current?.click()}
+                    disabled={uploading}
+                  >
+                    + Adicionar
+                  </button>
+                </div>
                 {pendingCount > 0 && (
                   <button
                     type="button"
