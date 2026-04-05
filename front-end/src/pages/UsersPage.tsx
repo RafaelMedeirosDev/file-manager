@@ -176,7 +176,7 @@ export function UsersPage() {
                   </div>
 
                   <div className="users-actions-cell">
-                    {isAdmin ? (
+                    {isAdmin && u.id !== user?.id ? (
                       <button
                         type="button"
                         className="users-btn-delete"
