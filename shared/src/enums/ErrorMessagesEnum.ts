@@ -19,4 +19,5 @@ export enum ErrorMessagesEnum {
   EXAM_NOT_FOUND = 'Exame nao encontrado',
   EXAM_CODE_ALREADY_REGISTERED = 'Ja existe um exame ativo com este codigo',
   EXAM_REQUEST_NOT_FOUND = 'Solicitacao de exame nao encontrada',
+  CANNOT_DELETE_SELF = 'Voce nao pode excluir sua propria conta',
 }

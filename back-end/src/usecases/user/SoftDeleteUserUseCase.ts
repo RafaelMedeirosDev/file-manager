@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { UserRepository } from '../../repositories/UserRepository';
 import { ErrorMessagesEnum } from '../../shared/enums/ErrorMessagesEnum';
 
 export type SoftDeleteUserInput = {
   id: string;
+  requesterId: string;
 };
 
 export type SoftDeleteUserOutput = {
@@ -20,6 +21,11 @@ export class SoftDeleteUserUseCase {
 
   async execute(input: SoftDeleteUserInput): Promise<SoftDeleteUserOutput> {
     this.logger.log('[SoftDeleteUserUseCase] Execute started');
+
+    if (input.requesterId === input.id) {
+      throw new ForbiddenException(ErrorMessagesEnum.CANNOT_DELETE_SELF);
+    }
+
     const existingUser = await this.userRepository.findById(input.id);
 
     if (!existingUser || existingUser.deletedAt) {
@@ -30,7 +36,7 @@ export class SoftDeleteUserUseCase {
     const deletedUser = await this.userRepository.softDeleteById(
       input.id,
       deletedAt,
-    );
+    );
     this.logger.log('[SoftDeleteUserUseCase] Execute finished');
 
 
