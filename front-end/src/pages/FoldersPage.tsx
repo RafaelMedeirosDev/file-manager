@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/hooks/useAuth';
 import { FolderIcon } from '../components/Icons';
 import { useFolders } from '../features/folders/hooks/useFolders';
@@ -24,16 +24,14 @@ function avatarInitials(name: string): string {
 
 export function FoldersPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { selectedUserId, selectUser } = useSidebarContext();
-  const [showCreate, setShowCreate] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const {
     visibleFolders, usersOptions, usersById, folderById,
-    loading, error, createError, creating, deletingFolderId,
-    selectedCreateUserId, setSelectedCreateUserId,
+    loading, error, deletingFolderId,
     selectedDeleteFolderId, setSelectedDeleteFolderId,
-    newFolderName, setNewFolderName,
-    handleCreateFolder, handleSoftDeleteFolder,
+    handleSoftDeleteFolder,
   } = useFolders();
 
   const isAdmin = user?.role === 'ADMIN';
@@ -49,37 +47,16 @@ export function FoldersPage() {
         {isAdmin ? (
           <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
             <button type="button" className="btn-secondary" style={{ fontSize: 12 }}
-              onClick={() => { setShowDelete((v) => !v); setShowCreate(false); }}>
+              onClick={() => setShowDelete((v) => !v)}>
               {showDelete ? 'Fechar' : 'Excluir pasta'}
             </button>
             <button type="button" className="btn-primary" style={{ fontSize: 12 }}
-              onClick={() => { setShowCreate((v) => !v); setShowDelete(false); }}>
-              {showCreate ? '− Fechar' : '+ Nova Pasta'}
+              onClick={() => navigate('/folders/new')}>
+              + Nova Pasta
             </button>
           </div>
         ) : null}
       </div>
-
-      {/* Create form panel */}
-      {isAdmin && showCreate ? (
-        <div className="page-expand-panel">
-          <form style={{ display: 'grid', gap: 8, gridTemplateColumns: '1fr 1fr auto' }} onSubmit={handleCreateFolder}>
-            <select className="app-input" value={selectedCreateUserId}
-              onChange={(e) => setSelectedCreateUserId(e.target.value)} required>
-              <option value="">Selecione o usuário</option>
-              {usersOptions.map((option) => (
-                <option key={option.id} value={option.id}>{option.name} ({option.email})</option>
-              ))}
-            </select>
-            <input value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)}
-              placeholder="Nome da pasta" className="app-input" required />
-            <button type="submit" disabled={creating} className="btn-primary" style={{ fontSize: 12 }}>
-              {creating ? 'Criando...' : 'Criar'}
-            </button>
-          </form>
-          {createError ? <p style={{ marginTop: 8, fontSize: 13, color: '#e11d48', fontFamily: 'Manrope, sans-serif' }}>{createError}</p> : null}
-        </div>
-      ) : null}
 
       {/* Delete form panel */}
       {isAdmin && showDelete ? (
