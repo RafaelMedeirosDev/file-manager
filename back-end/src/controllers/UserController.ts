@@ -147,9 +147,11 @@ export class UserController {
       }),
     )
     params: UpdateUserParamsDTO,
+    @Req() req: Request & { user: JwtPayload },
   ): Promise<SoftDeleteUserOutput> {
     return this.softDeleteUserUseCase.execute({
       id: params.id,
+      requesterId: req.user.sub,
     });
   }
 }
