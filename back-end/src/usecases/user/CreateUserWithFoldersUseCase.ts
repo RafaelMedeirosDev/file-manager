@@ -4,6 +4,7 @@ import { hash } from 'bcrypt';
 import { UserRepository } from '../../repositories/UserRepository';
 import { FolderRepository } from '../../repositories/FolderRepository';
 import { ErrorMessagesEnum } from '@file-manager/shared';
+import { BCRYPT_SALT_ROUNDS } from '../../shared/constants/bcrypt.constants';
 
 export type CreateUserWithFoldersInput = {
   name: string;
@@ -30,7 +31,6 @@ export type CreateUserWithFoldersOutput = {
 @Injectable()
 export class CreateUserWithFoldersUseCase {
   private readonly logger = new Logger(CreateUserWithFoldersUseCase.name);
-  private static readonly SALT_ROUNDS = 10;
 
   constructor(
     private readonly userRepository: UserRepository,
@@ -49,7 +49,7 @@ export class CreateUserWithFoldersUseCase {
 
     const hashedPassword = await hash(
       input.password,
-      CreateUserWithFoldersUseCase.SALT_ROUNDS,
+      BCRYPT_SALT_ROUNDS,
     );
 
     const user = await this.userRepository.create({

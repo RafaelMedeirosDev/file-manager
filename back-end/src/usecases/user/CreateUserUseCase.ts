@@ -3,6 +3,7 @@ import { ROLE } from '@prisma/client';
 import { hash } from 'bcrypt';
 import { ErrorMessagesEnum } from '@file-manager/shared';
 import { UserRepository } from '../../repositories/UserRepository';
+import { BCRYPT_SALT_ROUNDS } from '../../shared/constants/bcrypt.constants';
 
 export type CreateUserInput = {
   name: string;
@@ -22,7 +23,6 @@ export type CreateUserOutput = {
 @Injectable()
 export class CreateUserUseCase {
   private readonly logger = new Logger(CreateUserUseCase.name);
-  private static readonly SALT_ROUNDS = 10;
 
   constructor(private readonly userRepository: UserRepository) {}
 
@@ -36,7 +36,7 @@ export class CreateUserUseCase {
 
     const hashedPassword = await hash(
       input.password,
-      CreateUserUseCase.SALT_ROUNDS,
+      BCRYPT_SALT_ROUNDS,
     );
 
     const user = await this.userRepository.create({
@@ -44,7 +44,8 @@ export class CreateUserUseCase {
       email: input.email,
       password: hashedPassword,
       role: ROLE.USER,
-    });
+    });
+
     this.logger.log('[CreateUserUseCase] Execute finished');
 
 

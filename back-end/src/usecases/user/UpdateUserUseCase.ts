@@ -9,6 +9,7 @@ import { ROLE } from '@prisma/client';
 import { hash } from 'bcrypt';
 import { UserRepository } from '../../repositories/UserRepository';
 import { ErrorMessagesEnum } from '@file-manager/shared';
+import { BCRYPT_SALT_ROUNDS } from '../../shared/constants/bcrypt.constants';
 
 export type UpdateUserInput = {
   id: string;
@@ -28,7 +29,6 @@ export type UpdateUserOutput = {
 @Injectable()
 export class UpdateUserUseCase {
   private readonly logger = new Logger(UpdateUserUseCase.name);
-  private static readonly SALT_ROUNDS = 10;
 
   constructor(private readonly userRepository: UserRepository) {}
 
@@ -57,7 +57,7 @@ export class UpdateUserUseCase {
     }
 
     const hashedPassword = input.password
-      ? await hash(input.password, UpdateUserUseCase.SALT_ROUNDS)
+      ? await hash(input.password, BCRYPT_SALT_ROUNDS)
       : undefined;
 
     const updatedUser = await this.userRepository.updateById(input.id, {

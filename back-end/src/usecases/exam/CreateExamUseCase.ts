@@ -1,7 +1,6 @@
 import { ConflictException, Injectable, Logger } from '@nestjs/common';
-import { ExamCategory } from '@file-manager/shared';
+import { ExamCategory, ErrorMessagesEnum } from '@file-manager/shared';
 import { ExamRepository } from '../../repositories/ExamRepository';
-import { ErrorMessagesEnum } from '@file-manager/shared';
 
 export type CreateExamInput = {
   name: string;
