@@ -5,6 +5,7 @@ import { BadRequestException,
 import { compare, hash } from 'bcrypt';
 import { UserRepository } from '../../repositories/UserRepository';
 import { ErrorMessagesEnum } from '@file-manager/shared';
+import { BCRYPT_SALT_ROUNDS } from '../../shared/constants/bcrypt.constants';
 
 export type ChangeOwnPasswordInput = {
   userId: string;
@@ -22,7 +23,6 @@ export type ChangeOwnPasswordOutput = {
 @Injectable()
 export class ChangeOwnPasswordUseCase {
   private readonly logger = new Logger(ChangeOwnPasswordUseCase.name);
-  private static readonly SALT_ROUNDS = 10;
 
   constructor(private readonly userRepository: UserRepository) {}
 
@@ -57,7 +57,7 @@ export class ChangeOwnPasswordUseCase {
 
     const hashedPassword = await hash(
       input.newPassword,
-      ChangeOwnPasswordUseCase.SALT_ROUNDS,
+      BCRYPT_SALT_ROUNDS,
     );
 
     const updatedUser = await this.userRepository.updateById(user.id, {
