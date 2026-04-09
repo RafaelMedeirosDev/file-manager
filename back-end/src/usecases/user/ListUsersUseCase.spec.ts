@@ -78,7 +78,7 @@ describe('ListUsersUseCase', () => {
       'Ana Clara',
       'Carla Souza',
     ]);
-    expect(output.meta.total).toBe(3);
+    expect(output.meta.skip).toBe(3);
     expect(output.meta.hasNextPage).toBe(false);
   });
 
@@ -98,7 +98,7 @@ describe('ListUsersUseCase', () => {
     });
 
     expect(output.data.map((user) => user.name)).toEqual(['Carla Souza']);
-    expect(output.meta.total).toBe(1);
+    expect(output.meta.skip).toBe(1);
   });
 
   it('preserves pagination and alphabetical ordering', async () => {

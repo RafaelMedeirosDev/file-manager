@@ -14,7 +14,7 @@ export type ListUsersOutput = {
   meta: {
     page: number;
     limit: number;
-    total: number;
+    skip: number;
     hasNextPage: boolean;
   };
 };
@@ -36,53 +36,20 @@ export class ListUsersUseCase {
 
     const page = input?.page ?? 1;
     const limit = input?.limit ?? 10;
+    const skip = (page - 1) * limit;
     const normalizedSearch = input?.search?.trim().toLowerCase();
-    const normalizedName = input?.name?.trim().toLowerCase();
-    const normalizedEmail = input?.email?.trim().toLowerCase();
 
-    const users = await this.userRepository.findAll();
+    const users = await this.userRepository.listUsersActive(normalizedSearch, skip, limit);
+    const totalUsers = await this.userRepository.countActiveUsers(normalizedSearch);
 
-    const filteredUsers = users.filter((user) => {
-      if (user.deletedAt) {
-        return false;
-      }
-
-      if (
-        normalizedSearch &&
-        !user.name.toLowerCase().includes(normalizedSearch) &&
-        !user.email.toLowerCase().includes(normalizedSearch)
-      ) {
-        return false;
-      }
-
-      if (normalizedName && !user.name.toLowerCase().includes(normalizedName)) {
-        return false;
-      }
-
-      if (normalizedEmail && !user.email.toLowerCase().includes(normalizedEmail)) {
-        return false;
-      }
-
-      return true;
-    });
-
-    const mappedUsers = filteredUsers
-      .map((user) => ({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-      }))
-      .sort((a, b) =>
-        a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }),
-      );
-
-    const total = mappedUsers.length;
-    const start = (page - 1) * limit;
-    const paginatedUsers = mappedUsers.slice(start, start + limit);
-
+    const paginatedUsers = users.map(user => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    }));
     this.logger.log('[ListUsersUseCase] Execute finished');
 
     return {
@@ -90,8 +57,8 @@ export class ListUsersUseCase {
       meta: {
         page,
         limit,
-        total,
-        hasNextPage: start + limit < total,
+        skip,
+        hasNextPage: totalUsers > skip + limit,
       },
     };
   }
