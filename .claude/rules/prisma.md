@@ -29,11 +29,69 @@ return user;
 - Avoid giant `include` trees unless the consumer truly needs all nested relations.
 - If a query becomes hard to reason about, split it into explicit repository methods instead of building a generic data-access helper.
 
-## Current pagination pattern
-- For list endpoints in this project, repositories expose `findAll()` without `skip` or `take`.
-- Filtering, soft-delete exclusion, sorting, and pagination happen in the use case.
-- Preserve the API shape `{ data, meta }`.
-- If a new list can grow large, flag the performance risk before copying the same in-memory pattern blindly.
+## Filtering, sorting, and pagination belong in the database
+
+Never fetch all records and filter in memory inside a use case.
+Filtering (`where`), sorting (`orderBy`), and pagination (`skip`/`take`) must be expressed as Prisma query parameters inside the repository method.
+
+The use case is responsible for:
+- calculating `skip` from `page` and `limit`
+- passing normalized filter values to the repository
+- assembling the `{ data, meta }` response from the repository results
+
+For lists that support search across multiple fields, use Prisma's `OR` operator — not multiple sibling `where` fields (which are AND).
+Use the conditional spread pattern to keep the `where` clean when filters are optional.
+Expose a separate `count()` method with the same `where` (without `skip`/`take`) to power `hasNextPage`.
+
+Do this:
+```ts
+// Repository
+listUsersActive(search?: string, skip?: number, take?: number): Promise<User[]> {
+  return this.prisma.user.findMany({
+    where: {
+      deletedAt: null,
+      ...(search ? {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+        ],
+      } : {}),
+    },
+    skip,
+    take,
+  });
+}
+
+countActiveUsers(search?: string): Promise<number> {
+  return this.prisma.user.count({
+    where: {
+      deletedAt: null,
+      ...(search ? {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+        ],
+      } : {}),
+    },
+  });
+}
+
+// Use case
+const skip = (page - 1) * limit;
+const users = await this.userRepository.listUsersActive(search, skip, limit);
+const total = await this.userRepository.countActiveUsers(search);
+return { data: users.map(mapUser), meta: { page, limit, skip, hasNextPage: total > skip + limit } };
+```
+
+Avoid this:
+```ts
+// Never do in-memory filtering inside a use case
+const all = await this.userRepository.findAll();
+const filtered = all.filter(u => u.name.includes(search));
+const page = filtered.slice(skip, skip + limit);
+```
+
+Preserve the API shape `{ data, meta }`.
 
 ## Soft delete
 - `User`, `Folder`, `File`, `Exam`, and `ExamRequest` use `deletedAt`.
