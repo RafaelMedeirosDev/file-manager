@@ -14,7 +14,7 @@ export type ListExamsOutput = {
   meta: {
     page: number;
     limit: number;
-    total: number;
+    skip: number;
     hasNextPage: boolean;
   };
 };
@@ -36,43 +36,35 @@ export class ListExamsUseCase {
 
     const page = input?.page ?? 1;
     const limit = input?.limit ?? 10;
+    const skip = (page - 1) * limit;
     const normalizedName = input?.name?.trim().toLowerCase();
     const normalizedCode = input?.code?.trim().toLowerCase();
+    const normalizedCategory = input?.category;
 
-    const exams = await this.examRepository.findAll();
+    const exams = await this.examRepository.listExamsActive(normalizedName, normalizedCode, normalizedCategory, skip, limit);
+    const totalExams = await this.examRepository.countExamsActive(normalizedName, normalizedCode, normalizedCategory);
 
-    const filtered = exams.filter((exam) => {
-      if (exam.deletedAt) return false;
-      if (normalizedName && !exam.name.toLowerCase().includes(normalizedName)) return false;
-      if (normalizedCode && !exam.code.toLowerCase().includes(normalizedCode)) return false;
-      if (input?.category && exam.category !== input.category) return false;
-      return true;
-    });
-
-    const sorted = [...filtered].sort((a, b) =>
-      a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }),
-    );
-
-    const total = sorted.length;
-    const start = (page - 1) * limit;
-    const paginated = sorted.slice(start, start + limit);
-
-    this.logger.log('[ListExamsUseCase] Execute finished');
-
-    return {
-      data: paginated.map((exam) => ({
+    
+    const paginatedExams = exams.map((exam) => ({
         id: exam.id,
         name: exam.name,
         code: exam.code,
         category: exam.category,
         createdAt: exam.createdAt,
         updatedAt: exam.updatedAt,
-      })),
+      })
+    );
+    
+
+    this.logger.log('[ListExamsUseCase] Execute finished');
+
+    return {
+      data: paginatedExams,
       meta: {
         page,
         limit,
-        total,
-        hasNextPage: start + limit < total,
+        skip,
+        hasNextPage: totalExams > skip + limit,
       },
     };
   }
