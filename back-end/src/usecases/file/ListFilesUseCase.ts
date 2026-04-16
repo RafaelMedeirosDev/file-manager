@@ -38,37 +38,25 @@ export class ListFilesUseCase {
 
     const page = input.page ?? 1;
     const limit = input.limit ?? 10;
+    const skip = (page - 1) * limit;
 
-    const files = await this.fileRepository.findAll();
-
-    const filteredFiles = files.filter((file) => {
-      if (file.deletedAt) {
-        return false;
-      }
-
-      if (input.folderId && file.folderId !== input.folderId) {
-        return false;
-      }
-
-      if (input.requesterRole === ROLE.ADMIN) {
-        return true;
-      }
-
-      return file.userId === input.requesterUserId;
-    });
-
-    const sortedFiles = [...filteredFiles].sort((a, b) =>
-      a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }),
+    const files = await this.fileRepository.listFilesActive(
+      input.requesterUserId,
+      input.requesterRole,
+      input.folderId,
+      skip,
+      limit,
     );
-
-    const total = sortedFiles.length;
-    const start = (page - 1) * limit;
-    const paginatedFiles = sortedFiles.slice(start, start + limit);
+    const totalFiles = await this.fileRepository.countFilesActive(
+      input.requesterUserId,
+      input.requesterRole,
+      input.folderId,
+    );
 
     this.logger.log('[ListFilesUseCase] Execute finished');
 
     return {
-      data: paginatedFiles.map((file) => ({
+      data: files.map((file) => ({
         id: file.id,
         name: file.name,
         userId: file.userId,
@@ -81,10 +69,9 @@ export class ListFilesUseCase {
       meta: {
         page,
         limit,
-        total,
-        hasNextPage: start + limit < total,
+        total: totalFiles,
+        hasNextPage: totalFiles > skip + limit,
       },
     };
   }
 }
-
