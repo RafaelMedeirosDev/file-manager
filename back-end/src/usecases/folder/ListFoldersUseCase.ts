@@ -54,58 +54,41 @@ export class ListFoldersUseCase {
 
     const page = input.page ?? 1;
     const limit = input.limit ?? 10;
+    const skip = (page - 1) * limit;
 
-    const folders = await this.folderRepository.findAll();
-
-    const filteredFolders = folders.filter((folder) => {
-      if (!this.canAccessFolder(folder.userId, folder.deletedAt, input)) {
-        return false;
-      }
-
-      if (input.folderId) {
-        return folder.folderId === input.folderId;
-      }
-
-      if (input.rootsOnly) {
-        return folder.folderId === null;
-      }
-
-      return true;
-    });
-
-    const sortedFolders = [...filteredFolders].sort((a, b) =>
-      a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }),
+    const folders = await this.folderRepository.listFoldersActive(
+      input.requesterUserId,
+      input.requesterRole,
+      input.folderId,
+      input.rootsOnly,
+      skip,
+      limit,
     );
-
-    const total = sortedFolders.length;
-    const start = (page - 1) * limit;
-    const paginatedFolders = sortedFolders.slice(start, start + limit);
+    const totalFolders = await this.folderRepository.countFoldersActive(
+      input.requesterUserId,
+      input.requesterRole,
+      input.folderId,
+      input.rootsOnly,
+    );
 
     this.logger.log('[ListFoldersUseCase] Execute finished');
 
     return {
-      data: paginatedFolders.map((folder) => ({
+      data: folders.map((folder) => ({
         id: folder.id,
         name: folder.name,
         userId: folder.userId,
         folderId: folder.folderId,
-        parent:
-          folder.parent &&
-          this.canAccessFolder(folder.parent.userId, folder.parent.deletedAt, input)
-            ? {
-                id: folder.parent.id,
-                name: folder.parent.name,
-                userId: folder.parent.userId,
-                folderId: folder.parent.folderId,
-              }
-            : null,
+        parent: folder.parent && !folder.parent.deletedAt
+          ? {
+              id: folder.parent.id,
+              name: folder.parent.name,
+              userId: folder.parent.userId,
+              folderId: folder.parent.folderId,
+            }
+          : null,
         children: folder.children
-          .filter((child) =>
-            this.canAccessFolder(child.userId, child.deletedAt, input),
-          )
-          .sort((a, b) =>
-            a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }),
-          )
+          .filter((child) => !child.deletedAt)
           .map((child) => ({
             id: child.id,
             name: child.name,
@@ -118,28 +101,9 @@ export class ListFoldersUseCase {
       meta: {
         page,
         limit,
-        total,
-        hasNextPage: start + limit < total,
+        total: totalFolders,
+        hasNextPage: totalFolders > skip + limit,
       },
     };
-  }
-
-  private canAccessFolder(
-    ownerUserId: string,
-    deletedAt: Date | null,
-    input: {
-      requesterUserId: string;
-      requesterRole: ROLE;
-    },
-  ): boolean {
-    if (deletedAt) {
-      return false;
-    }
-
-    if (input.requesterRole === ROLE.ADMIN) {
-      return true;
-    }
-
-    return ownerUserId === input.requesterUserId;
   }
 }

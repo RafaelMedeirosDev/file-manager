@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Folder, Prisma } from '@prisma/client';
+import { Folder, Prisma, ROLE } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
 
 export type FolderWithRelations = Prisma.FolderGetPayload<{
@@ -78,6 +78,35 @@ export class FolderRepository {
     return this.prisma.folder.update({
       where: { id },
       data: { deletedAt },
+    });
+  }
+
+  listFoldersActive(requestUserId: string, requestRole: ROLE, folderId?: string, rootsOnly?: boolean, skip?: number, take?: number): Promise<FolderWithRelations[]>{
+    return this.prisma.folder.findMany({
+      where:{
+        deletedAt: null,
+        ...(requestRole === ROLE.USER ? {userId: requestUserId}: {}),
+        ...(folderId ? {folderId}: {}),
+        ...(rootsOnly ? {folderId: null}: {}),
+      },
+      include: {
+        parent: true,
+        children: true,
+      },
+      orderBy: { name: 'asc' },
+      skip,
+      take,
+    });
+  }
+
+  countFoldersActive(requestUserId: string, requestRole: ROLE, folderId?: string, rootsOnly?: boolean): Promise<number>{
+    return this.prisma.folder.count({
+      where:{
+        deletedAt: null,
+        ...(requestRole === ROLE.USER ? { userId: requestUserId } : {}),
+        ...(folderId ? {folderId}: {}),
+        ...(rootsOnly ? {folderId: null}: {}),
+      },
     });
   }
 }
