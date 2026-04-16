@@ -11,22 +11,6 @@ export class ListUsersQueryDTO {
   search?: string;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(50)
-  @Transform(({ value }) =>
-    typeof value === 'string' ? value.trim() : value,
-  )
-  name?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(50)
-  @Transform(({ value }) =>
-    typeof value === 'string' ? value.trim().toLowerCase() : value,
-  )
-  email?: string;
-
-  @IsOptional()
   @Transform(({ value }) => {
     if (value === undefined) {
       return undefined;

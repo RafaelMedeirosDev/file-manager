@@ -67,8 +67,6 @@ export class UserController {
       page: query.page,
       limit: query.limit,
       search: query.search,
-      name: query.name,
-      email: query.email,
     });
   }
 
