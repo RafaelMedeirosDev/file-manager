@@ -29,8 +29,6 @@ export class ListUsersUseCase {
     page?: number;
     limit?: number;
     search?: string;
-    name?: string;
-    email?: string;
   }): Promise<ListUsersOutput> {
     this.logger.log('[ListUsersUseCase] Execute started');
 
