@@ -23,7 +23,7 @@ export type ExamRequestListItem = {
 
 export type ListExamRequestsOutput = {
   data: ExamRequestListItem[];
-  meta: { page: number; limit: number; skip: number; hasNextPage: boolean };
+  meta: { page: number; limit: number; total: number; hasNextPage: boolean };
 };
 
 @Injectable()
@@ -71,10 +71,10 @@ export class ListExamRequestsUseCase {
 
     return {
       data: paginatedExamRequest,
-      meta: { 
-        page, 
-        limit, 
-        skip, 
+      meta: {
+        page,
+        limit,
+        total: totalExamRequest,
         hasNextPage: totalExamRequest > skip + limit,
       },
     };

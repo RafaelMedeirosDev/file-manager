@@ -14,7 +14,7 @@ export type ListUsersOutput = {
   meta: {
     page: number;
     limit: number;
-    skip: number;
+    total: number;
     hasNextPage: boolean;
   };
 };
@@ -55,7 +55,7 @@ export class ListUsersUseCase {
       meta: {
         page,
         limit,
-        skip,
+        total: totalUsers,
         hasNextPage: totalUsers > skip + limit,
       },
     };

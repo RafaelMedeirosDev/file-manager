@@ -14,7 +14,7 @@ export type ListExamsOutput = {
   meta: {
     page: number;
     limit: number;
-    skip: number;
+    total: number;
     hasNextPage: boolean;
   };
 };
@@ -63,7 +63,7 @@ export class ListExamsUseCase {
       meta: {
         page,
         limit,
-        skip,
+        total: totalExams,
         hasNextPage: totalExams > skip + limit,
       },
     };
