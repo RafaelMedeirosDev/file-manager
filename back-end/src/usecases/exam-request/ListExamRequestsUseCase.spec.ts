@@ -87,7 +87,7 @@ describe('ListExamRequestsUseCase', () => {
       expect(result.data[0].id).toBe('req-1');
       expect(result.meta.page).toBe(1);
       expect(result.meta.limit).toBe(10);
-      expect(result.meta.skip).toBe(0);
+      expect(result.meta.total).toBe(2);
       expect(result.meta.hasNextPage).toBe(false);
     });
 
@@ -121,7 +121,7 @@ describe('ListExamRequestsUseCase', () => {
 
       expect(result.meta.page).toBe(2);
       expect(result.meta.limit).toBe(2);
-      expect(result.meta.skip).toBe(2);
+      expect(result.meta.total).toBe(5);
       expect(result.meta.hasNextPage).toBe(true);
     });
 
@@ -191,7 +191,7 @@ describe('ListExamRequestsUseCase', () => {
       const result = await useCase.execute({});
 
       expect(result.data).toHaveLength(0);
-      expect(result.meta.skip).toBe(0);
+      expect(result.meta.total).toBe(0);
       expect(result.meta.hasNextPage).toBe(false);
     });
   });
