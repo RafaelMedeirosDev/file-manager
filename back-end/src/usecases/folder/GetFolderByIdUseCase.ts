@@ -64,7 +64,11 @@ export class GetFolderByIdUseCase {
       throw new ForbiddenException(ErrorMessagesEnum.FOLDER_ACCESS_FORBIDDEN);
     }
 
-    const files = await this.fileRepository.findAll();
+    const files = await this.fileRepository.listFilesActive(
+      input.requesterUserId,
+      input.requesterRole,
+      folder.id,
+    );
 
     // ── Ancestors: sobe a hierarquia até a raiz ──────────
     const ancestors: Array<{ id: string; name: string }> = [];
@@ -107,14 +111,7 @@ export class GetFolderByIdUseCase {
           userId: child.userId,
           folderId: child.folderId,
         })),
-      files: files
-        .filter(
-          (file) =>
-            file.folderId === folder.id &&
-            !file.deletedAt &&
-            this.canAccessFolder(file.userId, input),
-        )
-        .map((file) => ({
+      files: files.map((file) => ({
           id: file.id,
           name: file.name,
           userId: file.userId,
