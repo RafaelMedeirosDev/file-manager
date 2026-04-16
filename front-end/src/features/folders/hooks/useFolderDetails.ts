@@ -104,8 +104,14 @@ export function useFolderDetails(): UseFolderDetailsReturn {
     if (!folder) return [];
 
     const normalizedSearch = searchTerm.trim().toLowerCase();
+    const rawChildren = (
+      (folder as FolderDetails & { subfolders?: FolderDetails['children']; folders?: FolderDetails['children'] }).children
+      ?? (folder as FolderDetails & { subfolders?: FolderDetails['children']; folders?: FolderDetails['children'] }).subfolders
+      ?? (folder as FolderDetails & { subfolders?: FolderDetails['children']; folders?: FolderDetails['children'] }).folders
+      ?? []
+    );
 
-    const folders = folder.children
+    const folders = rawChildren
       .filter((child) =>
         normalizedSearch ? child.name.toLowerCase().includes(normalizedSearch) : true,
       )
@@ -198,6 +204,39 @@ export function useFolderDetails(): UseFolderDetailsReturn {
             : { ...item, status: 'success' };
         }),
       );
+
+      // Atualização otimista: já exibe os arquivos enviados na lista sem depender de refresh manual.
+      setFolder((prev) => {
+        if (!prev) return prev;
+
+        const now = new Date().toISOString();
+        const incomingFiles = res.results
+          .filter((result): result is { id: string; url: string; name: string; extension: string; error?: string } =>
+            Boolean(result.id && result.url && !result.error),
+          )
+          .map((result) => ({
+            id: result.id,
+            name: result.name,
+            userId: prev.userId,
+            folderId: prev.id,
+            extension: result.extension,
+            url: result.url,
+            createdAt: now,
+            updatedAt: now,
+          }));
+
+        if (incomingFiles.length === 0) return prev;
+
+        const existingIds = new Set(prev.files.map((file) => file.id));
+        const uniqueIncoming = incomingFiles.filter((file) => !existingIds.has(file.id));
+
+        if (uniqueIncoming.length === 0) return prev;
+
+        return {
+          ...prev,
+          files: [...uniqueIncoming, ...prev.files],
+        };
+      });
 
       await fetchFolder();
     } catch (err) {
