@@ -48,7 +48,10 @@ function examRequestMock(overrides = {}) {
 
 // ── Mock repository ───────────────────────────────────────────────────────────
 
-const mockExamRequestRepository = { findAll: jest.fn() };
+const mockExamRequestRepository = {
+  listExamsRequestActive: jest.fn(),
+  countExamRequestActive: jest.fn(),
+};
 
 // ── Suite ─────────────────────────────────────────────────────────────────────
 
@@ -70,118 +73,125 @@ describe('ListExamRequestsUseCase', () => {
   // ── Happy path ──────────────────────────────────────────────────────────────
 
   describe('should be able to list exam requests with success', () => {
-    it('returns all non-deleted requests with no filters', async () => {
+    it('returns mapped data and correct meta on page 1 with no filters', async () => {
       const requests = [
-        examRequestMock({ id: 'req-1', createdAt: new Date('2026-03-02') }),
-        examRequestMock({ id: 'req-2', createdAt: new Date('2026-03-01') }),
+        examRequestMock({ id: 'req-1' }),
+        examRequestMock({ id: 'req-2' }),
       ];
-      mockExamRequestRepository.findAll.mockResolvedValueOnce(requests);
+      mockExamRequestRepository.listExamsRequestActive.mockResolvedValueOnce(requests);
+      mockExamRequestRepository.countExamRequestActive.mockResolvedValueOnce(2);
 
       const result = await useCase.execute({});
 
       expect(result.data).toHaveLength(2);
-      // sorted by createdAt DESC
       expect(result.data[0].id).toBe('req-1');
-      expect(result.data[1].id).toBe('req-2');
-      expect(result.meta.total).toBe(2);
+      expect(result.meta.page).toBe(1);
+      expect(result.meta.limit).toBe(10);
+      expect(result.meta.skip).toBe(0);
+      expect(result.meta.hasNextPage).toBe(false);
     });
 
-    it('excludes requests whose user has role ADMIN', async () => {
-      mockExamRequestRepository.findAll.mockResolvedValueOnce([
-        examRequestMock({ id: 'req-user',  user: userMock({ role: 'USER' }) }),
-        examRequestMock({ id: 'req-admin', user: userMock({ role: 'ADMIN' }) }),
-      ]);
+    it('maps repository result to correct output shape', async () => {
+      const exam = examMock({ id: 'exam-x', name: 'PCR', code: '99999', category: ExamCategory.HEMATOLOGY });
+      const req = examRequestMock({ id: 'req-x', userId: 'user-x', indication: 'Febre', exams: [exam] });
+      mockExamRequestRepository.listExamsRequestActive.mockResolvedValueOnce([req]);
+      mockExamRequestRepository.countExamRequestActive.mockResolvedValueOnce(1);
 
       const result = await useCase.execute({});
 
-      expect(result.data).toHaveLength(1);
-      expect(result.data[0].id).toBe('req-user');
+      expect(result.data[0]).toEqual({
+        id: 'req-x',
+        userId: 'user-x',
+        indication: 'Febre',
+        createdAt: req.createdAt,
+        updatedAt: req.updatedAt,
+        user: { id: req.user.id, name: req.user.name, email: req.user.email },
+        exams: [{ id: 'exam-x', name: 'PCR', code: '99999', category: ExamCategory.HEMATOLOGY }],
+      });
     });
 
-    it('excludes soft-deleted requests', async () => {
-      mockExamRequestRepository.findAll.mockResolvedValueOnce([
-        examRequestMock({ id: 'req-active' }),
-        examRequestMock({ id: 'req-deleted', deletedAt: new Date() }),
+    it('calculates skip and hasNextPage correctly for page 2', async () => {
+      mockExamRequestRepository.listExamsRequestActive.mockResolvedValueOnce([
+        examRequestMock({ id: 'req-3' }),
+        examRequestMock({ id: 'req-4' }),
       ]);
-
-      const result = await useCase.execute({});
-
-      expect(result.data).toHaveLength(1);
-      expect(result.data[0].id).toBe('req-active');
-    });
-
-    it('filters by userId', async () => {
-      mockExamRequestRepository.findAll.mockResolvedValueOnce([
-        examRequestMock({ id: 'req-alice', userId: 'user-alice' }),
-        examRequestMock({ id: 'req-bob', userId: 'user-bob' }),
-      ]);
-
-      const result = await useCase.execute({ userId: 'user-alice' });
-
-      expect(result.data).toHaveLength(1);
-      expect(result.data[0].id).toBe('req-alice');
-    });
-
-    it('filters by dateFrom', async () => {
-      mockExamRequestRepository.findAll.mockResolvedValueOnce([
-        examRequestMock({ id: 'req-jan', createdAt: new Date('2026-01-10') }),
-        examRequestMock({ id: 'req-mar', createdAt: new Date('2026-03-10') }),
-      ]);
-
-      const result = await useCase.execute({ dateFrom: '2026-02-01' });
-
-      expect(result.data).toHaveLength(1);
-      expect(result.data[0].id).toBe('req-mar');
-    });
-
-    it('filters by dateTo', async () => {
-      mockExamRequestRepository.findAll.mockResolvedValueOnce([
-        examRequestMock({ id: 'req-jan', createdAt: new Date('2026-01-10') }),
-        examRequestMock({ id: 'req-mar', createdAt: new Date('2026-03-10') }),
-      ]);
-
-      const result = await useCase.execute({ dateTo: '2026-02-01' });
-
-      expect(result.data).toHaveLength(1);
-      expect(result.data[0].id).toBe('req-jan');
-    });
-
-    it('filters by examIds (any match)', async () => {
-      const examA = examMock({ id: 'exam-a' });
-      const examB = examMock({ id: 'exam-b' });
-      mockExamRequestRepository.findAll.mockResolvedValueOnce([
-        examRequestMock({ id: 'req-with-a', exams: [examA] }),
-        examRequestMock({ id: 'req-with-b', exams: [examB] }),
-      ]);
-
-      const result = await useCase.execute({ examIds: ['exam-a'] });
-
-      expect(result.data).toHaveLength(1);
-      expect(result.data[0].id).toBe('req-with-a');
-    });
-
-    it('applies pagination', async () => {
-      const requests = Array.from({ length: 5 }, (_, i) =>
-        examRequestMock({ id: `req-${i}`, createdAt: new Date(2026, 0, i + 1) }),
-      );
-      mockExamRequestRepository.findAll.mockResolvedValueOnce(requests);
+      mockExamRequestRepository.countExamRequestActive.mockResolvedValueOnce(5);
 
       const result = await useCase.execute({ page: 2, limit: 2 });
 
-      expect(result.data).toHaveLength(2);
       expect(result.meta.page).toBe(2);
       expect(result.meta.limit).toBe(2);
-      expect(result.meta.total).toBe(5);
+      expect(result.meta.skip).toBe(2);
       expect(result.meta.hasNextPage).toBe(true);
     });
 
-    it('returns empty data when no requests match', async () => {
-      mockExamRequestRepository.findAll.mockResolvedValueOnce([]);
+    it('passes userId, dateFrom, dateTo, and examIds to the repository', async () => {
+      mockExamRequestRepository.listExamsRequestActive.mockResolvedValueOnce([]);
+      mockExamRequestRepository.countExamRequestActive.mockResolvedValueOnce(0);
+
+      await useCase.execute({
+        userId: 'user-alice',
+        dateFrom: '2026-01-01',
+        dateTo: '2026-03-31',
+        examIds: ['exam-a'],
+      });
+
+      expect(mockExamRequestRepository.listExamsRequestActive).toHaveBeenCalledWith(
+        'user-alice',
+        new Date('2026-01-01'),
+        new Date('2026-03-31'),
+        ['exam-a'],
+        0,
+        10,
+      );
+      expect(mockExamRequestRepository.countExamRequestActive).toHaveBeenCalledWith(
+        'user-alice',
+        new Date('2026-01-01'),
+        new Date('2026-03-31'),
+        ['exam-a'],
+      );
+    });
+
+    it('passes undefined for dateFrom and dateTo when not provided', async () => {
+      mockExamRequestRepository.listExamsRequestActive.mockResolvedValueOnce([]);
+      mockExamRequestRepository.countExamRequestActive.mockResolvedValueOnce(0);
+
+      await useCase.execute({});
+
+      expect(mockExamRequestRepository.listExamsRequestActive).toHaveBeenCalledWith(
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        0,
+        10,
+      );
+    });
+
+    it('passes undefined for examIds when the array is empty', async () => {
+      mockExamRequestRepository.listExamsRequestActive.mockResolvedValueOnce([]);
+      mockExamRequestRepository.countExamRequestActive.mockResolvedValueOnce(0);
+
+      await useCase.execute({ examIds: [] });
+
+      expect(mockExamRequestRepository.listExamsRequestActive).toHaveBeenCalledWith(
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        0,
+        10,
+      );
+    });
+
+    it('returns empty data when repository returns no results', async () => {
+      mockExamRequestRepository.listExamsRequestActive.mockResolvedValueOnce([]);
+      mockExamRequestRepository.countExamRequestActive.mockResolvedValueOnce(0);
 
       const result = await useCase.execute({});
 
       expect(result.data).toHaveLength(0);
-      expect(result.meta.total).toBe(0);
+      expect(result.meta.skip).toBe(0);
       expect(result.meta.hasNextPage).toBe(false);
     });
   });

@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Exam, ExamCategory, Prisma } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
-import { contains } from 'class-validator';
 
 @Injectable()
 export class ExamRepository {
@@ -69,34 +68,7 @@ export class ExamRepository {
       },
     })
   }
-  /*
-  countActiveUsers(search?: string): Promise<number> {
-    return this.prisma.user.count({
-      where: {
-        deletedAt: null,
-        ...(search ? {
-          OR: [
-          {
-             name: {
-               contains: search,
-               mode: 'insensitive',
-             },
-            },
-              {
-                email: {
-                  contains: search,
-                  mode: 'insensitive',
-                },
-              },
-            ],
-        }: {}),
-      },
-   });
-  }
-
-
-    */
-
+  
   findManyBy(where: Prisma.ExamWhereInput): Promise<Exam[]> {
     return this.prisma.exam.findMany({ where });
   }
