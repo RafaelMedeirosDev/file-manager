@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { File, Prisma } from '@prisma/client';
+import { File, Prisma, ROLE } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
 
 export type FileWithFolderRelations = Prisma.FileGetPayload<{
@@ -31,6 +31,29 @@ export class FileRepository {
 
   findAll(): Promise<File[]> {
     return this.prisma.file.findMany();
+  }
+
+  listFilesActive(requestUserId: string, requestRole: ROLE, folderId?: string, skip?: number, take?: number): Promise<File[]> {
+    return this.prisma.file.findMany({
+      where: {
+        deletedAt: null,
+        ...(requestRole === ROLE.USER ? { userId: requestUserId } : {}),
+        ...(folderId ? { folderId } : {}),
+      },
+      orderBy: { name: 'asc' },
+      skip,
+      take,
+    });
+  }
+
+  countFilesActive(requestUserId: string, requestRole: ROLE, folderId?: string): Promise<number> {
+    return this.prisma.file.count({
+      where: {
+        deletedAt: null,
+        ...(requestRole === ROLE.USER ? { userId: requestUserId } : {}),
+        ...(folderId ? { folderId } : {}),
+      },
+    });
   }
 
   findById(id: string): Promise<FileWithFolderRelations | null> {
