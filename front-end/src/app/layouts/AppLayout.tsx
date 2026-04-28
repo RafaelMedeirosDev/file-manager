@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { NavLink, Outlet, useNavigate, useMatch } from 'react-router-dom';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { Sidebar } from '../../components/Sidebar';
@@ -12,7 +12,7 @@ function BrandMark({ onClick }: { onClick: () => void }) {
       type="button"
       onClick={onClick}
       style={{
-        display: 'flex', alignItems: 'center', gap: 10,
+        display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0,
         background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginRight: 8,
       }}
     >
@@ -27,7 +27,7 @@ function BrandMark({ onClick }: { onClick: () => void }) {
       </div>
       <span style={{
         fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: 14,
-        letterSpacing: '-0.01em', color: '#0d1e35',
+        letterSpacing: '-0.01em', color: '#0d1e35', whiteSpace: 'nowrap',
       }}>
         File Manager
       </span>
@@ -245,6 +245,9 @@ function SolicitacoesDropdown() {
 export function AppLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const closeSidebar = useCallback(() => setSidebarOpen(false), []);
 
   function handleLogout() {
     logout();
@@ -269,9 +272,25 @@ export function AppLayout() {
           zIndex: 20,
           flexShrink: 0,
         }}>
+          {/* Hamburguer — visível só em mobile via CSS */}
+          <button
+            type="button"
+            className="sb-toggle"
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Abrir menu"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+              strokeLinejoin="round" aria-hidden="true">
+              <line x1="3" y1="6"  x2="21" y2="6"  />
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+          </button>
+
           <BrandMark onClick={() => navigate('/')} />
 
-          <nav style={{ display: 'flex', alignItems: 'center' }}>
+          <nav className="topbar-nav">
             {user?.role === 'ADMIN' && (
               <>
                 <TopNavLink to="/users"   label="Usuários" />
@@ -288,7 +307,7 @@ export function AppLayout() {
 
           {/* User chip */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ textAlign: 'right', lineHeight: 1 }}>
+            <div className="topbar-user-text" style={{ textAlign: 'right', lineHeight: 1 }}>
               <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 13, fontWeight: 600, color: '#0d1e35', margin: 0 }}>
                 {user?.name}
               </p>
@@ -296,16 +315,23 @@ export function AppLayout() {
                 {user?.email}
               </p>
             </div>
-            <span className="app-chip">{user?.role}</span>
+            <span className="topbar-user-text app-chip">{user?.role}</span>
             <button type="button" onClick={handleLogout} className="btn-secondary" style={{ fontSize: 12, padding: '4px 10px' }}>
               Sair
             </button>
           </div>
         </header>
 
+        {/* ── Backdrop mobile ── */}
+        <div
+          className={`sb-backdrop${sidebarOpen ? ' open' : ''}`}
+          onClick={closeSidebar}
+          aria-hidden="true"
+        />
+
         {/* ── Body ── */}
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-          <Sidebar />
+          <Sidebar isOpen={sidebarOpen} onClose={closeSidebar} />
           <main style={{ flex: 1, overflow: 'auto' }}>
             <Outlet />
           </main>
