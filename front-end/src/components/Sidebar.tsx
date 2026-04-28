@@ -173,9 +173,46 @@ function TreeItem({ node, depth, isExpanded, isActive, onToggle, onNavigate, chi
   );
 }
 
+// ── Ícones para a nav mobile ─────────────────────────────
+
+function UsersNavIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: 15, height: 15, flexShrink: 0, color: 'rgba(255,255,255,0.4)' }}>
+      <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
+    </svg>
+  );
+}
+
+function ExamNavIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+      strokeLinecap="round" strokeLinejoin="round"
+      style={{ width: 15, height: 15, flexShrink: 0, color: 'rgba(255,255,255,0.4)' }}>
+      <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+      <rect x="9" y="3" width="6" height="4" rx="1" />
+      <line x1="9" y1="12" x2="15" y2="12" />
+      <line x1="9" y1="16" x2="13" y2="16" />
+    </svg>
+  );
+}
+
+function FolderNavIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor"
+      style={{ width: 15, height: 15, flexShrink: 0, color: 'rgba(255,255,255,0.4)' }}>
+      <path d="M10 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8l-2-2z" />
+    </svg>
+  );
+}
+
 // ── Sidebar ──────────────────────────────────────────────
 
-export function Sidebar() {
+type SidebarProps = {
+  isOpen: boolean;
+  onClose: () => void;
+};
+
+export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -186,7 +223,14 @@ export function Sidebar() {
 
   const activeFolderId = location.pathname.match(/^\/folders\/([^/]+)/)?.[1];
   const isFoldersRoot  = location.pathname === '/folders';
+  const isUsersPage    = location.pathname.startsWith('/users');
+  const isExamsPage    = location.pathname.startsWith('/exam-requests');
   const isAdmin = user?.role === 'ADMIN';
+
+  function navigate2(path: string) {
+    navigate(path);
+    onClose();
+  }
 
   function renderNodes(nodes: FolderNode[], depth = 0): React.ReactNode {
     return nodes.map((node) => (
@@ -197,7 +241,7 @@ export function Sidebar() {
         isExpanded={expanded.has(node.id)}
         isActive={activeFolderId === node.id}
         onToggle={handleToggle}
-        onNavigate={(id) => navigate(`/folders/${id}`)}
+        onNavigate={(id) => navigate2(`/folders/${id}`)}
       >
         {renderNodes(node.children, depth + 1)}
       </TreeItem>
@@ -205,25 +249,38 @@ export function Sidebar() {
   }
 
   return (
-    <aside style={{
-      width: 240,
-      flexShrink: 0,
-      background: 'var(--shell-sidebar)',
-      position: 'relative',
-      overflow: 'hidden',
-      display: 'flex',
-      flexDirection: 'column',
-      borderRight: 'none',
-    }}>
+    <aside className={`app-sidebar${isOpen ? ' open' : ''}`}>
       <DotGridPattern />
       <div style={{ position: 'relative', zIndex: 1, flex: 1, overflowY: 'auto', padding: '12px 8px' }}>
+
+        {/* ── Nav mobile para ADMIN (só visível em mobile via CSS) ── */}
+        {isAdmin && (
+          <div className="sb-mobile-nav">
+            <span className="sb-section-label">Navegação</span>
+            <button type="button" className={`sb-item${isUsersPage ? ' active' : ''}`}
+              onClick={() => navigate2('/users')}>
+              <UsersNavIcon />
+              Usuários
+            </button>
+            <button type="button" className={`sb-item${isFoldersRoot ? ' active' : ''}`}
+              onClick={() => navigate2('/folders')}>
+              <FolderNavIcon />
+              Pastas
+            </button>
+            <button type="button" className={`sb-item${isExamsPage ? ' active' : ''}`}
+              onClick={() => navigate2('/exam-requests')}>
+              <ExamNavIcon />
+              Solicitações
+            </button>
+          </div>
+        )}
 
         {/* ── USER: Início + folder tree ── */}
         {!isAdmin && (
           <>
             <button
               type="button"
-              onClick={() => navigate('/folders')}
+              onClick={() => navigate2('/folders')}
               className={`sb-item${isFoldersRoot ? ' active' : ''}`}
             >
               <HomeIcon active={isFoldersRoot} />

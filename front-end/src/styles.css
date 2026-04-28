@@ -15,6 +15,7 @@
     @apply m-0 min-h-screen text-slate-800 antialiased;
     font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
     background-color: #f0f0f0;
+    overflow-x: hidden;
   }
 
   * {
@@ -683,4 +684,104 @@
   font-family: 'Manrope', sans-serif;
   font-size: 13px;
   color: #10b981;
+}
+
+/* ════════════════════════════════════════════════
+   RESPONSIVE SHELL
+   ════════════════════════════════════════════════ */
+
+/* ── Sidebar como classe CSS (substituição dos inline styles) ── */
+.app-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--shell-sidebar);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Nav da topbar (display controlado aqui, não via inline style) ── */
+.topbar-nav {
+  display: flex;
+  align-items: center;
+}
+
+/* ── Botão hamburguer (oculto no desktop) ── */
+.sb-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #0d1e35;
+  flex-shrink: 0;
+  transition: background 0.12s;
+}
+.sb-toggle:hover { background: #f0f4f8; }
+
+/* ── Backdrop (oculto no desktop) ── */
+.sb-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 49;
+  background: rgba(13, 30, 53, 0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s;
+}
+
+/* ── Nav mobile dentro da sidebar (oculto no desktop) ── */
+.sb-mobile-nav {
+  display: none;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 4px;
+}
+
+@media (max-width: 767px) {
+  /* Hamburguer visível */
+  .sb-toggle { display: flex; }
+
+  /* Sidebar vira um drawer deslizante */
+  .app-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 50;
+    transform: translateX(-240px);
+    transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 0.24s;
+  }
+  .app-sidebar.open {
+    transform: translateX(0);
+    box-shadow: 4px 0 32px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Backdrop visível e ativo quando sidebar está aberta */
+  .sb-backdrop { display: block; }
+  .sb-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Oculta nav da topbar e info do usuário em mobile */
+  .topbar-nav       { display: none; }
+  .topbar-user-text { display: none; }
+
+  /* Nav mobile aparece dentro da sidebar */
+  .sb-mobile-nav { display: block; }
+
+  /* Ajuste de espaçamentos das páginas */
+  .page-header       { padding: 18px 16px 0; gap: 10px; }
+  .page-toolbar      { padding: 10px 16px; }
+  .page-content      { padding: 16px 16px 32px; }
+  .page-expand-panel { padding: 12px 16px; }
 }
