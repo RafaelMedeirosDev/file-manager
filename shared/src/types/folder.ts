@@ -5,6 +5,7 @@ export type FolderItem = {
   name: string;
   userId: string;
   folderId: string | null;
+  isDefault: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -31,6 +32,7 @@ export type FolderDetails = {
   name: string;
   userId: string;
   folderId: string | null;
+  isDefault: boolean;
   ancestors: Array<{ id: string; name: string }>;
   parent: FolderChild | null;
   children: FolderChild[];

@@ -57,12 +57,18 @@ export class UploadFileUseCase {
 
     // ── Resolve o dono do arquivo ────────────────────────
     // ADMIN pode fazer upload em qualquer pasta — o dono é o dono da pasta.
-    // USER só pode fazer upload nas próprias pastas.
+    // USER só pode fazer upload na própria pasta default.
     const isAdmin = input.requesterRole === ROLE.ADMIN;
 
     if (!isAdmin && folder.userId !== input.requesterId) {
       throw new BadRequestException(
         ErrorMessagesEnum.FOLDER_DOES_NOT_BELONG_TO_USER,
+      );
+    }
+
+    if (!isAdmin && !folder.isDefault) {
+      throw new BadRequestException(
+        ErrorMessagesEnum.UPLOAD_NOT_ALLOWED_IN_THIS_FOLDER,
       );
     }
 

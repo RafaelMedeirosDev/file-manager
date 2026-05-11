@@ -68,6 +68,12 @@ export class BulkUploadFilesUseCase {
       );
     }
 
+    if (!isAdmin && !folder.isDefault) {
+      throw new BadRequestException(
+        ErrorMessagesEnum.UPLOAD_NOT_ALLOWED_IN_THIS_FOLDER,
+      );
+    }
+
     const fileOwnerId = isAdmin ? folder.userId : input.requesterId;
 
     const owner = await this.userRepository.findById(fileOwnerId);

@@ -17,6 +17,7 @@ export type GetFolderByIdOutput = {
   name: string;
   userId: string;
   folderId: string | null;
+  isDefault: boolean;
   ancestors: Array<{ id: string; name: string }>;
   parent: {
     id: string;
@@ -88,6 +89,7 @@ export class GetFolderByIdUseCase {
       name: folder.name,
       userId: folder.userId,
       folderId: folder.folderId,
+      isDefault: folder.isDefault,
       ancestors,
       parent:
         folder.parent &&

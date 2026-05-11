@@ -505,12 +505,14 @@ export function FolderDetailsPage() {
     handleCreateSubFolder, handleDownload,
   } = useFolderDetails();
 
+  const canUpload = isAdmin || folder?.isDefault === true;
+
   const pendingCount = uploadQueue.filter((i) => i.status === 'pending').length;
   const hasQueue = uploadQueue.length > 0;
 
   // Show drop overlay when files are dragged over the window
   useEffect(() => {
-    if (!isAdmin) return;
+    if (!canUpload) return;
 
     function onDragEnter(e: DragEvent) {
       if (!e.dataTransfer?.types.includes('Files')) return;
@@ -603,7 +605,7 @@ export function FolderDetailsPage() {
             ))}
           </p>
         </div>
-        {isAdmin && (
+        {canUpload && (
           <button
             type="button"
             className={`fd-actions-toggle${showActions ? ' open' : ''}`}
@@ -650,44 +652,46 @@ export function FolderDetailsPage() {
         </span>
       </div>
 
-      {/* Admin actions panel */}
-      {isAdmin && showActions && (
-        <div className="fd-action-panel">
+      {/* Actions panel — subpasta só para ADMIN, upload para qualquer um com permissão */}
+      {canUpload && showActions && (
+        <div className="fd-action-panel" style={!isAdmin ? { gridTemplateColumns: '1fr' } : undefined}>
           {actionError && <p className="fd-error-bar">{actionError}</p>}
 
-          {/* Nova Subpasta */}
-          <div className="fd-card">
-            <div className="fd-card-header">
-              <span className="fd-card-icon">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                  strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-                  <path d="M12 11v6M9 14h6" />
-                </svg>
-              </span>
-              <p className="fd-card-title">Nova Subpasta</p>
+          {/* Nova Subpasta — ADMIN only */}
+          {isAdmin && (
+            <div className="fd-card">
+              <div className="fd-card-header">
+                <span className="fd-card-icon">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                    <path d="M12 11v6M9 14h6" />
+                  </svg>
+                </span>
+                <p className="fd-card-title">Nova Subpasta</p>
+              </div>
+              <form className="fd-card-body" onSubmit={handleCreateSubFolder}>
+                <input
+                  className="fd-card-input"
+                  placeholder="Nome da subpasta"
+                  value={newFolderName}
+                  onChange={(e) => setNewFolderName(e.target.value)}
+                  required
+                />
+                <button type="submit" className="fd-btn" disabled={creatingFolder}>
+                  {creatingFolder ? 'Criando…' : (
+                    <>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M12 5v14M5 12h14" />
+                      </svg>
+                      Criar
+                    </>
+                  )}
+                </button>
+              </form>
             </div>
-            <form className="fd-card-body" onSubmit={handleCreateSubFolder}>
-              <input
-                className="fd-card-input"
-                placeholder="Nome da subpasta"
-                value={newFolderName}
-                onChange={(e) => setNewFolderName(e.target.value)}
-                required
-              />
-              <button type="submit" className="fd-btn" disabled={creatingFolder}>
-                {creatingFolder ? 'Criando…' : (
-                  <>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                      strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M12 5v14M5 12h14" />
-                    </svg>
-                    Criar
-                  </>
-                )}
-              </button>
-            </form>
-          </div>
+          )}
 
           {/* Upload de Arquivos */}
           <div className="fd-card">
@@ -776,8 +780,8 @@ export function FolderDetailsPage() {
         </div>
       </div>
 
-      {/* ── Drop overlay (ADMIN only, visible only while dragging) ── */}
-      {isAdmin && (
+      {/* ── Drop overlay (visível apenas para quem pode fazer upload) ── */}
+      {canUpload && (
         <>
           <input
             ref={dropInputRef}
