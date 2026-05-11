@@ -17,6 +17,7 @@ export class FolderRepository {
     name: string;
     userId: string;
     folderId?: string;
+    isDefault?: boolean;
   }): Promise<Folder> {
     return this.prisma.folder.create({
       data,

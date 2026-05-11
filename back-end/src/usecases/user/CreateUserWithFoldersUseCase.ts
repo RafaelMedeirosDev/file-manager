@@ -59,7 +59,15 @@ export class CreateUserWithFoldersUseCase {
       role: ROLE.USER,
     });
 
-    const createdFolders: CreatedFolderOutput[] = [];
+    const defaultFolder = await this.folderRepository.create({
+      name: user.name,
+      userId: user.id,
+      isDefault: true,
+    });
+
+    const createdFolders: CreatedFolderOutput[] = [
+      { id: defaultFolder.id, name: defaultFolder.name },
+    ];
 
     for (const folderName of input.folders ?? []) {
       const duplicate = await this.folderRepository.findActiveByUserIdAndName({

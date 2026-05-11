@@ -9,6 +9,7 @@ export type ListFoldersOutput = {
     name: string;
     userId: string;
     folderId: string | null;
+    isDefault: boolean;
     parent: {
       id: string;
       name: string;
@@ -79,6 +80,7 @@ export class ListFoldersUseCase {
         name: folder.name,
         userId: folder.userId,
         folderId: folder.folderId,
+        isDefault: folder.isDefault,
         parent: folder.parent && !folder.parent.deletedAt
           ? {
               id: folder.parent.id,

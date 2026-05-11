@@ -54,6 +54,7 @@ export class UserRepository {
         ],
       } : {}),
       },
+      orderBy: { name: 'asc' },
       skip,
       take,
   });

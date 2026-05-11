@@ -20,4 +20,5 @@ export enum ErrorMessagesEnum {
   EXAM_CODE_ALREADY_REGISTERED = 'Ja existe um exame ativo com este codigo',
   EXAM_REQUEST_NOT_FOUND = 'Solicitacao de exame nao encontrada',
   CANNOT_DELETE_SELF = 'Voce nao pode excluir sua propria conta',
+  UPLOAD_NOT_ALLOWED_IN_THIS_FOLDER = 'Upload nao permitido nesta pasta',
 }
