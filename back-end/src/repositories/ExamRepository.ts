@@ -69,6 +69,14 @@ export class ExamRepository {
     })
   }
   
+  findById(id: string): Promise<Exam | null> {
+    return this.prisma.exam.findUnique({ where: { id } });
+  }
+
+  softDeleteById(id: string, deletedAt: Date): Promise<Exam> {
+    return this.prisma.exam.update({ where: { id }, data: { deletedAt } });
+  }
+
   findManyBy(where: Prisma.ExamWhereInput): Promise<Exam[]> {
     return this.prisma.exam.findMany({ where });
   }

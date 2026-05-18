@@ -272,6 +272,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               <ExamNavIcon />
               Solicitações
             </button>
+            <button type="button" className={`sb-item${location.pathname === '/exams' ? ' active' : ''}`}
+              onClick={() => navigate2('/exams')}>
+              <ExamNavIcon />
+              Catálogo de Exames
+            </button>
           </div>
         )}
 

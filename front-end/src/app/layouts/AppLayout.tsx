@@ -162,9 +162,10 @@ function SolicitacoesDropdown() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  const matchList = useMatch('/exam-requests');
-  const matchNew  = useMatch('/exam-requests/new');
-  const isActive  = !!(matchList || matchNew);
+  const matchList  = useMatch('/exam-requests');
+  const matchNew   = useMatch('/exam-requests/new');
+  const matchExams = useMatch('/exams');
+  const isActive   = !!(matchList || matchNew || matchExams);
 
   useEffect(() => {
     if (!open) return;
@@ -232,6 +233,25 @@ function SolicitacoesDropdown() {
                 </svg>
               </span>
               Solicitações
+            </NavLink>
+
+            <NavLink
+              to="/exams"
+              end
+              role="menuitem"
+              className={({ isActive: a }) => `nav-dropdown-item${a ? ' active' : ''}`}
+              onClick={() => setOpen(false)}
+            >
+              <span className="nav-dropdown-item-icon">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"
+                  strokeLinejoin="round" aria-hidden="true">
+                  <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+                  <rect x="9" y="3" width="6" height="4" rx="1" />
+                  <path d="M9 12h2m0 0h2m-2 0v2m0-2V10" />
+                </svg>
+              </span>
+              Catálogo de Exames
             </NavLink>
           </div>
         )}
