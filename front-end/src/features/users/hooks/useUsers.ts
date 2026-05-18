@@ -3,147 +3,88 @@ import { getApiErrorMessage, normalizePaginatedResponse } from '../../../shared/
 import type { UserItem } from '../../../shared/types';
 import { usersService } from '../services/usersService';
 
-// ── Types internos do hook ───────────────────────────────
+const PAGE_LIMIT = 10;
 
 type UseUsersReturn = {
-  // Dados
   users: UserItem[];
   totalUsers: number;
-
-  // Estados de lista
   loading: boolean;
-  loadingMore: boolean;
   error: string | null;
-
-  // Estados de ação
   actionError: string | null;
   deletingUserId: string | null;
-
-  // Filtros de busca
   searchTerm: string;
   setSearchTerm: (v: string) => void;
-
-  // Ações
+  page: number;
+  totalPages: number;
+  goToPage: (p: number) => void;
   handleSoftDeleteUser: (userId: string, userName: string) => Promise<void>;
-
-  // Ref para scroll infinito
-  sentinelRef: React.RefObject<HTMLDivElement>;
 };
-
-// ── Hook ────────────────────────────────────────────────
 
 export function useUsers(): UseUsersReturn {
   const [users, setUsers] = useState<UserItem[]>([]);
   const [totalUsers, setTotalUsers] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasNextPage, setHasNextPage] = useState(false);
-  const [currentPage, setCurrentPage] = useState(0);
   const [error, setError] = useState<string | null>(null);
-
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
-
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [searchTerm, setSearchTermState] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
-
-  const sentinelRef = useRef<HTMLDivElement>(null);
   const requestIdRef = useRef(0);
 
+  // Debounce da busca — reseta para página 1 ao buscar
   useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm.trim());
+    const t = window.setTimeout(() => {
+      setDebouncedSearch(searchTerm.trim());
+      setPage(1);
     }, 300);
-
-    return () => window.clearTimeout(timeout);
+    return () => window.clearTimeout(t);
   }, [searchTerm]);
 
-  // ── Carregamento de uma página ───────────────────────
+  function setSearchTerm(v: string) {
+    setSearchTermState(v);
+  }
 
-  const loadUsersPage = useCallback(
-    async (page: number, append: boolean) => {
-      const params: Record<string, string | number> = { page, limit: 10 };
-      const requestId = ++requestIdRef.current;
+  // ── Fetch ────────────────────────────────────────────
 
-      if (debouncedSearchTerm) params.search = debouncedSearchTerm;
+  const fetchPage = useCallback(async (targetPage: number) => {
+    const requestId = ++requestIdRef.current;
+    setLoading(true);
+    setError(null);
 
-      try {
-        const raw = await usersService.list(params);
-        const parsed = normalizePaginatedResponse<UserItem>(raw, page, 10);
+    const params: Record<string, string | number> = { page: targetPage, limit: PAGE_LIMIT };
+    if (debouncedSearch) params.search = debouncedSearch;
 
-        if (requestId !== requestIdRef.current) {
-          return;
-        }
+    try {
+      const raw = await usersService.list(params);
+      const parsed = normalizePaginatedResponse<UserItem>(raw, targetPage, PAGE_LIMIT);
 
-        setUsers((prev) => {
-          if (!append) return parsed.items;
-          const existingIds = new Set(prev.map((user) => user.id));
-          const merged = [...prev];
+      if (requestId !== requestIdRef.current) return;
 
-          for (const item of parsed.items) {
-            if (!existingIds.has(item.id)) merged.push(item);
-          }
-
-          return merged;
-        });
-
-        setTotalUsers(parsed.meta.total);
-        setCurrentPage(parsed.meta.page);
-        setHasNextPage(parsed.isLegacyArray ? false : parsed.meta.hasNextPage);
-      } catch (err) {
-        if (requestId !== requestIdRef.current) {
-          return;
-        }
-
-        throw err;
-      }
-    },
-    [debouncedSearchTerm],
-  );
-
-  // ── Primeira carga ───────────────────────────────────
-
-  useEffect(() => {
-    async function fetchFirstPage() {
-      setLoading(true);
-      setLoadingMore(false);
-      setError(null);
-      setUsers([]);
-      setTotalUsers(0);
-      setCurrentPage(0);
-      setHasNextPage(false);
-
-      try {
-        await loadUsersPage(1, false);
-      } catch (err) {
-        setError(getApiErrorMessage(err, 'Erro ao carregar usuários.'));
-      } finally {
-        setLoading(false);
-      }
+      setUsers(parsed.items);
+      setTotalUsers(parsed.meta.total);
+      setTotalPages(Math.max(1, Math.ceil(parsed.meta.total / PAGE_LIMIT)));
+    } catch (err) {
+      if (requestId !== requestIdRef.current) return;
+      setError(getApiErrorMessage(err, 'Erro ao carregar usuários.'));
+    } finally {
+      if (requestId === requestIdRef.current) setLoading(false);
     }
-    void fetchFirstPage();
-  }, [reloadKey, loadUsersPage]);
-
-  // ── Scroll infinito ──────────────────────────────────
+  }, [debouncedSearch]);
 
   useEffect(() => {
-    if (!sentinelRef.current || loading || loadingMore || !hasNextPage) return;
+    void fetchPage(page);
+  }, [page, reloadKey, fetchPage]);
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (!entries[0]?.isIntersecting) return;
-        setLoadingMore(true);
-        void loadUsersPage(currentPage + 1, true)
-          .catch((err) => setError(getApiErrorMessage(err, 'Erro ao carregar mais usuários.')))
-          .finally(() => setLoadingMore(false));
-      },
-      { rootMargin: '180px' },
-    );
+  // ── Navegação ────────────────────────────────────────
 
-    observer.observe(sentinelRef.current);
-    return () => observer.disconnect();
-  }, [currentPage, hasNextPage, loading, loadingMore, loadUsersPage]);
+  function goToPage(p: number) {
+    if (p < 1 || p > totalPages || p === page) return;
+    setPage(p);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 
   // ── Ações ────────────────────────────────────────────
 
@@ -155,6 +96,11 @@ export function useUsers(): UseUsersReturn {
     setDeletingUserId(userId);
     try {
       await usersService.softDelete(userId);
+      // Se excluiu o último da página, volta uma página
+      const nextTotal = totalUsers - 1;
+      const nextTotalPages = Math.max(1, Math.ceil(nextTotal / PAGE_LIMIT));
+      const targetPage = page > nextTotalPages ? nextTotalPages : page;
+      setPage(targetPage);
       setReloadKey((prev) => prev + 1);
     } catch (err) {
       setActionError(getApiErrorMessage(err, 'Erro ao excluir usuário.'));
@@ -163,19 +109,18 @@ export function useUsers(): UseUsersReturn {
     }
   }
 
-  // ── Retorno ──────────────────────────────────────────
-
   return {
     users,
     totalUsers,
     loading,
-    loadingMore,
     error,
     actionError,
     deletingUserId,
     searchTerm,
     setSearchTerm,
+    page,
+    totalPages,
+    goToPage,
     handleSoftDeleteUser,
-    sentinelRef,
   };
 }
