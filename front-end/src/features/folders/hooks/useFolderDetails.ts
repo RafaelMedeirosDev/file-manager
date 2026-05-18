@@ -26,6 +26,7 @@ type UseFolderDetailsReturn = {
   actionError: string | null;
   creatingFolder: boolean;
   downloadingFileId: string | null;
+  deletingFileId: string | null;
 
   // Formulário de criação de subpasta
   newFolderName: string;
@@ -46,6 +47,7 @@ type UseFolderDetailsReturn = {
   // Ações
   handleCreateSubFolder: (event: React.FormEvent<HTMLFormElement>) => Promise<void>;
   handleDownload: (fileId: string, fileName: string, extension: string) => Promise<void>;
+  handleDeleteFile: (fileId: string, fileName: string) => Promise<void>;
 };
 
 // ── Hook ────────────────────────────────────────────────
@@ -62,6 +64,7 @@ export function useFolderDetails(): UseFolderDetailsReturn {
   const [newFolderName, setNewFolderName] = useState('');
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
+  const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [uploadQueue, setUploadQueue] = useState<UploadQueueItem[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -253,6 +256,26 @@ export function useFolderDetails(): UseFolderDetailsReturn {
     }
   }
 
+  async function handleDeleteFile(fileId: string, fileName: string) {
+    const confirmed = window.confirm(`Deseja realmente excluir o arquivo "${fileName}"?`);
+    if (!confirmed) return;
+
+    setActionError(null);
+    setDeletingFileId(fileId);
+
+    try {
+      await folderDetailsService.deleteFile(fileId);
+      setFolder((prev) => {
+        if (!prev) return prev;
+        return { ...prev, files: prev.files.filter((f) => f.id !== fileId) };
+      });
+    } catch (err) {
+      setActionError(getApiErrorMessage(err, 'Não foi possível excluir o arquivo.'));
+    } finally {
+      setDeletingFileId(null);
+    }
+  }
+
   async function handleDownload(fileId: string, fileName: string, extension: string) {
     setActionError(null);
     setDownloadingFileId(fileId);
@@ -296,5 +319,7 @@ export function useFolderDetails(): UseFolderDetailsReturn {
     uploading,
     handleCreateSubFolder,
     handleDownload,
+    handleDeleteFile,
+    deletingFileId,
   };
 }

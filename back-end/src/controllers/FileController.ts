@@ -237,7 +237,7 @@ export class FileController {
   }
 
   @Delete(':id')
-  @Roles(ROLE.ADMIN)
+  @Roles(ROLE.USER, ROLE.ADMIN)
   async softDelete(
     @Param(
       new ValidationPipe({
@@ -247,9 +247,12 @@ export class FileController {
       }),
     )
     params: UpdateFileParamsDTO,
+    @Req() req: Request & { user: JwtPayload },
   ): Promise<SoftDeleteFileOutput> {
     return this.softDeleteFileUseCase.execute({
       id: params.id,
+      requesterUserId: req.user.sub,
+      requesterRole: req.user.role,
     });
   }
 }
