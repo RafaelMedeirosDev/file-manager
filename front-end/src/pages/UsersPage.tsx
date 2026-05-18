@@ -5,6 +5,56 @@ import { useUsers } from '../features/users/hooks/useUsers';
 import { useChangePassword } from '../features/users/hooks/useChangePassword';
 import { ChangePasswordModal } from '../features/users/components/ChangePasswordModal';
 
+// ── Paginação ─────────────────────────────────────────────
+
+function buildPages(current: number, total: number): (number | '...')[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const pages: (number | '...')[] = [1];
+  if (current > 3) pages.push('...');
+  for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) pages.push(i);
+  if (current < total - 2) pages.push('...');
+  pages.push(total);
+  return pages;
+}
+
+function Pagination({ page, totalPages, totalUsers, onPage }: {
+  page: number; totalPages: number; totalUsers: number; onPage: (p: number) => void;
+}) {
+  if (totalPages <= 1) return null;
+  const pages = buildPages(page, totalPages);
+  const from = (page - 1) * 10 + 1;
+  const to = Math.min(page * 10, totalUsers);
+
+  return (
+    <div className="pagination">
+      <span className="pagination-info">{from}–{to} de {totalUsers} usuário{totalUsers !== 1 ? 's' : ''}</span>
+      <div className="pagination-controls">
+        <button className="pagination-btn" onClick={() => onPage(page - 1)} disabled={page === 1}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+          <span className="pagination-btn-label" style={{ marginLeft: 4 }}>Anterior</span>
+        </button>
+
+        {pages.map((p, i) =>
+          p === '...'
+            ? <span key={`e${i}`} className="pagination-ellipsis">…</span>
+            : <button key={p} className={`pagination-btn${p === page ? ' active' : ''}`} onClick={() => onPage(p)}>{p}</button>
+        )}
+
+        <button className="pagination-btn" onClick={() => onPage(page + 1)} disabled={page === totalPages}>
+          <span className="pagination-btn-label" style={{ marginRight: 4 }}>Próxima</span>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M9 18l6-6-6-6" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 const AVATAR_COLORS = [
   'av-blue', 'av-indigo', 'av-violet', 'av-teal',
   'av-amber', 'av-rose', 'av-green', 'av-orange',
@@ -48,10 +98,10 @@ export function UsersPage() {
   const { user } = useAuth();
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const {
-    users, totalUsers, loading, loadingMore, error, actionError, deletingUserId,
+    users, totalUsers, loading, error, actionError, deletingUserId,
     searchTerm, setSearchTerm,
+    page, totalPages, goToPage,
     handleSoftDeleteUser,
-    sentinelRef,
   } = useUsers();
   const changePassword = useChangePassword();
 
@@ -211,12 +261,7 @@ export function UsersPage() {
           )}
         </div>
 
-        <div ref={sentinelRef} style={{ height: 40 }} />
-        {loadingMore ? (
-          <p style={{ textAlign: 'center', fontSize: 13, color: '#94a3b8', fontFamily: 'Manrope, sans-serif' }}>
-            Carregando mais resultados...
-          </p>
-        ) : null}
+        <Pagination page={page} totalPages={totalPages} totalUsers={totalUsers} onPage={goToPage} />
       </div>
     </>
   );
