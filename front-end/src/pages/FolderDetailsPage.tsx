@@ -497,12 +497,12 @@ export function FolderDetailsPage() {
   const dragCounterRef = useRef(0);
   const {
     folder, entries, loading, error, actionError,
-    creatingFolder, downloadingFileId,
+    creatingFolder, downloadingFileId, deletingFileId,
     newFolderName, setNewFolderName,
     searchTerm, setSearchTerm,
     uploadQueue, addFilesToQueue, removeFromQueue, clearQueue,
     handleBulkUpload, uploading,
-    handleCreateSubFolder, handleDownload,
+    handleCreateSubFolder, handleDownload, handleDeleteFile,
   } = useFolderDetails();
 
   const canUpload = isAdmin || folder?.isDefault === true;
@@ -759,14 +759,27 @@ export function FolderDetailsPage() {
                 )}
 
                 {entry.type === 'file' ? (
-                  <button
-                    type="button"
-                    className="download-btn"
-                    disabled={downloadingFileId === entry.id}
-                    onClick={() => handleDownload(entry.id, entry.name, entry.extension)}
-                  >
-                    {downloadingFileId === entry.id ? 'Baixando...' : 'Download'}
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <button
+                      type="button"
+                      className="download-btn"
+                      disabled={downloadingFileId === entry.id}
+                      onClick={() => handleDownload(entry.id, entry.name, entry.extension)}
+                    >
+                      {downloadingFileId === entry.id ? 'Baixando...' : 'Download'}
+                    </button>
+                    {canUpload && (
+                      <button
+                        type="button"
+                        className="btn-danger"
+                        style={{ fontSize: 11, padding: '4px 10px' }}
+                        disabled={deletingFileId === entry.id}
+                        onClick={() => handleDeleteFile(entry.id, `${entry.name}.${entry.extension}`)}
+                      >
+                        {deletingFileId === entry.id ? 'Excluindo...' : 'Excluir'}
+                      </button>
+                    )}
+                  </div>
                 ) : null}
               </li>
             ))}

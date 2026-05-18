@@ -66,4 +66,10 @@ export const folderDetailsService = {
       .post<BulkUploadResponse>('/files/bulk-upload', form)
       .then((r) => r.data);
   },
+
+  deleteFile(fileId: string): Promise<void> {
+    return api
+      .delete(`/files/${fileId}`)
+      .then(() => undefined);
+  },
 };
