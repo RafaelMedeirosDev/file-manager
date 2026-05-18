@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query, UseGuards, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Post, Query, UseGuards, ValidationPipe } from '@nestjs/common';
 import { ROLE } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -7,6 +7,7 @@ import { CreateExamDTO } from '../shared/dto/exam/CreateExamDTO';
 import { ListExamsQueryDTO } from '../shared/dto/exam/ListExamsQueryDTO';
 import { CreateExamOutput, CreateExamUseCase } from '../usecases/exam/CreateExamUseCase';
 import { ListExamsOutput, ListExamsUseCase } from '../usecases/exam/ListExamsUseCase';
+import { SoftDeleteExamOutput, SoftDeleteExamUseCase } from '../usecases/exam/SoftDeleteExamUseCase';
 
 @Controller('exams')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -14,6 +15,7 @@ export class ExamController {
   constructor(
     private readonly createExamUseCase: CreateExamUseCase,
     private readonly listExamsUseCase: ListExamsUseCase,
+    private readonly softDeleteExamUseCase: SoftDeleteExamUseCase,
   ) {}
 
   @Get()
@@ -44,5 +46,13 @@ export class ExamController {
     body: CreateExamDTO,
   ): Promise<CreateExamOutput> {
     return this.createExamUseCase.execute(body);
+  }
+
+  @Delete(':id')
+  @Roles(ROLE.ADMIN)
+  async softDelete(
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<SoftDeleteExamOutput> {
+    return this.softDeleteExamUseCase.execute({ id });
   }
 }

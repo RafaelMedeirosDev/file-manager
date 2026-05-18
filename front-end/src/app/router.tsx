@@ -9,6 +9,7 @@ import { UsersPage } from '../pages/UsersPage';
 import { CreateUserPage } from '../pages/CreateUserPage';
 import { ExamRequestPage } from '../pages/ExamRequestPage';
 import { ExamRequestsPage } from '../pages/ExamRequestsPage';
+import { ExamsPage } from '../pages/ExamsPage';
 import { FoldersBulkCreatePage } from '../pages/FoldersBulkCreatePage';
 
 export const router = createBrowserRouter([
@@ -39,6 +40,7 @@ export const router = createBrowserRouter([
           { path: '/users',             element: <UsersPage />              },
           { path: '/users/new',         element: <CreateUserPage />         },
           { path: '/folders/new',       element: <FoldersBulkCreatePage />  },
+          { path: '/exams',             element: <ExamsPage />              },
           { path: '/exam-requests',     element: <ExamRequestsPage />       },
           { path: '/exam-requests/new', element: <ExamRequestPage />        },
         ],

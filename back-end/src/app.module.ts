@@ -33,6 +33,7 @@ import { ExamController } from './controllers/ExamController';
 import { ExamRepository } from './repositories/ExamRepository';
 import { CreateExamUseCase } from './usecases/exam/CreateExamUseCase';
 import { ListExamsUseCase } from './usecases/exam/ListExamsUseCase';
+import { SoftDeleteExamUseCase } from './usecases/exam/SoftDeleteExamUseCase';
 import { ExamRequestController } from './controllers/ExamRequestController';
 import { ExamRequestRepository } from './repositories/ExamRequestRepository';
 import { CreateExamRequestUseCase } from './usecases/exam-request/CreateExamRequestUseCase';
@@ -69,6 +70,7 @@ import { UpdateExamRequestUseCase } from './usecases/exam-request/UpdateExamRequ
     ExamRepository,
     CreateExamUseCase,
     ListExamsUseCase,
+    SoftDeleteExamUseCase,
     ExamRequestRepository,
     CreateExamRequestUseCase,
     GetExamRequestByIdUseCase,
