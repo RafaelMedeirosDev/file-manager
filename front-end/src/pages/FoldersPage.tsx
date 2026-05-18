@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/hooks/useAuth';
 import { FolderIcon } from '../components/Icons';
 import { useFolders } from '../features/folders/hooks/useFolders';
 import { useSidebarContext } from '../features/folders/contexts/SidebarContext';
 
-// ── Avatar helpers (mesmos do UsersPage) ─────────────────
+// ── Avatar helpers ────────────────────────────────────────
 
 const AV_CLASSES = ['av-blue', 'av-indigo', 'av-violet', 'av-green', 'av-amber', 'av-rose', 'av-teal', 'av-orange'];
 
@@ -35,6 +35,46 @@ export function FoldersPage() {
   } = useFolders();
 
   const isAdmin = user?.role === 'ADMIN';
+
+  // ── Combobox state ───────────────────────────────────────
+  const [comboQuery, setComboQuery] = useState('');
+  const [comboOpen, setComboOpen] = useState(false);
+  const comboRef = useRef<HTMLDivElement>(null);
+
+  const selectedUser = usersOptions.find((u) => u.id === selectedUserId) ?? null;
+  const filteredUsers = usersOptions.filter((u) =>
+    u.name.toLowerCase().includes(comboQuery.toLowerCase()),
+  );
+
+  useEffect(() => {
+    if (!comboOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (comboRef.current && !comboRef.current.contains(e.target as Node)) {
+        setComboOpen(false);
+        setComboQuery('');
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [comboOpen]);
+
+  function handleComboFocus() {
+    setComboOpen(true);
+    setComboQuery('');
+  }
+
+  function handleSelectUser(id: string) {
+    selectUser(id);
+    setComboOpen(false);
+    setComboQuery('');
+  }
+
+  function handleClear(e: React.MouseEvent) {
+    e.stopPropagation();
+    selectUser(null);
+    setComboQuery('');
+    setComboOpen(false);
+  }
 
   return (
     <>
@@ -84,49 +124,135 @@ export function FoldersPage() {
       {/* Content */}
       <div className="page-content">
 
-        {/* ── Grade de usuários (ADMIN) ── */}
+        {/* ── Combobox de seleção de usuário (ADMIN) ── */}
         {isAdmin && usersOptions.length > 0 ? (
-          <div style={{ marginBottom: 24 }}>
-            <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#94a3b8', margin: '0 0 12px 0' }}>
+          <div style={{ marginBottom: 24, maxWidth: 400 }} ref={comboRef}>
+            <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#94a3b8', margin: '0 0 8px 0' }}>
               Selecione um usuário
             </p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-              {usersOptions.map((u) => {
-                const isSelected = selectedUserId === u.id;
-                return (
-                  <button
-                    key={u.id}
-                    type="button"
-                    onClick={() => selectUser(isSelected ? null : u.id)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                      padding: '10px 14px',
-                      background: isSelected ? '#eff6ff' : '#ffffff',
-                      border: `1.5px solid ${isSelected ? '#0078D4' : 'var(--shell-border)'}`,
-                      borderRadius: 10,
-                      cursor: 'pointer',
-                      transition: 'border-color 0.12s, background 0.12s, box-shadow 0.12s',
-                      boxShadow: isSelected ? '0 0 0 3px rgba(0,120,212,0.10)' : '0 1px 3px rgba(0,0,0,0.05)',
-                      fontFamily: 'Manrope, sans-serif',
-                    }}
-                  >
-                    <div className={`users-avatar ${avatarClass(u.name)}`} style={{ width: 32, height: 32, fontSize: 12 }}>
-                      {avatarInitials(u.name)}
-                    </div>
-                    <span style={{
-                      fontSize: 13,
-                      fontWeight: isSelected ? 700 : 500,
-                      color: isSelected ? '#0078D4' : '#0d1e35',
-                      whiteSpace: 'nowrap',
-                    }}>
-                      {u.name}
-                    </span>
-                  </button>
-                );
-              })}
+
+            {/* Campo de busca */}
+            <div style={{ position: 'relative' }}>
+              {/* Avatar do selecionado (visível quando fechado) */}
+              {selectedUser && !comboOpen && (
+                <div
+                  className={`users-avatar ${avatarClass(selectedUser.name)}`}
+                  style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 26, height: 26, fontSize: 10, zIndex: 1 }}
+                >
+                  {avatarInitials(selectedUser.name)}
+                </div>
+              )}
+
+              {/* Ícone de busca (visível quando aberto ou sem seleção) */}
+              {(!selectedUser || comboOpen) && (
+                <svg style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }}
+                  width="14" height="14" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+                </svg>
+              )}
+
+              <input
+                type="text"
+                value={comboOpen ? comboQuery : (selectedUser?.name ?? '')}
+                placeholder="Buscar usuário..."
+                onFocus={handleComboFocus}
+                onChange={(e) => setComboQuery(e.target.value)}
+                style={{
+                  width: '100%',
+                  fontFamily: 'Manrope, sans-serif',
+                  fontSize: 13,
+                  color: selectedUser && !comboOpen ? '#0078D4' : '#0d1e35',
+                  fontWeight: selectedUser && !comboOpen ? 600 : 400,
+                  background: selectedUser && !comboOpen ? '#eff6ff' : '#fff',
+                  border: `1.5px solid ${comboOpen ? '#0078D4' : selectedUser ? '#0078D4' : '#e0e8f0'}`,
+                  borderRadius: 10,
+                  padding: '10px 36px 10px 42px',
+                  outline: 'none',
+                  boxShadow: comboOpen ? '0 0 0 3px rgba(0,120,212,0.10)' : selectedUser ? '0 0 0 3px rgba(0,120,212,0.08)' : 'none',
+                  transition: 'border-color 0.15s, box-shadow 0.15s, background 0.15s',
+                  cursor: 'text',
+                  boxSizing: 'border-box',
+                }}
+              />
+
+              {/* Botão limpar */}
+              {selectedUser && !comboOpen && (
+                <button
+                  type="button"
+                  onClick={handleClear}
+                  style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center', padding: 2, borderRadius: 4 }}
+                  title="Limpar seleção"
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+
+              {/* Chevron */}
+              {!selectedUser && !comboOpen && (
+                <svg style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }}
+                  width="12" height="12" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
+              )}
             </div>
+
+            {/* Dropdown */}
+            {comboOpen && (
+              <div style={{
+                position: 'absolute',
+                zIndex: 100,
+                width: 400,
+                marginTop: 4,
+                background: '#fff',
+                border: '1px solid #e0e8f0',
+                borderRadius: 12,
+                boxShadow: '0 8px 24px rgba(13,30,53,0.12), 0 2px 6px rgba(13,30,53,0.06)',
+                overflow: 'hidden',
+                maxHeight: 280,
+                overflowY: 'auto',
+              }}>
+                {filteredUsers.length === 0 ? (
+                  <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 13, color: '#94a3b8', padding: '16px 16px', margin: 0, textAlign: 'center' }}>
+                    Nenhum usuário encontrado.
+                  </p>
+                ) : (
+                  filteredUsers.map((u) => (
+                    <button
+                      key={u.id}
+                      type="button"
+                      onClick={() => handleSelectUser(u.id)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        width: '100%',
+                        padding: '10px 14px',
+                        background: 'none',
+                        border: 'none',
+                        borderBottom: '1px solid #f4f7fa',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        transition: 'background 0.1s',
+                        fontFamily: 'Manrope, sans-serif',
+                      }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#f0f7fe'; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'none'; }}
+                    >
+                      <div className={`users-avatar ${avatarClass(u.name)}`} style={{ width: 30, height: 30, fontSize: 11, flexShrink: 0 }}>
+                        {avatarInitials(u.name)}
+                      </div>
+                      <span style={{ fontSize: 13, fontWeight: 500, color: '#0d1e35' }}>
+                        {u.name}
+                      </span>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
           </div>
         ) : null}
 
