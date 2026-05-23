@@ -1,9 +1,6 @@
-import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/hooks/useAuth';
 import { useUsers } from '../features/users/hooks/useUsers';
-import { useChangePassword } from '../features/users/hooks/useChangePassword';
-import { ChangePasswordModal } from '../features/users/components/ChangePasswordModal';
 
 // ── Paginação ─────────────────────────────────────────────
 
@@ -96,23 +93,15 @@ function EmptySearchIcon() {
 
 export function UsersPage() {
   const { user } = useAuth();
-  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const {
     users, totalUsers, loading, error, actionError, deletingUserId,
     searchTerm, setSearchTerm,
     page, totalPages, goToPage,
     handleSoftDeleteUser,
   } = useUsers();
-  const changePassword = useChangePassword();
 
   const isAdmin = user?.role === 'ADMIN';
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!changePassword.success) return;
-    const t = setTimeout(() => setIsPasswordModalOpen(false), 1200);
-    return () => clearTimeout(t);
-  }, [changePassword.success]);
 
   return (
     <>
@@ -122,43 +111,17 @@ export function UsersPage() {
           <h1 className="page-title">Usuários</h1>
           <p className="page-subtitle">Gerencie contas, permissões e acesso ao workspace.</p>
         </div>
-        <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
+        {isAdmin ? (
           <button
             type="button"
-            className="btn-secondary"
-            style={{ fontSize: 12, padding: '7px 12px' }}
-            onClick={() => { changePassword.reset(); setIsPasswordModalOpen(true); }}
+            className="btn-primary"
+            style={{ fontSize: 12, padding: '7px 12px', flexShrink: 0 }}
+            onClick={() => navigate('/users/new')}
           >
-            Minha senha
+            + Novo usuário
           </button>
-          {isAdmin ? (
-            <button
-              type="button"
-              className="btn-primary"
-              style={{ fontSize: 12, padding: '7px 12px' }}
-              onClick={() => navigate('/users/new')}
-            >
-              + Novo usuário
-            </button>
-          ) : null}
-        </div>
+        ) : null}
       </div>
-
-      {/* Change Password Modal */}
-      <ChangePasswordModal
-        isOpen={isPasswordModalOpen}
-        onClose={() => setIsPasswordModalOpen(false)}
-        currentPassword={changePassword.currentPassword}
-        onCurrentPasswordChange={changePassword.setCurrentPassword}
-        newPassword={changePassword.newPassword}
-        onNewPasswordChange={changePassword.setNewPassword}
-        confirmNewPassword={changePassword.confirmNewPassword}
-        onConfirmNewPasswordChange={changePassword.setConfirmNewPassword}
-        onSubmit={changePassword.handleSubmit}
-        isSubmitting={changePassword.isSubmitting}
-        error={changePassword.error}
-        success={changePassword.success}
-      />
 
       {/* Content */}
       <div className="page-content">

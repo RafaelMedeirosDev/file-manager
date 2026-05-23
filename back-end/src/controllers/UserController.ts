@@ -89,6 +89,7 @@ export class UserController {
     });
   }
 
+  @Roles(ROLE.USER, ROLE.ADMIN)
   @Patch('me/password')
   async changeOwnPassword(
     @Req() req: Request & { user: JwtPayload },
