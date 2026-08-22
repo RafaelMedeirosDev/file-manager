@@ -1,7 +1,10 @@
-import { BadRequestException,
+import {
+  BadRequestException,
   Injectable,
   NotFoundException,
-  UnauthorizedException, Logger } from '@nestjs/common';
+  UnauthorizedException,
+  Logger,
+} from '@nestjs/common';
 import { compare, hash } from 'bcrypt';
 import { UserRepository } from '../../repositories/UserRepository';
 import { ErrorMessagesEnum } from '@file-manager/shared';
@@ -26,7 +29,9 @@ export class ChangeOwnPasswordUseCase {
 
   constructor(private readonly userRepository: UserRepository) {}
 
-  async execute(input: ChangeOwnPasswordInput): Promise<ChangeOwnPasswordOutput> {
+  async execute(
+    input: ChangeOwnPasswordInput,
+  ): Promise<ChangeOwnPasswordOutput> {
     this.logger.log('[ChangeOwnPasswordUseCase] Execute started');
     const user = await this.userRepository.findById(input.userId);
 
@@ -46,25 +51,25 @@ export class ChangeOwnPasswordUseCase {
     );
 
     if (!isCurrentPasswordValid) {
-      throw new UnauthorizedException(ErrorMessagesEnum.INVALID_CURRENT_PASSWORD);
+      throw new UnauthorizedException(
+        ErrorMessagesEnum.INVALID_CURRENT_PASSWORD,
+      );
     }
 
     const isSamePassword = await compare(input.newPassword, user.password);
 
     if (isSamePassword) {
-      throw new BadRequestException(ErrorMessagesEnum.NEW_PASSWORD_MUST_BE_DIFFERENT);
+      throw new BadRequestException(
+        ErrorMessagesEnum.NEW_PASSWORD_MUST_BE_DIFFERENT,
+      );
     }
 
-    const hashedPassword = await hash(
-      input.newPassword,
-      BCRYPT_SALT_ROUNDS,
-    );
+    const hashedPassword = await hash(input.newPassword, BCRYPT_SALT_ROUNDS);
 
     const updatedUser = await this.userRepository.updateById(user.id, {
       password: hashedPassword,
     });
     this.logger.log('[ChangeOwnPasswordUseCase] Execute finished');
-
 
     return {
       id: updatedUser.id,
@@ -73,6 +78,3 @@ export class ChangeOwnPasswordUseCase {
     };
   }
 }
-
-
-

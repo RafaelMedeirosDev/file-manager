@@ -1,6 +1,9 @@
-import { BadRequestException,
+import {
+  BadRequestException,
   Injectable,
-  NotFoundException, Logger } from '@nestjs/common';
+  NotFoundException,
+  Logger,
+} from '@nestjs/common';
 import { FileRepository } from '../../repositories/FileRepository';
 import { FolderRepository } from '../../repositories/FolderRepository';
 import { ErrorMessagesEnum } from '@file-manager/shared';
@@ -33,7 +36,9 @@ export class UpdateFileUseCase {
   async execute(input: UpdateFileInput): Promise<UpdateFileOutput> {
     this.logger.log('[UpdateFileUseCase] Execute started');
     if (!input.folderId && !input.url) {
-      throw new BadRequestException(ErrorMessagesEnum.AT_LEAST_ONE_FIELD_REQUIRED);
+      throw new BadRequestException(
+        ErrorMessagesEnum.AT_LEAST_ONE_FIELD_REQUIRED,
+      );
     }
 
     const file = await this.fileRepository.findById(input.id);
@@ -62,7 +67,6 @@ export class UpdateFileUseCase {
     });
     this.logger.log('[UpdateFileUseCase] Execute finished');
 
-
     return {
       id: updatedFile.id,
       name: updatedFile.name,
@@ -75,6 +79,3 @@ export class UpdateFileUseCase {
     };
   }
 }
-
-
-

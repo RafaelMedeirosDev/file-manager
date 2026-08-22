@@ -1,13 +1,33 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Post, Query, UseGuards, ValidationPipe } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+  UseGuards,
+  ValidationPipe,
+} from '@nestjs/common';
 import { ROLE } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { CreateExamDTO } from '../shared/dto/exam/CreateExamDTO';
 import { ListExamsQueryDTO } from '../shared/dto/exam/ListExamsQueryDTO';
-import { CreateExamOutput, CreateExamUseCase } from '../usecases/exam/CreateExamUseCase';
-import { ListExamsOutput, ListExamsUseCase } from '../usecases/exam/ListExamsUseCase';
-import { SoftDeleteExamOutput, SoftDeleteExamUseCase } from '../usecases/exam/SoftDeleteExamUseCase';
+import {
+  CreateExamOutput,
+  CreateExamUseCase,
+} from '../usecases/exam/CreateExamUseCase';
+import {
+  ListExamsOutput,
+  ListExamsUseCase,
+} from '../usecases/exam/ListExamsUseCase';
+import {
+  SoftDeleteExamOutput,
+  SoftDeleteExamUseCase,
+} from '../usecases/exam/SoftDeleteExamUseCase';
 
 @Controller('exams')
 @UseGuards(JwtAuthGuard, RolesGuard)

@@ -132,16 +132,30 @@ describe('CreateExamRequestUseCase', () => {
       mockUserRepository.findById.mockResolvedValueOnce(null);
 
       await expect(
-        useCase.execute({ userId: 'nonexistent', indication: undefined, examIds: ['exam-uuid-001'] }),
-      ).rejects.toThrow(new NotFoundException(ErrorMessagesEnum.USER_NOT_FOUND));
+        useCase.execute({
+          userId: 'nonexistent',
+          indication: undefined,
+          examIds: ['exam-uuid-001'],
+        }),
+      ).rejects.toThrow(
+        new NotFoundException(ErrorMessagesEnum.USER_NOT_FOUND),
+      );
     });
 
     it('user is soft-deleted', async () => {
-      mockUserRepository.findById.mockResolvedValueOnce(userMock({ deletedAt: new Date() }));
+      mockUserRepository.findById.mockResolvedValueOnce(
+        userMock({ deletedAt: new Date() }),
+      );
 
       await expect(
-        useCase.execute({ userId: 'user-uuid-001', indication: undefined, examIds: ['exam-uuid-001'] }),
-      ).rejects.toThrow(new NotFoundException(ErrorMessagesEnum.USER_NOT_FOUND));
+        useCase.execute({
+          userId: 'user-uuid-001',
+          indication: undefined,
+          examIds: ['exam-uuid-001'],
+        }),
+      ).rejects.toThrow(
+        new NotFoundException(ErrorMessagesEnum.USER_NOT_FOUND),
+      );
     });
 
     it('one or more exams are not found', async () => {
@@ -150,8 +164,14 @@ describe('CreateExamRequestUseCase', () => {
       mockExamRepository.findManyBy.mockResolvedValueOnce([]);
 
       await expect(
-        useCase.execute({ userId: 'user-uuid-001', indication: undefined, examIds: ['exam-uuid-001'] }),
-      ).rejects.toThrow(new NotFoundException(ErrorMessagesEnum.EXAM_NOT_FOUND));
+        useCase.execute({
+          userId: 'user-uuid-001',
+          indication: undefined,
+          examIds: ['exam-uuid-001'],
+        }),
+      ).rejects.toThrow(
+        new NotFoundException(ErrorMessagesEnum.EXAM_NOT_FOUND),
+      );
     });
   });
 });

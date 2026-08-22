@@ -34,7 +34,10 @@ import {
   SoftDeleteUserOutput,
   SoftDeleteUserUseCase,
 } from '../usecases/user/SoftDeleteUserUseCase';
-import { ListUsersOutput, ListUsersUseCase } from '../usecases/user/ListUsersUseCase';
+import {
+  ListUsersOutput,
+  ListUsersUseCase,
+} from '../usecases/user/ListUsersUseCase';
 import {
   ChangeOwnPasswordOutput,
   ChangeOwnPasswordUseCase,

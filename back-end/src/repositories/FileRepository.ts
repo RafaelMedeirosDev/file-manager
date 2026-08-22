@@ -33,7 +33,13 @@ export class FileRepository {
     return this.prisma.file.findMany();
   }
 
-  listFilesActive(requestUserId: string, requestRole: ROLE, folderId?: string, skip?: number, take?: number): Promise<File[]> {
+  listFilesActive(
+    requestUserId: string,
+    requestRole: ROLE,
+    folderId?: string,
+    skip?: number,
+    take?: number,
+  ): Promise<File[]> {
     return this.prisma.file.findMany({
       where: {
         deletedAt: null,
@@ -46,7 +52,11 @@ export class FileRepository {
     });
   }
 
-  countFilesActive(requestUserId: string, requestRole: ROLE, folderId?: string): Promise<number> {
+  countFilesActive(
+    requestUserId: string,
+    requestRole: ROLE,
+    folderId?: string,
+  ): Promise<number> {
     return this.prisma.file.count({
       where: {
         deletedAt: null,

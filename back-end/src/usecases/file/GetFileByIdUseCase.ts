@@ -1,6 +1,9 @@
-import { ForbiddenException,
+import {
+  ForbiddenException,
   Injectable,
-  NotFoundException, Logger } from '@nestjs/common';
+  NotFoundException,
+  Logger,
+} from '@nestjs/common';
 import { ROLE } from '@prisma/client';
 import { FileRepository } from '../../repositories/FileRepository';
 import { ErrorMessagesEnum } from '@file-manager/shared';
@@ -58,7 +61,6 @@ export class GetFileByIdUseCase {
     }
     this.logger.log('[GetFileByIdUseCase] Execute finished');
 
-
     return {
       id: file.id,
       name: file.name,
@@ -89,7 +91,8 @@ export class GetFileByIdUseCase {
               children: file.folder.children
                 .filter(
                   (child) =>
-                    !child.deletedAt && this.canAccessResource(child.userId, input),
+                    !child.deletedAt &&
+                    this.canAccessResource(child.userId, input),
                 )
                 .map((child) => ({
                   id: child.id,
@@ -115,6 +118,3 @@ export class GetFileByIdUseCase {
     return ownerUserId === input.requesterUserId;
   }
 }
-
-
-

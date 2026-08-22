@@ -29,7 +29,7 @@ const countFoldersActive = jest.fn();
 let useCase: ListFoldersUseCase;
 
 const adminInput = { requesterUserId: 'admin-id', requesterRole: ROLE.ADMIN };
-const userInput  = { requesterUserId: 'user-id',  requesterRole: ROLE.USER };
+const userInput = { requesterUserId: 'user-id', requesterRole: ROLE.USER };
 
 // ── Suite ─────────────────────────────────────────────────────────────────────
 
@@ -58,8 +58,16 @@ describe('ListFoldersUseCase', () => {
     });
 
     it('maps repository result to correct output shape including parent and children', async () => {
-      const parent = folderMock({ id: 'parent-id', name: 'Root', deletedAt: null });
-      const child  = folderMock({ id: 'child-id',  name: 'Sub',  deletedAt: null });
+      const parent = folderMock({
+        id: 'parent-id',
+        name: 'Root',
+        deletedAt: null,
+      });
+      const child = folderMock({
+        id: 'child-id',
+        name: 'Sub',
+        deletedAt: null,
+      });
       const folder = folderMock({ id: 'f-x', parent, children: [child] });
       listFoldersActive.mockResolvedValueOnce([folder]);
       countFoldersActive.mockResolvedValueOnce(1);
@@ -67,8 +75,10 @@ describe('ListFoldersUseCase', () => {
       const result = await useCase.execute(adminInput);
 
       expect(result.data[0].parent).toEqual({
-        id: 'parent-id', name: 'Root',
-        userId: parent.userId, folderId: parent.folderId,
+        id: 'parent-id',
+        name: 'Root',
+        userId: parent.userId,
+        folderId: parent.folderId,
       });
       expect(result.data[0].children).toHaveLength(1);
       expect(result.data[0].children[0].id).toBe('child-id');
@@ -86,9 +96,15 @@ describe('ListFoldersUseCase', () => {
     });
 
     it('excludes deleted children from output', async () => {
-      const activeChild  = folderMock({ id: 'c-active',  deletedAt: null });
-      const deletedChild = folderMock({ id: 'c-deleted', deletedAt: new Date() });
-      const folder = folderMock({ id: 'f-x', children: [activeChild, deletedChild] });
+      const activeChild = folderMock({ id: 'c-active', deletedAt: null });
+      const deletedChild = folderMock({
+        id: 'c-deleted',
+        deletedAt: new Date(),
+      });
+      const folder = folderMock({
+        id: 'f-x',
+        children: [activeChild, deletedChild],
+      });
       listFoldersActive.mockResolvedValueOnce([folder]);
       countFoldersActive.mockResolvedValueOnce(1);
 
@@ -102,7 +118,11 @@ describe('ListFoldersUseCase', () => {
       listFoldersActive.mockResolvedValueOnce([folderMock(), folderMock()]);
       countFoldersActive.mockResolvedValueOnce(5);
 
-      const result = await useCase.execute({ ...adminInput, page: 2, limit: 2 });
+      const result = await useCase.execute({
+        ...adminInput,
+        page: 2,
+        limit: 2,
+      });
 
       expect(result.meta.page).toBe(2);
       expect(result.meta.limit).toBe(2);
@@ -114,10 +134,27 @@ describe('ListFoldersUseCase', () => {
       listFoldersActive.mockResolvedValueOnce([]);
       countFoldersActive.mockResolvedValueOnce(0);
 
-      await useCase.execute({ ...userInput, folderId: 'folder-abc', page: 1, limit: 10 });
+      await useCase.execute({
+        ...userInput,
+        folderId: 'folder-abc',
+        page: 1,
+        limit: 10,
+      });
 
-      expect(listFoldersActive).toHaveBeenCalledWith('user-id', ROLE.USER, 'folder-abc', undefined, 0, 10);
-      expect(countFoldersActive).toHaveBeenCalledWith('user-id', ROLE.USER, 'folder-abc', undefined);
+      expect(listFoldersActive).toHaveBeenCalledWith(
+        'user-id',
+        ROLE.USER,
+        'folder-abc',
+        undefined,
+        0,
+        10,
+      );
+      expect(countFoldersActive).toHaveBeenCalledWith(
+        'user-id',
+        ROLE.USER,
+        'folder-abc',
+        undefined,
+      );
     });
   });
 

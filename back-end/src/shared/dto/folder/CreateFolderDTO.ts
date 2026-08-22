@@ -1,5 +1,11 @@
 import { Transform } from 'class-transformer';
-import { IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+} from 'class-validator';
 
 export class CreateFolderDTO {
   @IsString()

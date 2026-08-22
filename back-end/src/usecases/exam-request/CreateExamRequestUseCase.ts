@@ -38,7 +38,9 @@ export class CreateExamRequestUseCase {
     const user = await this.userRepository.findById(input.userId);
 
     if (!user || user.deletedAt) {
-      this.logger.warn('[CreateExamRequestUseCase] User not found', { userId: input.userId });
+      this.logger.warn('[CreateExamRequestUseCase] User not found', {
+        userId: input.userId,
+      });
       throw new NotFoundException(ErrorMessagesEnum.USER_NOT_FOUND);
     }
 

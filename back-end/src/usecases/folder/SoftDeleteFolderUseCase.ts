@@ -34,7 +34,6 @@ export class SoftDeleteFolderUseCase {
     );
     this.logger.log('[SoftDeleteFolderUseCase] Execute finished');
 
-
     return {
       id: deletedFolder.id,
       name: deletedFolder.name,
@@ -44,6 +43,3 @@ export class SoftDeleteFolderUseCase {
     };
   }
 }
-
-
-

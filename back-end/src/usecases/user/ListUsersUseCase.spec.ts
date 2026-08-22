@@ -52,7 +52,12 @@ describe('ListUsersUseCase', () => {
     });
 
     it('maps repository result to correct output shape', async () => {
-      const user = userMock({ id: 'u-x', name: 'Bob', email: 'bob@example.com', role: ROLE.ADMIN });
+      const user = userMock({
+        id: 'u-x',
+        name: 'Bob',
+        email: 'bob@example.com',
+        role: ROLE.ADMIN,
+      });
       listUsersActive.mockResolvedValueOnce([user]);
       countActiveUsers.mockResolvedValueOnce(1);
 
@@ -69,7 +74,10 @@ describe('ListUsersUseCase', () => {
     });
 
     it('calculates skip and hasNextPage correctly for page 2', async () => {
-      listUsersActive.mockResolvedValueOnce([userMock({ id: 'u-3' }), userMock({ id: 'u-4' })]);
+      listUsersActive.mockResolvedValueOnce([
+        userMock({ id: 'u-3' }),
+        userMock({ id: 'u-4' }),
+      ]);
       countActiveUsers.mockResolvedValueOnce(5);
 
       const result = await useCase.execute({ page: 2, limit: 2 });

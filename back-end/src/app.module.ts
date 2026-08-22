@@ -43,7 +43,14 @@ import { UpdateExamRequestUseCase } from './usecases/exam-request/UpdateExamRequ
 
 @Module({
   imports: [PrismaModule, AuthModule],
-  controllers: [AppController, UserController, FolderController, FileController, ExamController, ExamRequestController],
+  controllers: [
+    AppController,
+    UserController,
+    FolderController,
+    FileController,
+    ExamController,
+    ExamRequestController,
+  ],
   providers: [
     AppService,
     CreateUserUseCase,
@@ -81,4 +88,3 @@ import { UpdateExamRequestUseCase } from './usecases/exam-request/UpdateExamRequ
   ],
 })
 export class AppModule {}
-

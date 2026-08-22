@@ -50,7 +50,9 @@ export class ListFoldersUseCase {
     this.logger.log('[ListFoldersUseCase] Execute started');
 
     if (input.folderId && input.rootsOnly) {
-      throw new BadRequestException(ErrorMessagesEnum.INVALID_FOLDER_LIST_FILTER);
+      throw new BadRequestException(
+        ErrorMessagesEnum.INVALID_FOLDER_LIST_FILTER,
+      );
     }
 
     const page = input.page ?? 1;
@@ -81,14 +83,15 @@ export class ListFoldersUseCase {
         userId: folder.userId,
         folderId: folder.folderId,
         isDefault: folder.isDefault,
-        parent: folder.parent && !folder.parent.deletedAt
-          ? {
-              id: folder.parent.id,
-              name: folder.parent.name,
-              userId: folder.parent.userId,
-              folderId: folder.parent.folderId,
-            }
-          : null,
+        parent:
+          folder.parent && !folder.parent.deletedAt
+            ? {
+                id: folder.parent.id,
+                name: folder.parent.name,
+                userId: folder.parent.userId,
+                folderId: folder.parent.folderId,
+              }
+            : null,
         children: folder.children
           .filter((child) => !child.deletedAt)
           .map((child) => ({

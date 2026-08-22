@@ -67,48 +67,68 @@ export class ExamRequestRepository {
     });
   }
 
-  listExamsRequestActive(userId?: string, dateFrom?: Date, dateTo?: Date, examsIds?: string[], skip?: number, take?: number): Promise<ExamRequestWithExamsAndUser[]> {
+  listExamsRequestActive(
+    userId?: string,
+    dateFrom?: Date,
+    dateTo?: Date,
+    examsIds?: string[],
+    skip?: number,
+    take?: number,
+  ): Promise<ExamRequestWithExamsAndUser[]> {
     return this.prisma.examRequest.findMany({
       where: {
         deletedAt: null,
-        ...(userId ? {userId}: {}),
-        ...(dateFrom || dateTo ? {
-            createdAt: {
-              ...(dateFrom ? {gte: dateFrom}: {}),
-              ...(dateTo ? {lte: dateTo}: {}),
+        ...(userId ? { userId } : {}),
+        ...(dateFrom || dateTo
+          ? {
+              createdAt: {
+                ...(dateFrom ? { gte: dateFrom } : {}),
+                ...(dateTo ? { lte: dateTo } : {}),
+              },
             }
-        }: {}),
-        ...(examsIds && examsIds.length > 0 ? {
-          exams:{some: {id: {in: examsIds}}}
-        }: {}),
-        user: { role: 'USER'}
+          : {}),
+        ...(examsIds && examsIds.length > 0
+          ? {
+              exams: { some: { id: { in: examsIds } } },
+            }
+          : {}),
+        user: { role: 'USER' },
       },
       include: {
-        exams: true, 
-        user: true
+        exams: true,
+        user: true,
       },
-      orderBy: { createdAt: 'desc'},
+      orderBy: { createdAt: 'desc' },
       skip,
-      take
+      take,
     });
   }
 
-  countExamRequestActive(userId?: string, dateFrom?: Date, dateTo?: Date, examsIds?: string[]): Promise<number> {
+  countExamRequestActive(
+    userId?: string,
+    dateFrom?: Date,
+    dateTo?: Date,
+    examsIds?: string[],
+  ): Promise<number> {
     return this.prisma.examRequest.count({
       where: {
         deletedAt: null,
-        ...(userId ? {userId}: {}),
-        ...(dateFrom || dateTo ? {
-            createdAt: {
-              ...(dateFrom ? {gte: dateFrom}: {}),
-              ...(dateTo ? {lte: dateTo}: {}),
+        ...(userId ? { userId } : {}),
+        ...(dateFrom || dateTo
+          ? {
+              createdAt: {
+                ...(dateFrom ? { gte: dateFrom } : {}),
+                ...(dateTo ? { lte: dateTo } : {}),
+              },
             }
-        }: {}),
-        ...(examsIds && examsIds.length > 0 ? {
-          exams:{some: {id: {in: examsIds}}}
-        }: {}),
-        user: { role: 'USER'}
-      }
-    })
+          : {}),
+        ...(examsIds && examsIds.length > 0
+          ? {
+              exams: { some: { id: { in: examsIds } } },
+            }
+          : {}),
+        user: { role: 'USER' },
+      },
+    });
   }
 }

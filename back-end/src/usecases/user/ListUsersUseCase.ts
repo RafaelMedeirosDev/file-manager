@@ -37,10 +37,15 @@ export class ListUsersUseCase {
     const skip = (page - 1) * limit;
     const normalizedSearch = input?.search?.trim().toLowerCase();
 
-    const users = await this.userRepository.listUsersActive(normalizedSearch, skip, limit);
-    const totalUsers = await this.userRepository.countActiveUsers(normalizedSearch);
+    const users = await this.userRepository.listUsersActive(
+      normalizedSearch,
+      skip,
+      limit,
+    );
+    const totalUsers =
+      await this.userRepository.countActiveUsers(normalizedSearch);
 
-    const paginatedUsers = users.map(user => ({
+    const paginatedUsers = users.map((user) => ({
       id: user.id,
       name: user.name,
       email: user.email,

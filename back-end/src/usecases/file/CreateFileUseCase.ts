@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  Logger,
+} from '@nestjs/common';
 import { FileRepository } from '../../repositories/FileRepository';
 import { FolderRepository } from '../../repositories/FolderRepository';
 import { UserRepository } from '../../repositories/UserRepository';
@@ -61,7 +66,6 @@ export class CreateFileUseCase {
     });
     this.logger.log('[CreateFileUseCase] Execute finished');
 
-
     return {
       id: file.id,
       name: file.name,
@@ -74,6 +78,3 @@ export class CreateFileUseCase {
     };
   }
 }
-
-
-

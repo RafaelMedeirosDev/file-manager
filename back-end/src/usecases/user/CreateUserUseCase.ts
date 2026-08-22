@@ -34,10 +34,7 @@ export class CreateUserUseCase {
       throw new ConflictException(ErrorMessagesEnum.EMAIL_ALREADY_REGISTERED);
     }
 
-    const hashedPassword = await hash(
-      input.password,
-      BCRYPT_SALT_ROUNDS,
-    );
+    const hashedPassword = await hash(input.password, BCRYPT_SALT_ROUNDS);
 
     const user = await this.userRepository.create({
       name: input.name,
@@ -47,7 +44,6 @@ export class CreateUserUseCase {
     });
 
     this.logger.log('[CreateUserUseCase] Execute finished');
-
 
     return {
       id: user.id,
@@ -59,6 +55,3 @@ export class CreateUserUseCase {
     };
   }
 }
-
-
-

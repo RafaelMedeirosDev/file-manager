@@ -78,7 +78,9 @@ describe('ListExamRequestsUseCase', () => {
         examRequestMock({ id: 'req-1' }),
         examRequestMock({ id: 'req-2' }),
       ];
-      mockExamRequestRepository.listExamsRequestActive.mockResolvedValueOnce(requests);
+      mockExamRequestRepository.listExamsRequestActive.mockResolvedValueOnce(
+        requests,
+      );
       mockExamRequestRepository.countExamRequestActive.mockResolvedValueOnce(2);
 
       const result = await useCase.execute({});
@@ -92,9 +94,21 @@ describe('ListExamRequestsUseCase', () => {
     });
 
     it('maps repository result to correct output shape', async () => {
-      const exam = examMock({ id: 'exam-x', name: 'PCR', code: '99999', category: ExamCategory.HEMATOLOGY });
-      const req = examRequestMock({ id: 'req-x', userId: 'user-x', indication: 'Febre', exams: [exam] });
-      mockExamRequestRepository.listExamsRequestActive.mockResolvedValueOnce([req]);
+      const exam = examMock({
+        id: 'exam-x',
+        name: 'PCR',
+        code: '99999',
+        category: ExamCategory.HEMATOLOGY,
+      });
+      const req = examRequestMock({
+        id: 'req-x',
+        userId: 'user-x',
+        indication: 'Febre',
+        exams: [exam],
+      });
+      mockExamRequestRepository.listExamsRequestActive.mockResolvedValueOnce([
+        req,
+      ]);
       mockExamRequestRepository.countExamRequestActive.mockResolvedValueOnce(1);
 
       const result = await useCase.execute({});
@@ -106,7 +120,14 @@ describe('ListExamRequestsUseCase', () => {
         createdAt: req.createdAt,
         updatedAt: req.updatedAt,
         user: { id: req.user.id, name: req.user.name, email: req.user.email },
-        exams: [{ id: 'exam-x', name: 'PCR', code: '99999', category: ExamCategory.HEMATOLOGY }],
+        exams: [
+          {
+            id: 'exam-x',
+            name: 'PCR',
+            code: '99999',
+            category: ExamCategory.HEMATOLOGY,
+          },
+        ],
       });
     });
 
@@ -126,7 +147,9 @@ describe('ListExamRequestsUseCase', () => {
     });
 
     it('passes userId, dateFrom, dateTo, and examIds to the repository', async () => {
-      mockExamRequestRepository.listExamsRequestActive.mockResolvedValueOnce([]);
+      mockExamRequestRepository.listExamsRequestActive.mockResolvedValueOnce(
+        [],
+      );
       mockExamRequestRepository.countExamRequestActive.mockResolvedValueOnce(0);
 
       await useCase.execute({
@@ -136,7 +159,9 @@ describe('ListExamRequestsUseCase', () => {
         examIds: ['exam-a'],
       });
 
-      expect(mockExamRequestRepository.listExamsRequestActive).toHaveBeenCalledWith(
+      expect(
+        mockExamRequestRepository.listExamsRequestActive,
+      ).toHaveBeenCalledWith(
         'user-alice',
         new Date('2026-01-01'),
         new Date('2026-03-31'),
@@ -144,7 +169,9 @@ describe('ListExamRequestsUseCase', () => {
         0,
         10,
       );
-      expect(mockExamRequestRepository.countExamRequestActive).toHaveBeenCalledWith(
+      expect(
+        mockExamRequestRepository.countExamRequestActive,
+      ).toHaveBeenCalledWith(
         'user-alice',
         new Date('2026-01-01'),
         new Date('2026-03-31'),
@@ -153,39 +180,35 @@ describe('ListExamRequestsUseCase', () => {
     });
 
     it('passes undefined for dateFrom and dateTo when not provided', async () => {
-      mockExamRequestRepository.listExamsRequestActive.mockResolvedValueOnce([]);
+      mockExamRequestRepository.listExamsRequestActive.mockResolvedValueOnce(
+        [],
+      );
       mockExamRequestRepository.countExamRequestActive.mockResolvedValueOnce(0);
 
       await useCase.execute({});
 
-      expect(mockExamRequestRepository.listExamsRequestActive).toHaveBeenCalledWith(
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        0,
-        10,
-      );
+      expect(
+        mockExamRequestRepository.listExamsRequestActive,
+      ).toHaveBeenCalledWith(undefined, undefined, undefined, undefined, 0, 10);
     });
 
     it('passes undefined for examIds when the array is empty', async () => {
-      mockExamRequestRepository.listExamsRequestActive.mockResolvedValueOnce([]);
+      mockExamRequestRepository.listExamsRequestActive.mockResolvedValueOnce(
+        [],
+      );
       mockExamRequestRepository.countExamRequestActive.mockResolvedValueOnce(0);
 
       await useCase.execute({ examIds: [] });
 
-      expect(mockExamRequestRepository.listExamsRequestActive).toHaveBeenCalledWith(
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        0,
-        10,
-      );
+      expect(
+        mockExamRequestRepository.listExamsRequestActive,
+      ).toHaveBeenCalledWith(undefined, undefined, undefined, undefined, 0, 10);
     });
 
     it('returns empty data when repository returns no results', async () => {
-      mockExamRequestRepository.listExamsRequestActive.mockResolvedValueOnce([]);
+      mockExamRequestRepository.listExamsRequestActive.mockResolvedValueOnce(
+        [],
+      );
       mockExamRequestRepository.countExamRequestActive.mockResolvedValueOnce(0);
 
       const result = await useCase.execute({});

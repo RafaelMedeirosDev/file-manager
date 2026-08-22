@@ -82,13 +82,20 @@ export class FolderRepository {
     });
   }
 
-  listFoldersActive(requestUserId: string, requestRole: ROLE, folderId?: string, rootsOnly?: boolean, skip?: number, take?: number): Promise<FolderWithRelations[]>{
+  listFoldersActive(
+    requestUserId: string,
+    requestRole: ROLE,
+    folderId?: string,
+    rootsOnly?: boolean,
+    skip?: number,
+    take?: number,
+  ): Promise<FolderWithRelations[]> {
     return this.prisma.folder.findMany({
-      where:{
+      where: {
         deletedAt: null,
-        ...(requestRole === ROLE.USER ? {userId: requestUserId}: {}),
-        ...(folderId ? {folderId}: {}),
-        ...(rootsOnly ? {folderId: null}: {}),
+        ...(requestRole === ROLE.USER ? { userId: requestUserId } : {}),
+        ...(folderId ? { folderId } : {}),
+        ...(rootsOnly ? { folderId: null } : {}),
       },
       include: {
         parent: true,
@@ -100,15 +107,19 @@ export class FolderRepository {
     });
   }
 
-  countFoldersActive(requestUserId: string, requestRole: ROLE, folderId?: string, rootsOnly?: boolean): Promise<number>{
+  countFoldersActive(
+    requestUserId: string,
+    requestRole: ROLE,
+    folderId?: string,
+    rootsOnly?: boolean,
+  ): Promise<number> {
     return this.prisma.folder.count({
-      where:{
+      where: {
         deletedAt: null,
         ...(requestRole === ROLE.USER ? { userId: requestUserId } : {}),
-        ...(folderId ? {folderId}: {}),
-        ...(rootsOnly ? {folderId: null}: {}),
+        ...(folderId ? { folderId } : {}),
+        ...(rootsOnly ? { folderId: null } : {}),
       },
     });
   }
 }
-
