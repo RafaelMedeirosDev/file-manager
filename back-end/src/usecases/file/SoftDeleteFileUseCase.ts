@@ -1,4 +1,9 @@
-import { ForbiddenException, Injectable, NotFoundException, Logger } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+  Logger,
+} from '@nestjs/common';
 import { ROLE } from '@prisma/client';
 import { FileRepository } from '../../repositories/FileRepository';
 import { FolderRepository } from '../../repositories/FolderRepository';
@@ -54,7 +59,10 @@ export class SoftDeleteFileUseCase {
     }
 
     const deletedAt = new Date();
-    const deletedFile = await this.fileRepository.softDeleteById(input.id, deletedAt);
+    const deletedFile = await this.fileRepository.softDeleteById(
+      input.id,
+      deletedAt,
+    );
 
     this.logger.log('[SoftDeleteFileUseCase] Execute finished');
 

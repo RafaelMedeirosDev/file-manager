@@ -41,20 +41,27 @@ export class ListExamsUseCase {
     const normalizedCode = input?.code?.trim().toLowerCase();
     const normalizedCategory = input?.category;
 
-    const exams = await this.examRepository.listExamsActive(normalizedName, normalizedCode, normalizedCategory, skip, limit);
-    const totalExams = await this.examRepository.countExamsActive(normalizedName, normalizedCode, normalizedCategory);
-
-    
-    const paginatedExams = exams.map((exam) => ({
-        id: exam.id,
-        name: exam.name,
-        code: exam.code,
-        category: exam.category,
-        createdAt: exam.createdAt,
-        updatedAt: exam.updatedAt,
-      })
+    const exams = await this.examRepository.listExamsActive(
+      normalizedName,
+      normalizedCode,
+      normalizedCategory,
+      skip,
+      limit,
     );
-    
+    const totalExams = await this.examRepository.countExamsActive(
+      normalizedName,
+      normalizedCode,
+      normalizedCategory,
+    );
+
+    const paginatedExams = exams.map((exam) => ({
+      id: exam.id,
+      name: exam.name,
+      code: exam.code,
+      category: exam.category,
+      createdAt: exam.createdAt,
+      updatedAt: exam.updatedAt,
+    }));
 
     this.logger.log('[ListExamsUseCase] Execute finished');
 

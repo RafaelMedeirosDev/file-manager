@@ -31,9 +31,8 @@ export class SoftDeleteFolderUseCase {
     const deletedFolder = await this.folderRepository.softDeleteById(
       input.id,
       deletedAt,
-    );
+    );
     this.logger.log('[SoftDeleteFolderUseCase] Execute finished');
-
 
     return {
       id: deletedFolder.id,
@@ -44,6 +43,3 @@ export class SoftDeleteFolderUseCase {
     };
   }
 }
-
-
-

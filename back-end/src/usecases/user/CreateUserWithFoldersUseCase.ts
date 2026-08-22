@@ -47,10 +47,7 @@ export class CreateUserWithFoldersUseCase {
       throw new ConflictException(ErrorMessagesEnum.EMAIL_ALREADY_REGISTERED);
     }
 
-    const hashedPassword = await hash(
-      input.password,
-      BCRYPT_SALT_ROUNDS,
-    );
+    const hashedPassword = await hash(input.password, BCRYPT_SALT_ROUNDS);
 
     const user = await this.userRepository.create({
       name: input.name,

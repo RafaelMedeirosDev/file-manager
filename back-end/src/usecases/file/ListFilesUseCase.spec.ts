@@ -27,7 +27,7 @@ const countFilesActive = jest.fn();
 let useCase: ListFilesUseCase;
 
 const adminInput = { requesterUserId: 'admin-id', requesterRole: ROLE.ADMIN };
-const userInput  = { requesterUserId: 'user-id',  requesterRole: ROLE.USER };
+const userInput = { requesterUserId: 'user-id', requesterRole: ROLE.USER };
 
 // ── Suite ─────────────────────────────────────────────────────────────────────
 
@@ -56,7 +56,12 @@ describe('ListFilesUseCase', () => {
     });
 
     it('maps repository result to correct output shape', async () => {
-      const file = fileMock({ id: 'f-x', name: 'photo.png', extension: 'png', url: 'https://s3.example.com/photo.png' });
+      const file = fileMock({
+        id: 'f-x',
+        name: 'photo.png',
+        extension: 'png',
+        url: 'https://s3.example.com/photo.png',
+      });
       listFilesActive.mockResolvedValueOnce([file]);
       countFilesActive.mockResolvedValueOnce(1);
 
@@ -78,7 +83,11 @@ describe('ListFilesUseCase', () => {
       listFilesActive.mockResolvedValueOnce([fileMock(), fileMock()]);
       countFilesActive.mockResolvedValueOnce(5);
 
-      const result = await useCase.execute({ ...adminInput, page: 2, limit: 2 });
+      const result = await useCase.execute({
+        ...adminInput,
+        page: 2,
+        limit: 2,
+      });
 
       expect(result.meta.page).toBe(2);
       expect(result.meta.limit).toBe(2);
@@ -92,8 +101,18 @@ describe('ListFilesUseCase', () => {
 
       await useCase.execute({ ...userInput, folderId: 'folder-abc' });
 
-      expect(listFilesActive).toHaveBeenCalledWith('user-id', ROLE.USER, 'folder-abc', 0, 10);
-      expect(countFilesActive).toHaveBeenCalledWith('user-id', ROLE.USER, 'folder-abc');
+      expect(listFilesActive).toHaveBeenCalledWith(
+        'user-id',
+        ROLE.USER,
+        'folder-abc',
+        0,
+        10,
+      );
+      expect(countFilesActive).toHaveBeenCalledWith(
+        'user-id',
+        ROLE.USER,
+        'folder-abc',
+      );
     });
 
     it('passes undefined folderId when not provided', async () => {
@@ -102,8 +121,18 @@ describe('ListFilesUseCase', () => {
 
       await useCase.execute(adminInput);
 
-      expect(listFilesActive).toHaveBeenCalledWith('admin-id', ROLE.ADMIN, undefined, 0, 10);
-      expect(countFilesActive).toHaveBeenCalledWith('admin-id', ROLE.ADMIN, undefined);
+      expect(listFilesActive).toHaveBeenCalledWith(
+        'admin-id',
+        ROLE.ADMIN,
+        undefined,
+        0,
+        10,
+      );
+      expect(countFilesActive).toHaveBeenCalledWith(
+        'admin-id',
+        ROLE.ADMIN,
+        undefined,
+      );
     });
 
     it('returns empty data when repository returns no results', async () => {

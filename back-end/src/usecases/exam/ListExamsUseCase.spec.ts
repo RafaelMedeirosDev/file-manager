@@ -51,7 +51,12 @@ describe('ListExamsUseCase', () => {
     });
 
     it('maps repository result to correct output shape', async () => {
-      const exam = examMock({ id: 'e-x', name: 'PCR', code: '99999', category: ExamCategory.HEMATOLOGY });
+      const exam = examMock({
+        id: 'e-x',
+        name: 'PCR',
+        code: '99999',
+        category: ExamCategory.HEMATOLOGY,
+      });
       listExamsActive.mockResolvedValueOnce([exam]);
       countExamsActive.mockResolvedValueOnce(1);
 
@@ -68,7 +73,10 @@ describe('ListExamsUseCase', () => {
     });
 
     it('calculates skip and hasNextPage correctly for page 2', async () => {
-      listExamsActive.mockResolvedValueOnce([examMock({ id: 'e-3' }), examMock({ id: 'e-4' })]);
+      listExamsActive.mockResolvedValueOnce([
+        examMock({ id: 'e-3' }),
+        examMock({ id: 'e-4' }),
+      ]);
       countExamsActive.mockResolvedValueOnce(5);
 
       const result = await useCase.execute({ page: 2, limit: 2 });
@@ -85,7 +93,13 @@ describe('ListExamsUseCase', () => {
 
       await useCase.execute({ name: '  HEMO  ', code: '  403  ' });
 
-      expect(listExamsActive).toHaveBeenCalledWith('hemo', '403', undefined, 0, 10);
+      expect(listExamsActive).toHaveBeenCalledWith(
+        'hemo',
+        '403',
+        undefined,
+        0,
+        10,
+      );
       expect(countExamsActive).toHaveBeenCalledWith('hemo', '403', undefined);
     });
 
@@ -95,8 +109,18 @@ describe('ListExamsUseCase', () => {
 
       await useCase.execute({ category: ExamCategory.HEMATOLOGY });
 
-      expect(listExamsActive).toHaveBeenCalledWith(undefined, undefined, ExamCategory.HEMATOLOGY, 0, 10);
-      expect(countExamsActive).toHaveBeenCalledWith(undefined, undefined, ExamCategory.HEMATOLOGY);
+      expect(listExamsActive).toHaveBeenCalledWith(
+        undefined,
+        undefined,
+        ExamCategory.HEMATOLOGY,
+        0,
+        10,
+      );
+      expect(countExamsActive).toHaveBeenCalledWith(
+        undefined,
+        undefined,
+        ExamCategory.HEMATOLOGY,
+      );
     });
 
     it('returns empty data when repository returns no results', async () => {

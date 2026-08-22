@@ -6,7 +6,11 @@ import { PrismaService } from '../database/prisma.service';
 export class ExamRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  create(data: { name: string; code: string; category: ExamCategory }): Promise<Exam> {
+  create(data: {
+    name: string;
+    code: string;
+    category: ExamCategory;
+  }): Promise<Exam> {
     return this.prisma.exam.create({ data });
   }
 
@@ -20,55 +24,76 @@ export class ExamRepository {
     return this.prisma.exam.findMany();
   }
 
-  listExamsActive(name?: string, code?: string, category?: ExamCategory, skip?: number, take?: number): Promise<Exam[]> {
+  listExamsActive(
+    name?: string,
+    code?: string,
+    category?: ExamCategory,
+    skip?: number,
+    take?: number,
+  ): Promise<Exam[]> {
     return this.prisma.exam.findMany({
       where: {
         deletedAt: null,
-        ...(name ? {
-          name: {
-            contains: name,
-            mode: 'insensitive'
-          }
-        }: {}),
-        ...(code ? {
-          code:{
-            contains: code,
-            mode: 'insensitive'
-          }
-        }: {}),
-        ...(category ? {
-          category: category
-        }: {}),
+        ...(name
+          ? {
+              name: {
+                contains: name,
+                mode: 'insensitive',
+              },
+            }
+          : {}),
+        ...(code
+          ? {
+              code: {
+                contains: code,
+                mode: 'insensitive',
+              },
+            }
+          : {}),
+        ...(category
+          ? {
+              category: category,
+            }
+          : {}),
       },
       skip,
-      take
+      take,
     });
-  };
+  }
 
-
-  countExamsActive(name?: string, code?: string, category?: ExamCategory): Promise<number> {
+  countExamsActive(
+    name?: string,
+    code?: string,
+    category?: ExamCategory,
+  ): Promise<number> {
     return this.prisma.exam.count({
       where: {
         deletedAt: null,
-        ...(name ? {
-          name: {
-            contains: name,
-            mode: 'insensitive'
-          }
-        }: {}),
-        ...(code ? {
-          code:{
-            contains: code,
-            mode: 'insensitive'
-          }
-        }: {}),
-        ...(category ? {
-          category: category
-        }: {}),
+        ...(name
+          ? {
+              name: {
+                contains: name,
+                mode: 'insensitive',
+              },
+            }
+          : {}),
+        ...(code
+          ? {
+              code: {
+                contains: code,
+                mode: 'insensitive',
+              },
+            }
+          : {}),
+        ...(category
+          ? {
+              category: category,
+            }
+          : {}),
       },
-    })
+    });
   }
-  
+
   findById(id: string): Promise<Exam | null> {
     return this.prisma.exam.findUnique({ where: { id } });
   }

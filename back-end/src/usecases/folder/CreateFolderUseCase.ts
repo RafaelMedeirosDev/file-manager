@@ -1,4 +1,9 @@
-import { ConflictException, Injectable, NotFoundException, Logger } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+  Logger,
+} from '@nestjs/common';
 import { FolderRepository } from '../../repositories/FolderRepository';
 import { UserRepository } from '../../repositories/UserRepository';
 import { ErrorMessagesEnum } from '@file-manager/shared';
@@ -49,16 +54,17 @@ export class CreateFolderUseCase {
       });
 
     if (activeFolderWithSameName) {
-      throw new ConflictException(ErrorMessagesEnum.FOLDER_NAME_ALREADY_REGISTERED);
+      throw new ConflictException(
+        ErrorMessagesEnum.FOLDER_NAME_ALREADY_REGISTERED,
+      );
     }
 
     const folder = await this.folderRepository.create({
       name: input.name,
       userId: input.userId,
       folderId: input.folderId,
-    });
+    });
     this.logger.log('[CreateFolderUseCase] Execute finished');
-
 
     return {
       id: folder.id,
@@ -70,6 +76,3 @@ export class CreateFolderUseCase {
     };
   }
 }
-
-
-

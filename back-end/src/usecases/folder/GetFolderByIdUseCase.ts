@@ -1,6 +1,9 @@
-import { ForbiddenException,
+import {
+  ForbiddenException,
   Injectable,
-  NotFoundException, Logger } from '@nestjs/common';
+  NotFoundException,
+  Logger,
+} from '@nestjs/common';
 import { ROLE } from '@prisma/client';
 import { FileRepository } from '../../repositories/FileRepository';
 import { FolderRepository } from '../../repositories/FolderRepository';
@@ -114,15 +117,15 @@ export class GetFolderByIdUseCase {
           folderId: child.folderId,
         })),
       files: files.map((file) => ({
-          id: file.id,
-          name: file.name,
-          userId: file.userId,
-          folderId: file.folderId,
-          extension: file.extension,
-          url: file.url,
-          createdAt: file.createdAt,
-          updatedAt: file.updatedAt,
-        })),
+        id: file.id,
+        name: file.name,
+        userId: file.userId,
+        folderId: file.folderId,
+        extension: file.extension,
+        url: file.url,
+        createdAt: file.createdAt,
+        updatedAt: file.updatedAt,
+      })),
       createdAt: folder.createdAt,
       updatedAt: folder.updatedAt,
     };
@@ -139,6 +142,3 @@ export class GetFolderByIdUseCase {
     return ownerUserId === input.requesterUserId;
   }
 }
-
-
-

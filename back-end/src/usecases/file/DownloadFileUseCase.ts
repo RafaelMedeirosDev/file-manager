@@ -1,9 +1,12 @@
-import { BadGatewayException,
+import {
+  BadGatewayException,
   BadRequestException,
   ForbiddenException,
   GatewayTimeoutException,
   Injectable,
-  NotFoundException, Logger } from '@nestjs/common';
+  NotFoundException,
+  Logger,
+} from '@nestjs/common';
 import { Readable } from 'node:stream';
 import { ROLE } from '@prisma/client';
 import { FileRepository } from '../../repositories/FileRepository';
@@ -41,7 +44,10 @@ export class DownloadFileUseCase {
       throw new NotFoundException(ErrorMessagesEnum.FILE_NOT_FOUND);
     }
 
-    if (input.requesterRole !== ROLE.ADMIN && file.userId !== input.requesterUserId) {
+    if (
+      input.requesterRole !== ROLE.ADMIN &&
+      file.userId !== input.requesterUserId
+    ) {
       throw new ForbiddenException(ErrorMessagesEnum.FILE_ACCESS_FORBIDDEN);
     }
 
@@ -68,16 +74,22 @@ export class DownloadFileUseCase {
       upstream = await fetch(fileUrl, { signal: abortController.signal });
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
-        throw new GatewayTimeoutException(ErrorMessagesEnum.FILE_DOWNLOAD_TIMEOUT);
+        throw new GatewayTimeoutException(
+          ErrorMessagesEnum.FILE_DOWNLOAD_TIMEOUT,
+        );
       }
 
-      throw new BadGatewayException(ErrorMessagesEnum.FILE_DOWNLOAD_UNAVAILABLE);
+      throw new BadGatewayException(
+        ErrorMessagesEnum.FILE_DOWNLOAD_UNAVAILABLE,
+      );
     } finally {
       clearTimeout(timeoutId);
     }
 
     if (!upstream.ok || !upstream.body) {
-      throw new BadGatewayException(ErrorMessagesEnum.FILE_DOWNLOAD_UNAVAILABLE);
+      throw new BadGatewayException(
+        ErrorMessagesEnum.FILE_DOWNLOAD_UNAVAILABLE,
+      );
     }
 
     const upstreamContentType = upstream.headers
@@ -95,7 +107,6 @@ export class DownloadFileUseCase {
         : upstreamContentType;
     this.logger.log('[DownloadFileUseCase] Execute finished');
 
-
     return {
       stream: Readable.fromWeb(upstream.body as any),
       fileName: `${file.name}.${file.extension}`,
@@ -104,6 +115,3 @@ export class DownloadFileUseCase {
     };
   }
 }
-
-
-

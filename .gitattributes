@@ -1,0 +1,28 @@
+# Normaliza fim de linha no repositorio.
+#
+# A maior parte dos arquivos ja estava gravada em LF, mas o core.autocrlf=true
+# entregava CRLF na working tree durante o checkout. O prettier espera LF,
+# entao o eslint acusava centenas de erros `Delete CR` que nenhuma mudanca de
+# codigo era capaz de zerar, e qualquer ferramenta que reescrevesse um arquivo
+# o convertia para LF, transformando uma edicao de poucas linhas num diff do
+# arquivo inteiro.
+#
+# `text=auto eol=lf` grava tudo em LF no repositorio e entrega LF tambem na
+# working tree, sobrepondo o autocrlf local e tornando o resultado igual em
+# qualquer sistema operacional.
+
+* text=auto eol=lf
+
+# Binarios: nunca converter.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.webp binary
+*.pdf  binary
+*.zip  binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.eot   binary

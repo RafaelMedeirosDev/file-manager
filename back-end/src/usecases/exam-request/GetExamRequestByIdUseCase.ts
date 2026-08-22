@@ -21,17 +21,21 @@ export type GetExamRequestByIdOutput = {
 export class GetExamRequestByIdUseCase {
   private readonly logger = new Logger(GetExamRequestByIdUseCase.name);
 
-  constructor(
-    private readonly examRequestRepository: ExamRequestRepository,
-  ) {}
+  constructor(private readonly examRequestRepository: ExamRequestRepository) {}
 
-  async execute(input: GetExamRequestByIdInput): Promise<GetExamRequestByIdOutput> {
-    this.logger.log('[GetExamRequestByIdUseCase] Execute started', { id: input.id });
+  async execute(
+    input: GetExamRequestByIdInput,
+  ): Promise<GetExamRequestByIdOutput> {
+    this.logger.log('[GetExamRequestByIdUseCase] Execute started', {
+      id: input.id,
+    });
 
     const examRequest = await this.examRequestRepository.findById(input.id);
 
     if (!examRequest || examRequest.deletedAt) {
-      this.logger.warn('[GetExamRequestByIdUseCase] ExamRequest not found', { id: input.id });
+      this.logger.warn('[GetExamRequestByIdUseCase] ExamRequest not found', {
+        id: input.id,
+      });
       throw new NotFoundException(ErrorMessagesEnum.EXAM_REQUEST_NOT_FOUND);
     }
 

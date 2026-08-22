@@ -29,7 +29,9 @@ export class CreateExamUseCase {
     const existing = await this.examRepository.findByCode(input.code);
 
     if (existing) {
-      this.logger.warn('[CreateExamUseCase] Exam code already registered', { code: input.code });
+      this.logger.warn('[CreateExamUseCase] Exam code already registered', {
+        code: input.code,
+      });
       throw new ConflictException(
         ErrorMessagesEnum.EXAM_CODE_ALREADY_REGISTERED,
       );

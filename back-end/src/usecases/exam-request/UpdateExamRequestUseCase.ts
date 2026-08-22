@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { ExamCategory } from '@file-manager/shared';
 import { ExamRepository } from '../../repositories/ExamRepository';
 import { ExamRequestRepository } from '../../repositories/ExamRequestRepository';
@@ -29,18 +34,29 @@ export class UpdateExamRequestUseCase {
     private readonly examRepository: ExamRepository,
   ) {}
 
-  async execute(input: UpdateExamRequestInput): Promise<UpdateExamRequestOutput> {
-    this.logger.log('[UpdateExamRequestUseCase] Execute started', { id: input.id });
+  async execute(
+    input: UpdateExamRequestInput,
+  ): Promise<UpdateExamRequestOutput> {
+    this.logger.log('[UpdateExamRequestUseCase] Execute started', {
+      id: input.id,
+    });
 
     if (input.indication === undefined && input.examIds === undefined) {
-      this.logger.warn('[UpdateExamRequestUseCase] No fields provided for update', { id: input.id });
-      throw new BadRequestException(ErrorMessagesEnum.AT_LEAST_ONE_FIELD_REQUIRED);
+      this.logger.warn(
+        '[UpdateExamRequestUseCase] No fields provided for update',
+        { id: input.id },
+      );
+      throw new BadRequestException(
+        ErrorMessagesEnum.AT_LEAST_ONE_FIELD_REQUIRED,
+      );
     }
 
     const examRequest = await this.examRequestRepository.findById(input.id);
 
     if (!examRequest || examRequest.deletedAt) {
-      this.logger.warn('[UpdateExamRequestUseCase] ExamRequest not found', { id: input.id });
+      this.logger.warn('[UpdateExamRequestUseCase] ExamRequest not found', {
+        id: input.id,
+      });
       throw new NotFoundException(ErrorMessagesEnum.EXAM_REQUEST_NOT_FOUND);
     }
 
@@ -51,7 +67,10 @@ export class UpdateExamRequestUseCase {
       });
 
       if (exams.length !== input.examIds.length) {
-        this.logger.warn('[UpdateExamRequestUseCase] One or more exams not found', { examIds: input.examIds });
+        this.logger.warn(
+          '[UpdateExamRequestUseCase] One or more exams not found',
+          { examIds: input.examIds },
+        );
         throw new NotFoundException(ErrorMessagesEnum.EXAM_NOT_FOUND);
       }
     }

@@ -1,5 +1,12 @@
 import { Transform } from 'class-transformer';
-import { ArrayMinSize, IsArray, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import {
+  ArrayMinSize,
+  IsArray,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+} from 'class-validator';
 
 export class CreateExamRequestDTO {
   @IsOptional()

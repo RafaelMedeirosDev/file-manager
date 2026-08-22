@@ -1,4 +1,9 @@
-import { ConflictException, Injectable, NotFoundException, Logger } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+  Logger,
+} from '@nestjs/common';
 import { FolderRepository } from '../../repositories/FolderRepository';
 import { ErrorMessagesEnum } from '@file-manager/shared';
 
@@ -37,14 +42,15 @@ export class UpdateFolderUseCase {
       });
 
     if (activeFolderWithSameName) {
-      throw new ConflictException(ErrorMessagesEnum.FOLDER_NAME_ALREADY_REGISTERED);
+      throw new ConflictException(
+        ErrorMessagesEnum.FOLDER_NAME_ALREADY_REGISTERED,
+      );
     }
 
     const updatedFolder = await this.folderRepository.updateById(input.id, {
       name: input.name,
-    });
+    });
     this.logger.log('[UpdateFolderUseCase] Execute finished');
-
 
     return {
       id: updatedFolder.id,
@@ -56,6 +62,3 @@ export class UpdateFolderUseCase {
     };
   }
 }
-
-
-

@@ -1,5 +1,13 @@
 import { Transform } from 'class-transformer';
-import { IsArray, IsISO8601, IsInt, IsOptional, IsUUID, Max, Min } from 'class-validator';
+import {
+  IsArray,
+  IsISO8601,
+  IsInt,
+  IsOptional,
+  IsUUID,
+  Max,
+  Min,
+} from 'class-validator';
 
 export class ListExamRequestsQueryDTO {
   @IsOptional()

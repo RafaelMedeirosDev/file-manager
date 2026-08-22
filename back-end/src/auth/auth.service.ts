@@ -17,12 +17,15 @@ export class AuthService {
     user: { id: string; name: string; email: string; role: string };
   }> {
     const user = await this.userRepository.findByEmail(input.email);
-    const isPasswordValid = user && !user.deletedAt
-      ? await compare(input.password, user.password)
-      : false;
+    const isPasswordValid =
+      user && !user.deletedAt
+        ? await compare(input.password, user.password)
+        : false;
 
     if (!user || user.deletedAt || !isPasswordValid) {
-      throw new UnauthorizedException(ErrorMessagesEnum.INVALID_EMAIL_OR_PASSWORD);
+      throw new UnauthorizedException(
+        ErrorMessagesEnum.INVALID_EMAIL_OR_PASSWORD,
+      );
     }
 
     const payload = {

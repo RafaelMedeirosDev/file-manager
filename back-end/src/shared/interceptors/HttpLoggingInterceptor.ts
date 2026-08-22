@@ -48,7 +48,8 @@ export class HttpLoggingInterceptor implements NestInterceptor {
         return throwError(() => error);
       }),
       finalize(() => {
-        const statusCode = http.getResponse<{ statusCode?: number }>()?.statusCode;
+        const statusCode = http.getResponse<{ statusCode?: number }>()
+          ?.statusCode;
         const elapsed = Date.now() - startedAt;
 
         this.logger.log(

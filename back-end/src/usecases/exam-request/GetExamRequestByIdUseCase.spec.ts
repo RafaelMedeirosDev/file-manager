@@ -13,11 +13,23 @@ function examRequestMock(overrides = {}) {
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,
-    user: { id: 'user-uuid-001', name: 'Alice', email: 'alice@example.com', role: 'USER' },
-    exams: [{
-      id: 'exam-uuid-001', name: 'Hemograma', code: '40303630',
-      category: ExamCategory.HEMATOLOGY, createdAt: new Date(), updatedAt: new Date(), deletedAt: null,
-    }],
+    user: {
+      id: 'user-uuid-001',
+      name: 'Alice',
+      email: 'alice@example.com',
+      role: 'USER',
+    },
+    exams: [
+      {
+        id: 'exam-uuid-001',
+        name: 'Hemograma',
+        code: '40303630',
+        category: ExamCategory.HEMATOLOGY,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null,
+      },
+    ],
     ...overrides,
   };
 }
@@ -41,14 +53,18 @@ describe('GetExamRequestByIdUseCase', () => {
 
   describe('should be able to get exam request by id with success', () => {
     it('returns the exam request with user and exams', async () => {
-      mockExamRequestRepository.findById.mockResolvedValueOnce(examRequestMock());
+      mockExamRequestRepository.findById.mockResolvedValueOnce(
+        examRequestMock(),
+      );
 
       const result = await useCase.execute({ id: 'req-uuid-001' });
 
       expect(result.id).toBe('req-uuid-001');
       expect(result.user.name).toBe('Alice');
       expect(result.exams).toHaveLength(1);
-      expect(mockExamRequestRepository.findById).toHaveBeenCalledWith('req-uuid-001');
+      expect(mockExamRequestRepository.findById).toHaveBeenCalledWith(
+        'req-uuid-001',
+      );
     });
   });
 
@@ -56,8 +72,9 @@ describe('GetExamRequestByIdUseCase', () => {
     it('exam request is not found', async () => {
       mockExamRequestRepository.findById.mockResolvedValueOnce(null);
 
-      await expect(useCase.execute({ id: 'nonexistent' }))
-        .rejects.toThrow(new NotFoundException(ErrorMessagesEnum.EXAM_REQUEST_NOT_FOUND));
+      await expect(useCase.execute({ id: 'nonexistent' })).rejects.toThrow(
+        new NotFoundException(ErrorMessagesEnum.EXAM_REQUEST_NOT_FOUND),
+      );
     });
 
     it('exam request is soft-deleted', async () => {
@@ -65,8 +82,9 @@ describe('GetExamRequestByIdUseCase', () => {
         examRequestMock({ deletedAt: new Date() }),
       );
 
-      await expect(useCase.execute({ id: 'req-uuid-001' }))
-        .rejects.toThrow(new NotFoundException(ErrorMessagesEnum.EXAM_REQUEST_NOT_FOUND));
+      await expect(useCase.execute({ id: 'req-uuid-001' })).rejects.toThrow(
+        new NotFoundException(ErrorMessagesEnum.EXAM_REQUEST_NOT_FOUND),
+      );
     });
   });
 });

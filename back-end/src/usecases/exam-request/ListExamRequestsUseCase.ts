@@ -30,9 +30,7 @@ export type ListExamRequestsOutput = {
 export class ListExamRequestsUseCase {
   private readonly logger = new Logger(ListExamRequestsUseCase.name);
 
-  constructor(
-    private readonly examRequestRepository: ExamRequestRepository,
-  ) {}
+  constructor(private readonly examRequestRepository: ExamRequestRepository) {}
 
   async execute(input: ListExamRequestsInput): Promise<ListExamRequestsOutput> {
     this.logger.log('[ListExamRequestsUseCase] Execute started');
@@ -43,10 +41,24 @@ export class ListExamRequestsUseCase {
     const userId = input.userId;
     const dateFrom = input.dateFrom ? new Date(input.dateFrom) : undefined;
     const dateTo = input.dateTo ? new Date(input.dateTo) : undefined;
-    const examsIds = input.examIds && input.examIds.length > 0 ? input.examIds : undefined;
+    const examsIds =
+      input.examIds && input.examIds.length > 0 ? input.examIds : undefined;
 
-    const examRequest = await this.examRequestRepository.listExamsRequestActive(userId, dateFrom, dateTo, examsIds, skip, limit);
-    const totalExamRequest = await this.examRequestRepository.countExamRequestActive(userId, dateFrom, dateTo, examsIds);
+    const examRequest = await this.examRequestRepository.listExamsRequestActive(
+      userId,
+      dateFrom,
+      dateTo,
+      examsIds,
+      skip,
+      limit,
+    );
+    const totalExamRequest =
+      await this.examRequestRepository.countExamRequestActive(
+        userId,
+        dateFrom,
+        dateTo,
+        examsIds,
+      );
 
     const paginatedExamRequest = examRequest.map((req) => ({
       id: req.id,
