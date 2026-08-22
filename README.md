@@ -384,8 +384,8 @@ Após o envio ao R2, é criado um registro na tabela `files` com `name`, `userId
 
 - **Node.js 20+**
 - **pnpm 10+** (o repositório fixa `pnpm@10.19.0` no campo `packageManager`)
-- **PostgreSQL** acessível
-- Um bucket **Cloudflare R2** com credenciais de acesso
+- **Docker** e **Docker Compose** — para o PostgreSQL local (ou um PostgreSQL próprio, se preferir)
+- Um bucket **Cloudflare R2** com credenciais de acesso — **opcional**: necessário apenas para upload e download de arquivos
 
 ### 2. Clonar o repositório
 
@@ -404,7 +404,17 @@ O script `prepare` do pacote `shared/` compila automaticamente `shared/dist/` du
 
 O `postinstall` do `back-end/` gera o Prisma Client no mesmo momento. Sem ele, `@prisma/client` permanece como stub e o build falha por falta dos tipos gerados (`ROLE`, `PrismaClient`, os modelos).
 
-### 4. Configurar as variáveis de ambiente
+### 4. Subir o banco de dados
+
+```bash
+docker compose up -d --wait
+```
+
+Sobe um PostgreSQL 16 na porta 5432, com volume persistente. O `--wait` só retorna quando o banco aceita conexão, evitando rodar a migration cedo demais.
+
+Se você já usa a porta 5432, exporte `POSTGRES_PORT=5433` e ajuste a porta no `DATABASE_URL`.
+
+### 5. Configurar as variáveis de ambiente
 
 ```bash
 cp back-end/.env.example back-end/.env
@@ -413,7 +423,7 @@ cp front-end/.env.example front-end/.env
 
 Preencha os valores conforme a seção [Variáveis de ambiente](#variáveis-de-ambiente). A aplicação valida as variáveis obrigatórias na inicialização e falha imediatamente com uma mensagem explícita caso alguma esteja ausente.
 
-### 5. Executar as migrations
+### 6. Executar as migrations
 
 ```bash
 pnpm prisma:migrate:dev
@@ -421,9 +431,24 @@ pnpm prisma:migrate:dev
 
 Em ambientes de produção, use `pnpm prisma:migrate:deploy`.
 
-> O projeto não possui script de seed. O primeiro usuário `ADMIN` precisa ser criado manualmente no banco (a criação de usuários pela API é uma rota restrita a `ADMIN`).
+### 7. Popular o banco
 
-### 6. Executar em desenvolvimento
+```bash
+pnpm --dir back-end prisma:seed
+```
+
+Cria os usuários iniciais e uma amostra do catálogo de exames. O seed é idempotente — rodar de novo não duplica nada.
+
+| Papel | E-mail | Senha |
+|---|---|---|
+| `ADMIN` | `admin@filemanager.dev` | `admin123` |
+| `USER` | `user@filemanager.dev` | `user123` |
+
+Sem este passo não há como entrar na aplicação: a criação de usuários pela API é restrita a `ADMIN`.
+
+> **Sobre o Cloudflare R2:** o `.env.example` traz placeholders nas variáveis `R2_*`, o que permite a API subir e login, usuários, pastas, exames e solicitações funcionarem normalmente. Apenas **upload e download de arquivos** exigem um bucket real — substitua os placeholders por credenciais válidas para exercitar essas rotas.
+
+### 8. Executar em desenvolvimento
 
 Ambos os serviços em paralelo:
 
@@ -438,7 +463,7 @@ pnpm start:dev     # apenas a API, em modo watch
 pnpm start:front   # apenas o frontend (Vite, porta 5173)
 ```
 
-### 7. Build de produção
+### 9. Build de produção
 
 ```bash
 pnpm build          # todos os workspaces via Turbo (shared → back-end → front-end)
@@ -446,7 +471,7 @@ pnpm build:back     # apenas o backend
 pnpm build:front    # apenas o frontend
 ```
 
-### 8. Executar os testes
+### 10. Executar os testes
 
 ```bash
 pnpm test                       # testes unitários (atualmente apenas o back-end possui suíte)
@@ -547,6 +572,7 @@ VITE_API_URL=
 | `format` | Formata `src/` e `test/` com Prettier. |
 | `test` / `test:watch` / `test:cov` / `test:debug` | Testes unitários com Jest, em suas variações. |
 | `test:e2e` | Testes end-to-end via `test/jest-e2e.json`. |
+| `prisma:seed` | Popula o banco com usuários iniciais e exames de exemplo. |
 | `prisma:generate` / `prisma:migrate:dev` / `prisma:migrate:deploy` / `prisma:studio` | Comandos do Prisma. |
 
 ### `front-end/`
@@ -579,11 +605,11 @@ VITE_API_URL=
 - Contratos de API compartilhados entre backend e frontend por um pacote único, evitando divergência de tipos.
 
 **O que está parcial ou pendente**
-- **Cobertura de testes limitada**: 9 specs unitários (concentrados nos use cases de listagem e no domínio de solicitações) e 2 suítes e2e. Vários use cases de escrita ainda não têm teste.
+- **Cobertura de testes parcial**: 55 testes unitários em 11 suítes e 10 testes e2e em 3 suítes. Ainda assim, 16 dos 26 use cases não têm spec — o caminho de escrita (criação, atualização e soft delete) é o mais descoberto.
 - **Sem testes no frontend** — não há runner configurado.
 - **Sem lint/format no frontend** — ESLint e Prettier existem apenas no backend, e o `front-end/` não expõe scripts `lint`/`test`, de modo que `pnpm lint` e `pnpm test` na raiz cobrem apenas a API.
 - **Sem documentação de API** (Swagger/OpenAPI não está instalado) — o contrato precisa ser lido nos controllers e DTOs.
-- **Sem CI/CD, sem Docker e sem deploy publicado.** O único artefato relacionado a deploy é um `railpack.json` no backend.
+- **Sem deploy publicado.** Existe CI (GitHub Actions rodando build, lint e as duas suítes de teste a cada pull request) e um `docker-compose.yml` para o PostgreSQL local, mas nenhum ambiente de demonstração no ar. O único artefato relacionado a deploy é um `railpack.json` no backend.
 - Camada de estilos mista no frontend: classes utilitárias do Tailwind, um design system em CSS puro e blocos de estilo injetados em tempo de execução em algumas páginas convivem no mesmo projeto.
 - `DashboardPage.tsx` existe mas não está registrada no roteador.
 - Ausência de arquivo de licença.
@@ -619,9 +645,9 @@ VITE_API_URL=
 - Introduzir um runner de testes no frontend e cobrir hooks e utilitários.
 - Adicionar ESLint e Prettier ao `front-end/`, junto dos scripts `lint`, `format` e `test`, para que os comandos da raiz cubram todo o monorepo.
 - Documentar a API com Swagger/OpenAPI a partir dos DTOs já existentes.
-- Configurar pipeline de CI (lint, build e testes a cada pull request) e, na sequência, CD.
-- Criar ambiente containerizado com Docker Compose (API + PostgreSQL) para simplificar o onboarding.
+- Publicar um ambiente de demonstração e adicionar CD ao pipeline de CI existente.
 - Substituir o acesso público aos arquivos por **URLs pré-assinadas**, restringindo a leitura direta do bucket.
+- Containerizar a API e o front, e subir um S3 local (MinIO) para que o upload funcione sem credenciais reais do R2.
 - Validar o conteúdo real dos arquivos por *magic bytes*, complementando a checagem de extensão e mimetype.
 - Enviar os uploads em streaming direto para o R2, eliminando o buffer em memória e o limite agregado do bulk.
 - Remover o objeto no R2 (ou movê-lo para uma área de retenção) quando o arquivo for excluído logicamente.
@@ -630,7 +656,6 @@ VITE_API_URL=
 - Restringir a origem do CORS por ambiente, hoje configurada para refletir qualquer origem.
 - Unificar a estratégia de estilos do frontend, eliminando os blocos de CSS injetados em tempo de execução.
 - Alinhar a porta padrão da API entre backend e frontend, e remover a variável `R2_ENDPOINT` não utilizada.
-- Adicionar script de seed para criar o primeiro usuário `ADMIN` e dados de demonstração.
 - Adicionar arquivo de licença, capturas de tela da interface e um ambiente de demonstração publicado.
 
 ---

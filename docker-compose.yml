@@ -1,0 +1,36 @@
+# PostgreSQL para desenvolvimento local.
+#
+# Sobe apenas o banco: a API e o front continuam rodando via `pnpm dev`.
+# Containerizar o monorepo inteiro seria trabalho de outra ordem e o gargalo
+# para quem clona o projeto e provisionar o Postgres, nao rodar o Node.
+#
+#   docker compose up -d
+#
+# As credenciais abaixo sao de desenvolvimento e casam com o DATABASE_URL
+# sugerido em back-end/.env.example.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: file-manager-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: file_manager
+      POSTGRES_PASSWORD: file_manager
+      POSTGRES_DB: file_manager
+    # Porta configuravel: quem ja tem um PostgreSQL local na 5432 pode
+    # exportar POSTGRES_PORT=5433 (e ajustar o DATABASE_URL) sem conflito.
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    # Faz `docker compose up -d --wait` so retornar quando o banco aceitar
+    # conexao, evitando que a migration rode antes de o Postgres estar pronto.
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U file_manager -d file_manager']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-data:
