@@ -1,4 +1,8 @@
-import { CanActivate, ExecutionContext, INestApplication } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  INestApplication,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Reflector } from '@nestjs/core';
 import request from 'supertest';
@@ -9,7 +13,9 @@ import { FolderController } from '../src/controllers/FolderController';
 import { FileController } from '../src/controllers/FileController';
 import { JwtAuthGuard } from '../src/auth/jwt-auth.guard';
 import { RolesGuard } from '../src/auth/roles.guard';
-import { CreateUserUseCase } from '../src/usecases/user/CreateUserUseCase';
+import { CreateUserWithFoldersUseCase } from '../src/usecases/user/CreateUserWithFoldersUseCase';
+import { ChangeOwnPasswordUseCase } from '../src/usecases/user/ChangeOwnPasswordUseCase';
+import { GetFolderByIdUseCase } from '../src/usecases/folder/GetFolderByIdUseCase';
 import { ListUsersUseCase } from '../src/usecases/user/ListUsersUseCase';
 import { UpdateUserUseCase } from '../src/usecases/user/UpdateUserUseCase';
 import { SoftDeleteUserUseCase } from '../src/usecases/user/SoftDeleteUserUseCase';
@@ -23,6 +29,8 @@ import { GetFileByIdUseCase } from '../src/usecases/file/GetFileByIdUseCase';
 import { DownloadFileUseCase } from '../src/usecases/file/DownloadFileUseCase';
 import { UpdateFileUseCase } from '../src/usecases/file/UpdateFileUseCase';
 import { SoftDeleteFileUseCase } from '../src/usecases/file/SoftDeleteFileUseCase';
+import { UploadFileUseCase } from '../src/usecases/file/UploadFileUseCase';
+import { BulkUploadFilesUseCase } from '../src/usecases/file/BulkUploadFilesUseCase';
 
 class TestJwtAuthGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
@@ -174,12 +182,36 @@ describe('RBAC (e2e)', () => {
   };
 
   beforeEach(async () => {
+    const changeOwnPasswordUseCase = {
+      execute: jest.fn(async () => ({ success: true })),
+    };
+    const getFolderByIdUseCase = {
+      execute: jest.fn(async () => ({
+        id: 'folder-1',
+        name: 'Folder',
+        children: [],
+        files: [],
+        ancestors: [],
+      })),
+    };
+    const uploadFileUseCase = {
+      execute: jest.fn(async () => ({ id: 'file-1' })),
+    };
+    const bulkUploadFilesUseCase = {
+      execute: jest.fn(async () => ({ results: [] })),
+    };
+
     const moduleBuilder = Test.createTestingModule({
       controllers: [UserController, FolderController, FileController],
       providers: [
         Reflector,
         RolesGuard,
-        { provide: CreateUserUseCase, useValue: createUserUseCase },
+        { provide: CreateUserWithFoldersUseCase, useValue: createUserUseCase },
+        {
+          provide: ChangeOwnPasswordUseCase,
+          useValue: changeOwnPasswordUseCase,
+        },
+        { provide: GetFolderByIdUseCase, useValue: getFolderByIdUseCase },
         { provide: ListUsersUseCase, useValue: listUsersUseCase },
         { provide: UpdateUserUseCase, useValue: updateUserUseCase },
         { provide: SoftDeleteUserUseCase, useValue: softDeleteUserUseCase },
@@ -193,6 +225,8 @@ describe('RBAC (e2e)', () => {
         { provide: DownloadFileUseCase, useValue: downloadFileUseCase },
         { provide: UpdateFileUseCase, useValue: updateFileUseCase },
         { provide: SoftDeleteFileUseCase, useValue: softDeleteFileUseCase },
+        { provide: UploadFileUseCase, useValue: uploadFileUseCase },
+        { provide: BulkUploadFilesUseCase, useValue: bulkUploadFilesUseCase },
       ],
     });
 

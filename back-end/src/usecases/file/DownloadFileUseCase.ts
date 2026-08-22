@@ -8,6 +8,10 @@ import { Readable } from 'node:stream';
 import { ROLE } from '@prisma/client';
 import { FileRepository } from '../../repositories/FileRepository';
 import { ErrorMessagesEnum } from '@file-manager/shared';
+import {
+  DEFAULT_UPLOAD_CONTENT_TYPE,
+  MIME_BY_EXTENSION,
+} from '../../shared/constants/upload.constants';
 
 export type DownloadFileInput = {
   id: string;
@@ -26,18 +30,6 @@ export type DownloadFileOutput = {
 export class DownloadFileUseCase {
   private readonly logger = new Logger(DownloadFileUseCase.name);
   private static readonly DOWNLOAD_TIMEOUT_MS = 15_000;
-  private static readonly MIME_BY_EXTENSION: Record<string, string> = {
-    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    xls: 'application/vnd.ms-excel',
-    pdf: 'application/pdf',
-    csv: 'text/csv',
-    txt: 'text/plain',
-    json: 'application/json',
-    zip: 'application/zip',
-    png: 'image/png',
-    jpg: 'image/jpeg',
-    jpeg: 'image/jpeg',
-  };
 
   constructor(private readonly fileRepository: FileRepository) {}
 
@@ -94,12 +86,13 @@ export class DownloadFileUseCase {
       .trim()
       .toLowerCase();
     const fallbackContentType =
-      DownloadFileUseCase.MIME_BY_EXTENSION[file.extension.toLowerCase()] ??
-      'application/octet-stream';
+      MIME_BY_EXTENSION[file.extension.toLowerCase()] ??
+      DEFAULT_UPLOAD_CONTENT_TYPE;
     const contentType =
-      !upstreamContentType || upstreamContentType === 'application/octet-stream'
+      !upstreamContentType ||
+      upstreamContentType === DEFAULT_UPLOAD_CONTENT_TYPE
         ? fallbackContentType
-        : upstreamContentType;
+        : upstreamContentType;
     this.logger.log('[DownloadFileUseCase] Execute finished');
 
 

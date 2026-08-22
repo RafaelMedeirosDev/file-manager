@@ -13,6 +13,10 @@ import { FileRepository } from '../../repositories/FileRepository';
 import { FolderRepository } from '../../repositories/FolderRepository';
 import { UserRepository } from '../../repositories/UserRepository';
 import { ErrorMessagesEnum } from '@file-manager/shared';
+import {
+  canonicalMimeTypeFor,
+  declaredMimeTypeMatches,
+} from '../../shared/constants/upload.constants';
 
 export type BulkUploadFileEntry = {
   buffer: Buffer;
@@ -86,6 +90,32 @@ export class BulkUploadFilesUseCase {
     const results = await Promise.all(
       input.files.map(async (entry): Promise<BulkUploadFileResult> => {
         try {
+          // ── Validacao por arquivo ──────────────────────
+          // Rejeicao individual entra no relatorio e o lote segue. Nao usamos
+          // fileFilter do multer porque ele so permite abortar o lote inteiro
+          // (cb(err)) ou descartar em silencio (cb(null, false)), e nenhum dos
+          // dois produz o relatorio { name, extension, error }.
+          if (entry.buffer.length > env.MAX_UPLOAD_SIZE_BYTES) {
+            return {
+              name: entry.name,
+              extension: entry.extension,
+              error: ErrorMessagesEnum.FILE_TOO_LARGE,
+            };
+          }
+
+          const contentType = canonicalMimeTypeFor(entry.extension);
+
+          if (
+            !contentType ||
+            !declaredMimeTypeMatches(entry.mimeType, contentType)
+          ) {
+            return {
+              name: entry.name,
+              extension: entry.extension,
+              error: ErrorMessagesEnum.FILE_TYPE_NOT_ALLOWED,
+            };
+          }
+
           const key = `${randomUUID()}.${entry.extension}`;
 
           await r2Client.send(
@@ -93,7 +123,7 @@ export class BulkUploadFilesUseCase {
               Bucket: env.R2_BUCKET_NAME,
               Key: key,
               Body: entry.buffer,
-              ContentType: entry.mimeType,
+              ContentType: contentType,
             }),
           );
 
@@ -107,11 +137,22 @@ export class BulkUploadFilesUseCase {
             url,
           });
 
-          return { name: entry.name, extension: entry.extension, id: file.id, url: file.url };
+          return {
+            name: entry.name,
+            extension: entry.extension,
+            id: file.id,
+            url: file.url,
+          };
         } catch (err) {
-          const message = err instanceof Error ? err.message : 'Upload failed';
-          this.logger.error(`[BulkUploadFilesUseCase] Failed to upload ${entry.name}: ${message}`);
-          return { name: entry.name, extension: entry.extension, error: message };
+          const message = err instanceof Error ? err.message : 'Unknown error';
+          this.logger.error(
+            `[BulkUploadFilesUseCase] Failed to upload ${entry.name}: ${message}`,
+          );
+          return {
+            name: entry.name,
+            extension: entry.extension,
+            error: ErrorMessagesEnum.UPLOAD_FAILED,
+          };
         }
       }),
     );

@@ -321,7 +321,19 @@ Os endpoints de upload usam os interceptors do `@nestjs/platform-express` sobre 
 - `POST /files/upload` → `FileInterceptor('file')` — um arquivo por requisição.
 - `POST /files/bulk-upload` → `FilesInterceptor('files', 20)` — até 20 arquivos por requisição.
 
-Os arquivos são recebidos **em memória** (o buffer é lido diretamente de `file.buffer`); não há gravação em disco no servidor. Não há limite de tamanho configurado por arquivo — apenas o limite de quantidade no lote.
+Os arquivos são recebidos **em memória** (o buffer é lido diretamente de `file.buffer`); não há gravação em disco no servidor.
+
+### Limites e tipos aceitos
+
+Cada arquivo é limitado a `MAX_UPLOAD_SIZE_BYTES` (padrão 10 MiB), aplicado pelo `limits.fileSize` do Multer — ou seja, no transporte, antes de o handler executar. Um estouro devolve **413** com a mensagem padronizada do `ErrorMessagesEnum`, via um `ExceptionFilter` aplicado apenas às duas rotas de upload.
+
+> Como o armazenamento é em memória, o limite relevante é o agregado: `BULK_UPLOAD_MAX_FILES` × `MAX_UPLOAD_SIZE_BYTES` é o pior caso de heap por requisição de bulk — 200 MiB com os valores padrão. Ao aumentar o limite por arquivo, reduza a quantidade máxima na mesma proporção.
+
+Só são aceitas as extensões do mapa canônico `MIME_BY_EXTENSION` (`xlsx`, `xls`, `pdf`, `csv`, `txt`, `json`, `zip`, `png`, `jpg`, `jpeg`). Formatos que o browser renderiza como documento ativo — `svg`, `html` — ficam deliberadamente de fora, porque os objetos são servidos publicamente a partir de `R2_PUBLIC_URL` e permitiriam XSS armazenado no domínio da aplicação. Um tipo rejeitado devolve **415**.
+
+O `Content-Type` gravado no R2 é sempre o canônico derivado da extensão, **nunca** o mimetype declarado pelo cliente. Esse é o controle que efetivamente fecha o vetor: sem ele, um `foto.png` anunciado como `text/html` seria servido como HTML mesmo passando pela whitelist de extensão.
+
+**Limitação conhecida:** extensão e mimetype são metadados, não conteúdo. Um arquivo com extensão permitida mas conteúdo malicioso passa pela validação — embora seja servido com o `Content-Type` da extensão, o que impede a execução no browser. Validar o conteúdo de fato exigiria inspecionar os *magic bytes* (assinatura nos primeiros bytes do buffer), o que demanda uma dependência adicional e está registrado nas melhorias futuras.
 
 ### Regras de negócio antes da escrita
 
@@ -466,6 +478,7 @@ JWT_SECRET=
 PORT=3000
 NODE_ENV=development
 LOG_LEVELS=log,error,warn
+MAX_UPLOAD_SIZE_BYTES=10485760
 
 # Cloudflare R2
 R2_ACCOUNT_ID=
@@ -484,6 +497,7 @@ R2_PUBLIC_URL=
 | `PORT` | Não | Porta da API. Valor padrão no código: `3000`. |
 | `NODE_ENV` | Não | Ambiente de execução. Padrão: `development`. |
 | `LOG_LEVELS` | Não | Lista separada por vírgula entre `log`, `error`, `warn`, `debug`, `verbose`, `fatal`. Padrão: `log,error,warn`. |
+| `MAX_UPLOAD_SIZE_BYTES` | Não | Tamanho máximo aceito por arquivo no upload, em bytes. Padrão: `10485760` (10 MiB). |
 | `R2_ACCOUNT_ID` | Sim | Account ID do Cloudflare R2 — usado para montar o endpoint do cliente S3. |
 | `R2_ACCESS_KEY_ID` | Sim | Access key de acesso ao bucket. |
 | `R2_SECRET_ACCESS_KEY` | Sim | Secret key de acesso ao bucket. |
@@ -612,7 +626,8 @@ VITE_API_URL=
 - Configurar pipeline de CI (lint, build e testes a cada pull request) e, na sequência, CD.
 - Criar ambiente containerizado com Docker Compose (API + PostgreSQL) para simplificar o onboarding.
 - Substituir o acesso público aos arquivos por **URLs pré-assinadas**, restringindo a leitura direta do bucket.
-- Definir limite de tamanho por upload e validação de tipos de arquivo aceitos.
+- Validar o conteúdo real dos arquivos por *magic bytes*, complementando a checagem de extensão e mimetype.
+- Enviar os uploads em streaming direto para o R2, eliminando o buffer em memória e o limite agregado do bulk.
 - Remover o objeto no R2 (ou movê-lo para uma área de retenção) quando o arquivo for excluído logicamente.
 - Adotar um `ValidationPipe` global e um filtro global de exceções, reduzindo repetição nos controllers e padronizando o corpo das respostas de erro.
 - Implementar refresh token e tratamento automático de `401` no interceptor do Axios.

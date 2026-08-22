@@ -21,4 +21,7 @@ export enum ErrorMessagesEnum {
   EXAM_REQUEST_NOT_FOUND = 'Solicitacao de exame nao encontrada',
   CANNOT_DELETE_SELF = 'Voce nao pode excluir sua propria conta',
   UPLOAD_NOT_ALLOWED_IN_THIS_FOLDER = 'Upload nao permitido nesta pasta',
+  FILE_TOO_LARGE = 'Arquivo excede o tamanho maximo permitido',
+  FILE_TYPE_NOT_ALLOWED = 'Tipo de arquivo nao permitido',
+  UPLOAD_FAILED = 'Nao foi possivel enviar o arquivo',
 }
