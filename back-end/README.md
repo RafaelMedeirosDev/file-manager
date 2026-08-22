@@ -27,9 +27,10 @@ Módulos de apoio: `src/auth/` (JWT, guards, `@Roles`), `src/database/` (módulo
 
 ```bash
 cp .env.example .env    # preencha os valores
-pnpm prisma:generate
 pnpm prisma:migrate:dev
 ```
+
+O Prisma Client é gerado pelo `postinstall` durante o `pnpm install`. Rode `pnpm prisma:generate` manualmente apenas após alterar o `schema.prisma`.
 
 As variáveis obrigatórias são validadas em `src/config/env.ts` na inicialização: a aplicação falha imediatamente, com o nome da variável, se alguma estiver ausente. A referência completa está na [seção de variáveis de ambiente do README da raiz](../README.md#variáveis-de-ambiente).
 

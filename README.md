@@ -402,6 +402,8 @@ pnpm install
 
 O script `prepare` do pacote `shared/` compila automaticamente `shared/dist/` durante a instalação — não é necessário nenhum passo manual em um clone novo.
 
+O `postinstall` do `back-end/` gera o Prisma Client no mesmo momento. Sem ele, `@prisma/client` permanece como stub e o build falha por falta dos tipos gerados (`ROLE`, `PrismaClient`, os modelos).
+
 ### 4. Configurar as variáveis de ambiente
 
 ```bash
@@ -411,13 +413,7 @@ cp front-end/.env.example front-end/.env
 
 Preencha os valores conforme a seção [Variáveis de ambiente](#variáveis-de-ambiente). A aplicação valida as variáveis obrigatórias na inicialização e falha imediatamente com uma mensagem explícita caso alguma esteja ausente.
 
-### 5. Gerar o Prisma Client
-
-```bash
-pnpm prisma:generate
-```
-
-### 6. Executar as migrations
+### 5. Executar as migrations
 
 ```bash
 pnpm prisma:migrate:dev
@@ -427,7 +423,7 @@ Em ambientes de produção, use `pnpm prisma:migrate:deploy`.
 
 > O projeto não possui script de seed. O primeiro usuário `ADMIN` precisa ser criado manualmente no banco (a criação de usuários pela API é uma rota restrita a `ADMIN`).
 
-### 7. Executar em desenvolvimento
+### 6. Executar em desenvolvimento
 
 Ambos os serviços em paralelo:
 
@@ -442,7 +438,7 @@ pnpm start:dev     # apenas a API, em modo watch
 pnpm start:front   # apenas o frontend (Vite, porta 5173)
 ```
 
-### 8. Build de produção
+### 7. Build de produção
 
 ```bash
 pnpm build          # todos os workspaces via Turbo (shared → back-end → front-end)
@@ -450,7 +446,7 @@ pnpm build:back     # apenas o backend
 pnpm build:front    # apenas o frontend
 ```
 
-### 9. Executar os testes
+### 8. Executar os testes
 
 ```bash
 pnpm test                       # testes unitários (atualmente apenas o back-end possui suíte)

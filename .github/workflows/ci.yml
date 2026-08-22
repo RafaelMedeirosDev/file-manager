@@ -41,19 +41,12 @@ jobs:
 
       # --frozen-lockfile faz o run falhar se o lockfile estiver dessincronizado
       # do package.json, em vez de resolver silenciosamente outra arvore.
+      #
+      # O postinstall do back-end roda prisma generate aqui: sem isso o
+      # @prisma/client fica no estado de stub e o build quebra com dezenas
+      # de TS2305/TS2339.
       - name: Instalar dependencias
         run: pnpm install --frozen-lockfile
-
-      # O @prisma/client e publicado como stub: os tipos (PrismaClient, ROLE,
-      # Prisma, os modelos) so existem depois do generate. Sem este passo o
-      # build do back-end falha com dezenas de TS2305/TS2339.
-      #
-      # Chamado direto no workspace, e nao via turbo: a task prisma:generate
-      # declara outputs em node_modules/.prisma/**, mas com pnpm o client e
-      # escrito dentro de node_modules/.pnpm/..., entao o cache do turbo nao
-      # descreveria o artefato corretamente.
-      - name: Gerar Prisma Client
-        run: pnpm --dir back-end prisma:generate
 
       # Turbo resolve a ordem entre os workspaces: shared -> back-end -> front-end.
       - name: Build
