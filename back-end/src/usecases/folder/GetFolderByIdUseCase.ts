@@ -75,10 +75,15 @@ export class GetFolderByIdUseCase {
     );
 
     // ── Ancestors: sobe a hierarquia até a raiz ──────────
+    // O Set guarda os ids ja visitados: sem ele, uma hierarquia ciclica
+    // (A -> B -> A) manteria o laco consultando o banco indefinidamente.
     const ancestors: Array<{ id: string; name: string }> = [];
+    const visitedFolderIds = new Set<string>([folder.id]);
     let currentParentId = folder.folderId;
 
-    while (currentParentId) {
+    while (currentParentId && !visitedFolderIds.has(currentParentId)) {
+      visitedFolderIds.add(currentParentId);
+
       const ancestor = await this.folderRepository.findById(currentParentId);
       if (!ancestor || ancestor.deletedAt) break;
       ancestors.unshift({ id: ancestor.id, name: ancestor.name });

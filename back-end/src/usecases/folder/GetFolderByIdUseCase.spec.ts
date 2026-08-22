@@ -127,6 +127,37 @@ describe('GetFolderByIdUseCase', () => {
       expect(output.ancestors).toEqual([{ id: 'folder-pai', name: 'Pai' }]);
     });
 
+    it('stops instead of looping forever when a folder is its own parent', async () => {
+      // mockResolvedValue (e nao Once) alimenta o laco indefinidamente: se a
+      // guarda de ciclo falhar, o sintoma e timeout, nao erro de asserção.
+      mockFolderRepository.findById.mockResolvedValue(
+        folderMock({ id: 'folder-uuid-001', folderId: 'folder-uuid-001' }),
+      );
+
+      const output = await useCase.execute(asOwner);
+
+      // a propria pasta nunca e ancestral de si mesma
+      expect(output.ancestors).toEqual([]);
+    });
+
+    it('stops instead of looping forever on an A -> B -> A cycle', async () => {
+      mockFolderRepository.findById.mockImplementation((id: string) =>
+        Promise.resolve(
+          id === 'folder-pai'
+            ? relatedMock({
+                id: 'folder-pai',
+                name: 'Pai',
+                folderId: 'folder-uuid-001',
+              })
+            : folderMock({ folderId: 'folder-pai' }),
+        ),
+      );
+
+      const output = await useCase.execute(asOwner);
+
+      // sobe uma vez ate o pai e para ao reencontrar a pasta de origem
+      expect(output.ancestors).toEqual([{ id: 'folder-pai', name: 'Pai' }]);
+    });
     it('maps the files returned by the repository', async () => {
       mockFolderRepository.findById.mockResolvedValueOnce(folderMock());
       mockFileRepository.listFilesActive.mockResolvedValue([
