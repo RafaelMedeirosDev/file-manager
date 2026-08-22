@@ -55,7 +55,7 @@ export class GetFileByIdUseCase {
 
     if (!this.canAccessResource(file.userId, input)) {
       throw new ForbiddenException(ErrorMessagesEnum.FILE_ACCESS_FORBIDDEN);
-    }
+    }
     this.logger.log('[GetFileByIdUseCase] Execute finished');
 
 

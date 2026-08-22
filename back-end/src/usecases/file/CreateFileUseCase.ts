@@ -58,7 +58,7 @@ export class CreateFileUseCase {
       folderId: input.folderId,
       extension: input.extension,
       url: input.url,
-    });
+    });
     this.logger.log('[CreateFileUseCase] Execute finished');
 
 

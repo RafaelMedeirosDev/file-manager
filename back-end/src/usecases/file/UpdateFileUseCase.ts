@@ -59,7 +59,7 @@ export class UpdateFileUseCase {
     const updatedFile = await this.fileRepository.updateById(input.id, {
       folderId: input.folderId,
       url: input.url,
-    });
+    });
     this.logger.log('[UpdateFileUseCase] Execute finished');
 
 

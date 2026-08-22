@@ -42,7 +42,7 @@ export class UpdateFolderUseCase {
 
     const updatedFolder = await this.folderRepository.updateById(input.id, {
       name: input.name,
-    });
+    });
     this.logger.log('[UpdateFolderUseCase] Execute finished');
 
 

@@ -56,7 +56,7 @@ export class CreateFolderUseCase {
       name: input.name,
       userId: input.userId,
       folderId: input.folderId,
-    });
+    });
     this.logger.log('[CreateFolderUseCase] Execute finished');
 
 
