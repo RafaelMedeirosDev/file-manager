@@ -3,6 +3,8 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  PayloadTooLargeException,
+  UnsupportedMediaTypeException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
@@ -13,6 +15,10 @@ import { FileRepository } from '../../repositories/FileRepository';
 import { FolderRepository } from '../../repositories/FolderRepository';
 import { UserRepository } from '../../repositories/UserRepository';
 import { ErrorMessagesEnum } from '@file-manager/shared';
+import {
+  canonicalMimeTypeFor,
+  declaredMimeTypeMatches,
+} from '../../shared/constants/upload.constants';
 
 export type UploadFileInput = {
   buffer: Buffer;
@@ -81,6 +87,24 @@ export class UploadFileUseCase {
       throw new NotFoundException(ErrorMessagesEnum.USER_NOT_FOUND);
     }
 
+    // ── Validacao: tamanho dentro do limite ──────────────
+    // Defesa em profundidade: o multer ja barra no transporte via limits.fileSize,
+    // esta guarda cobre chamadas do use case fora do caminho HTTP.
+    if (input.buffer.length > env.MAX_UPLOAD_SIZE_BYTES) {
+      throw new PayloadTooLargeException(ErrorMessagesEnum.FILE_TOO_LARGE);
+    }
+
+    // ── Validacao: tipo permitido ────────────────────────
+    // O mimetype declarado no multipart nao e confiavel: o Content-Type gravado
+    // no R2 e sempre o canonico da extensao, nunca o que o cliente enviou.
+    const contentType = canonicalMimeTypeFor(input.extension);
+
+    if (!contentType || !declaredMimeTypeMatches(input.mimeType, contentType)) {
+      throw new UnsupportedMediaTypeException(
+        ErrorMessagesEnum.FILE_TYPE_NOT_ALLOWED,
+      );
+    }
+
     // ── Upload para o R2 ─────────────────────────────────
     const key = `${randomUUID()}.${input.extension}`;
 
@@ -89,7 +113,7 @@ export class UploadFileUseCase {
         Bucket: env.R2_BUCKET_NAME,
         Key: key,
         Body: input.buffer,
-        ContentType: input.mimeType,
+        ContentType: contentType,
       }),
     );
 

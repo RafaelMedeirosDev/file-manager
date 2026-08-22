@@ -13,11 +13,15 @@ import {
   StreamableFile,
   UploadedFile,
   UploadedFiles,
+  UseFilters,
   UseGuards,
   UseInterceptors,
   ValidationPipe,
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { env } from '../config/env';
+import { BULK_UPLOAD_MAX_FILES } from '../shared/constants/upload.constants';
+import { UploadPayloadTooLargeFilter } from '../shared/filters/UploadPayloadTooLargeFilter';
 import type { Request, Response } from 'express';
 import { ROLE } from '@prisma/client';
 import { CreateFileDTO } from '../shared/dto/file/CreateFileDTO';
@@ -78,7 +82,12 @@ export class FileController {
 
   @Post('upload')
   @Roles(ROLE.USER, ROLE.ADMIN)
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: env.MAX_UPLOAD_SIZE_BYTES },
+    }),
+  )
+  @UseFilters(UploadPayloadTooLargeFilter)
   async upload(
     @UploadedFile() file: Express.Multer.File,
     @Body(
@@ -106,7 +115,12 @@ export class FileController {
 
   @Post('bulk-upload')
   @Roles(ROLE.USER, ROLE.ADMIN)
-  @UseInterceptors(FilesInterceptor('files', 20))
+  @UseInterceptors(
+    FilesInterceptor('files', BULK_UPLOAD_MAX_FILES, {
+      limits: { fileSize: env.MAX_UPLOAD_SIZE_BYTES },
+    }),
+  )
+  @UseFilters(UploadPayloadTooLargeFilter)
   async bulkUpload(
     @UploadedFiles() files: Express.Multer.File[],
     @Body(
