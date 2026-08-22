@@ -8,6 +8,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Readable } from 'node:stream';
+import type { ReadableStream } from 'node:stream/web';
 import { ROLE } from '@prisma/client';
 import { FileRepository } from '../../repositories/FileRepository';
 import { ErrorMessagesEnum } from '@file-manager/shared';
@@ -108,7 +109,7 @@ export class DownloadFileUseCase {
     this.logger.log('[DownloadFileUseCase] Execute finished');
 
     return {
-      stream: Readable.fromWeb(upstream.body as any),
+      stream: Readable.fromWeb(upstream.body as ReadableStream<Uint8Array>),
       fileName: `${file.name}.${file.extension}`,
       contentType,
       contentLength: upstream.headers.get('content-length') ?? undefined,

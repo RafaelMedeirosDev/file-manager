@@ -34,4 +34,17 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-call': 'off'
     },
   },
+  {
+    // Codigo de teste lida por natureza com mocks e com retornos `any` do
+    // Nest e do supertest. Tipar cada mock deixaria os testes mais verbosos
+    // que o codigo que eles cobrem, contrariando .claude/rules/tests.md
+    // ("avoid excessive mocks that make the test harder to read than the
+    // production code"). As mesmas regras seguem ativas em src/.
+    files: ['**/*.spec.ts', 'test/**/*.ts'],
+    rules: {
+      '@typescript-eslint/require-await': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+    },
+  },
 );
