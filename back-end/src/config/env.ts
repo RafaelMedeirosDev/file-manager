@@ -37,7 +37,7 @@ function parseLogLevels(): LogLevel[] {
 
 export const env = {
   DATABASE_URL: required('DATABASE_URL'),
-  DATABASE_SCHEMA: process.env.DATABASE_SCHEMA ?? 'projeto-kiko',
+  DATABASE_SCHEMA: process.env.DATABASE_SCHEMA,
   JWT_SECRET: required('JWT_SECRET'),
   PORT: Number(process.env.PORT ?? 3000),
   NODE_ENV: process.env.NODE_ENV ?? 'development',
