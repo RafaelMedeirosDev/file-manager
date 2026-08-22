@@ -32,6 +32,16 @@ Thumbs.db
 # pnpm local store/cache
 .pnpm-store/
 
+# artefatos de compilacao do TypeScript
+#
+# front-end/tsconfig.node.json e um projeto composite que inclui
+# vite.config.ts, e composite obriga emissao: cada `tsc -b` reescreve
+# vite.config.js e .d.ts ao lado da fonte. O Vite le o .ts diretamente,
+# entao esses arquivos nunca sao consumidos por ninguem.
+*.tsbuildinfo
+front-end/vite.config.js
+front-end/vite.config.d.ts
+
 # turborepo cache
 .turbo/
 
