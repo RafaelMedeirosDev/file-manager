@@ -53,7 +53,9 @@ export class SoftDeleteFileUseCase {
         ? await this.folderRepository.findById(file.folderId)
         : null;
 
-      if (!folder?.isDefault) {
+      // deletedAt tratado como inexistencia, como no resto do codigo: uma
+      // pasta apagada nao autoriza mais a exclusao do arquivo.
+      if (!folder || folder.deletedAt || !folder.isDefault) {
         throw new ForbiddenException(ErrorMessagesEnum.FILE_ACCESS_FORBIDDEN);
       }
     }
