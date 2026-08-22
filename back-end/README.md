@@ -1,98 +1,68 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Backend — File Manager
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+API REST em NestJS 11 com Prisma 7 e PostgreSQL. Este é o workspace `back-end/` do monorepo.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+> Visão geral do projeto, arquitetura, modelagem de dados, RBAC e instruções completas de execução estão no [README da raiz](../README.md).
 
-## Description
+## Arquitetura
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+O fluxo de uma requisição segue `controller → DTO → use case → repository`:
 
-## Project setup
+| Camada | Pasta | Responsabilidade |
+|---|---|---|
+| Controllers | `src/controllers/` | Apenas transporte: validam o input via `ValidationPipe`, extraem o contexto de `req.user` e delegam para um use case. |
+| DTOs | `src/shared/dto/<domínio>/` | Validam o formato do input com `class-validator` e normalizam strings. |
+| Use cases | `src/usecases/<domínio>/` | Regras de negócio, checagem de propriedade e de soft delete, paginação e mapeamento de saída. |
+| Repositories | `src/repositories/` | Única camada que fala com o Prisma. |
+
+Módulos de apoio: `src/auth/` (JWT, guards, `@Roles`), `src/database/` (módulo global do Prisma), `src/config/env.ts` (validação das variáveis de ambiente no boot), `src/shared/` (interceptors, constantes, cliente R2).
+
+## Pré-requisitos
+
+- Node.js 20+ e pnpm 10+
+- PostgreSQL acessível
+- Bucket Cloudflare R2 com credenciais
+
+## Configuração
 
 ```bash
-$ npm install
+cp .env.example .env    # preencha os valores
+pnpm prisma:generate
+pnpm prisma:migrate:dev
 ```
 
-## Compile and run the project
+As variáveis obrigatórias são validadas em `src/config/env.ts` na inicialização: a aplicação falha imediatamente, com o nome da variável, se alguma estiver ausente. A referência completa está na [seção de variáveis de ambiente do README da raiz](../README.md#variáveis-de-ambiente).
 
-```bash
-# development
-$ npm run start
+## Scripts
 
-# watch mode
-$ npm run start:dev
+| Script | Descrição |
+|---|---|
+| `pnpm start:dev` | Sobe a API em modo watch. |
+| `pnpm start:debug` | Modo watch com o inspector do Node. |
+| `pnpm build` | Compila com `nest build`. |
+| `pnpm start:prod` | Executa o build compilado. |
+| `pnpm test` | Testes unitários (Jest). |
+| `pnpm test:watch` / `test:cov` | Watch e relatório de cobertura. |
+| `pnpm test:e2e` | Testes end-to-end via `test/jest-e2e.json`. |
+| `pnpm lint` | ESLint com `--fix`. |
+| `pnpm format` | Prettier em `src/` e `test/`. |
+| `pnpm prisma:migrate:dev` | Cria e aplica migrations em desenvolvimento. |
+| `pnpm prisma:migrate:deploy` | Aplica migrations pendentes (produção). |
+| `pnpm prisma:generate` | Gera o Prisma Client. |
+| `pnpm prisma:studio` | Abre o Prisma Studio. |
 
-# production mode
-$ npm run start:prod
-```
+## Testes
 
-## Run tests
+- Specs unitários ficam ao lado dos use cases, em `src/usecases/**/*.spec.ts`.
+- Testes end-to-end ficam em `test/`, incluindo `rbac.e2e-spec.ts`, que valida o controle de acesso por papel via códigos de status HTTP.
+- Os repositórios são mockados no seam, então a suíte unitária não precisa de banco.
 
-```bash
-# unit tests
-$ npm run test
+## Convenções
 
-# e2e tests
-$ npm run test:e2e
+- Arquivos de controllers, use cases, repositories e DTOs usam `PascalCase.ts`.
+- Providers e controllers são registrados em `src/app.module.ts`; a autenticação fica isolada em `src/auth/auth.module.ts`.
+- Mensagens de erro vêm de `ErrorMessagesEnum`, exportado por `@file-manager/shared`.
+- Todas as entidades usam soft delete via `deletedAt`; não há exclusão física.
+- Filtro, ordenação e paginação são expressos como parâmetros de query do Prisma no repositório, nunca em memória no use case.
 
-# test coverage
-$ npm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+As regras detalhadas estão em [`.claude/rules/`](../.claude/rules/) na raiz do monorepo.
