@@ -479,7 +479,7 @@ R2_PUBLIC_URL=
 | Variável | Obrigatória | Descrição |
 |---|---|---|
 | `DATABASE_URL` | Sim | String de conexão do PostgreSQL. |
-| `DATABASE_SCHEMA` | Não | Schema usado pelo driver adapter do Prisma. |
+| `DATABASE_SCHEMA` | Não | Schema usado pelo driver adapter do Prisma. Se omitida, as queries usam o `search_path` padrão da conexão — `public`, no PostgreSQL. |
 | `JWT_SECRET` | Sim | Segredo usado para assinar e verificar os tokens JWT. |
 | `PORT` | Não | Porta da API. Valor padrão no código: `3000`. |
 | `NODE_ENV` | Não | Ambiente de execução. Padrão: `development`. |
@@ -581,7 +581,6 @@ VITE_API_URL=
 **Inconsistências conhecidas**
 - A porta padrão da API no código é `3000`, enquanto o fallback do frontend aponta para `http://localhost:3001` — em desenvolvimento é necessário definir `PORT` ou `VITE_API_URL` de forma coerente.
 - `R2_ENDPOINT` aparece no `.env.example` mas não é consumida pelo código.
-- `DATABASE_SCHEMA` tem como padrão um nome de schema legado.
 - O soft delete de arquivos não remove o objeto correspondente do bucket R2.
 
 ---
