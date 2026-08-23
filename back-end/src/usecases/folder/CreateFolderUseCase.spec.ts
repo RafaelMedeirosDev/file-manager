@@ -1,4 +1,8 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ErrorMessagesEnum } from '@file-manager/shared';
 import { CreateFolderUseCase } from './CreateFolderUseCase';
@@ -131,6 +135,21 @@ describe('CreateFolderUseCase', () => {
       );
     });
 
+    it('the parent folder belongs to another user', async () => {
+      mockFolderRepository.findById.mockResolvedValue(
+        folderMock({ id: 'folder-parent', userId: 'user-uuid-999' }),
+      );
+
+      await expect(
+        useCase.execute({ ...input, folderId: 'folder-parent' }),
+      ).rejects.toThrow(
+        new BadRequestException(
+          ErrorMessagesEnum.FOLDER_DOES_NOT_BELONG_TO_USER,
+        ),
+      );
+
+      expect(mockFolderRepository.create).not.toHaveBeenCalled();
+    });
     it('the user already has an active folder with the same name', async () => {
       mockFolderRepository.findActiveByUserIdAndName.mockResolvedValue(
         folderMock(),

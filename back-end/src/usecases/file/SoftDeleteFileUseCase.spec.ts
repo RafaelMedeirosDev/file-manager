@@ -138,6 +138,17 @@ describe('SoftDeleteFileUseCase', () => {
       expect(mockFileRepository.softDeleteById).not.toHaveBeenCalled();
     });
 
+    it('a USER owns the file but its default folder was soft-deleted', async () => {
+      mockFolderRepository.findById.mockResolvedValue(
+        folderMock({ deletedAt: new Date('2026-02-01T00:00:00.000Z') }),
+      );
+
+      await expect(useCase.execute(asOwner)).rejects.toThrow(
+        new ForbiddenException(ErrorMessagesEnum.FILE_ACCESS_FORBIDDEN),
+      );
+
+      expect(mockFileRepository.softDeleteById).not.toHaveBeenCalled();
+    });
     it('a USER owns the file but it is not in the default folder', async () => {
       mockFolderRepository.findById.mockResolvedValue(
         folderMock({ isDefault: false }),

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -44,6 +45,15 @@ export class CreateFolderUseCase {
 
       if (!parentFolder || parentFolder.deletedAt) {
         throw new NotFoundException(ErrorMessagesEnum.FOLDER_NOT_FOUND);
+      }
+
+      // Sem esta checagem a pasta de um usuario podia ser pendurada dentro da
+      // pasta de outro, produzindo hierarquia com donos cruzados — que depois
+      // faz GetFolderById esconder o pai e filtrar os filhos.
+      if (parentFolder.userId !== input.userId) {
+        throw new BadRequestException(
+          ErrorMessagesEnum.FOLDER_DOES_NOT_BELONG_TO_USER,
+        );
       }
     }
 
