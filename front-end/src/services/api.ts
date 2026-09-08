@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { readSession } from '../features/auth/session';
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL?.toString().trim() || 'http://localhost:3001';
@@ -8,20 +9,10 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const sessionRaw = localStorage.getItem('file-manager:session');
+  const session = readSession();
 
-  if (!sessionRaw) {
-    return config;
-  }
-
-  try {
-    const session = JSON.parse(sessionRaw) as { accessToken?: string };
-
-    if (session.accessToken) {
-      config.headers.Authorization = `Bearer ${session.accessToken}`;
-    }
-  } catch {
-    localStorage.removeItem('file-manager:session');
+  if (session?.accessToken) {
+    config.headers.Authorization = `Bearer ${session.accessToken}`;
   }
 
   return config;

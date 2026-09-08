@@ -15,6 +15,20 @@ export function getApiErrorMessage(error: unknown, fallback: string): string {
 }
 
 /**
+ * Extrai o status HTTP de um erro Axios, quando houver.
+ *
+ * Mesmo cast estrutural de getApiErrorMessage: evita espalhar
+ * axios.isAxiosError pelos consumidores. Devolve undefined em erro de rede,
+ * quando a requisicao nem chegou a ter resposta.
+ */
+export function getApiErrorStatus(error: unknown): number | undefined {
+  const status = (error as { response?: { status?: unknown } })?.response
+    ?.status;
+
+  return typeof status === 'number' ? status : undefined;
+}
+
+/**
  * Normaliza a resposta da API para o formato interno PaginatedResult<T>.
  *
  * O backend retorna { data: T[], meta: {...} }, mas versões antigas
