@@ -22,6 +22,7 @@ export class FileRepository {
     userId: string;
     folderId: string;
     extension: string;
+    key: string;
     url: string;
   }): Promise<File> {
     return this.prisma.file.create({
@@ -84,7 +85,6 @@ export class FileRepository {
     id: string,
     data: {
       folderId?: string;
-      url?: string;
     },
   ): Promise<File> {
     return this.prisma.file.update({

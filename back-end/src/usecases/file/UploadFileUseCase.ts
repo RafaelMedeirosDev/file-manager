@@ -36,7 +36,6 @@ export type UploadFileOutput = {
   userId: string;
   folderId: string | null;
   extension: string;
-  url: string;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -120,6 +119,9 @@ export class UploadFileUseCase {
     this.logger.log(`[UploadFileUseCase] Uploaded to R2 with key: ${key}`);
 
     // ── Persiste no banco ────────────────────────────────
+    // A `key` e o que o download usa. A `url` continua sendo gravada apenas
+    // enquanto durar a transicao para o bucket privado, para permitir rollback;
+    // ela nao e mais exposta pela API nem usada para buscar o arquivo.
     const url = `${env.R2_PUBLIC_URL}/${key}`;
 
     const file = await this.fileRepository.create({
@@ -127,6 +129,7 @@ export class UploadFileUseCase {
       userId: fileOwnerId,
       folderId: input.folderId,
       extension: input.extension,
+      key,
       url,
     });
 
@@ -138,7 +141,6 @@ export class UploadFileUseCase {
       userId: file.userId,
       folderId: file.folderId,
       extension: file.extension,
-      url: file.url,
       createdAt: file.createdAt,
       updatedAt: file.updatedAt,
     };

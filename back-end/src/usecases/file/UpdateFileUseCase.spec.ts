@@ -15,6 +15,7 @@ function fileMock(overrides: Record<string, unknown> = {}) {
     userId: OWNER,
     folderId: 'folder-uuid-001',
     extension: 'pdf',
+    key: '11111111-1111-4111-8111-111111111111.pdf',
     url: 'https://cdn.example.com/laudo.pdf',
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     updatedAt: new Date('2026-01-03T00:00:00.000Z'),
@@ -54,22 +55,23 @@ describe('UpdateFileUseCase', () => {
     mockFileRepository.findById.mockResolvedValue(fileMock());
     mockFolderRepository.findById.mockResolvedValue(folderMock());
     mockFileRepository.updateById.mockResolvedValue(
-      fileMock({ url: 'https://cdn.example.com/novo.pdf' }),
+      fileMock({ folderId: 'folder-destino' }),
     );
   });
 
   // ── Happy path ─────────────────────────────────────────
   describe('should be able to update a file with success', () => {
-    it('updates only the url without touching the folder repository', async () => {
+    it('persists only the destination folder', async () => {
       await useCase.execute({
         id: 'file-uuid-001',
-        url: 'https://cdn.example.com/novo.pdf',
+        folderId: 'folder-destino',
       });
 
-      expect(mockFolderRepository.findById).not.toHaveBeenCalled();
+      // A url do objeto deixou de ser atualizavel: o binario e resolvido pela
+      // key gravada no upload, entao nao ha endereco a reescrever aqui.
       expect(mockFileRepository.updateById).toHaveBeenCalledWith(
         'file-uuid-001',
-        { folderId: undefined, url: 'https://cdn.example.com/novo.pdf' },
+        { folderId: 'folder-destino' },
       );
     });
 
@@ -87,10 +89,10 @@ describe('UpdateFileUseCase', () => {
     it('returns the file as returned by the update, not the one read before', async () => {
       const output = await useCase.execute({
         id: 'file-uuid-001',
-        url: 'https://cdn.example.com/novo.pdf',
+        folderId: 'folder-destino',
       });
 
-      expect(output.url).toBe('https://cdn.example.com/novo.pdf');
+      expect(output.folderId).toBe('folder-destino');
     });
   });
 
@@ -111,7 +113,7 @@ describe('UpdateFileUseCase', () => {
       await expect(
         useCase.execute({
           id: 'missing',
-          url: 'https://cdn.example.com/x.pdf',
+          folderId: 'folder-destino',
         }),
       ).rejects.toThrow(
         new NotFoundException(ErrorMessagesEnum.FILE_NOT_FOUND),
@@ -126,7 +128,7 @@ describe('UpdateFileUseCase', () => {
       await expect(
         useCase.execute({
           id: 'file-uuid-001',
-          url: 'https://cdn.example.com/x.pdf',
+          folderId: 'folder-destino',
         }),
       ).rejects.toThrow(
         new NotFoundException(ErrorMessagesEnum.FILE_NOT_FOUND),

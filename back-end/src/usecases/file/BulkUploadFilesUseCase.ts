@@ -36,7 +36,6 @@ export type BulkUploadFileResult = {
   name: string;
   extension: string;
   id?: string;
-  url?: string;
   error?: string;
 };
 
@@ -134,6 +133,7 @@ export class BulkUploadFilesUseCase {
             userId: fileOwnerId,
             folderId: input.folderId,
             extension: entry.extension,
+            key,
             url,
           });
 
@@ -141,7 +141,6 @@ export class BulkUploadFilesUseCase {
             name: entry.name,
             extension: entry.extension,
             id: file.id,
-            url: file.url,
           };
         } catch (err) {
           const message = err instanceof Error ? err.message : 'Unknown error';

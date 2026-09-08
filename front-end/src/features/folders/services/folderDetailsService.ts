@@ -19,7 +19,6 @@ export type BulkUploadResult = {
   name: string;
   extension: string;
   id?: string;
-  url?: string;
   error?: string;
 };
 

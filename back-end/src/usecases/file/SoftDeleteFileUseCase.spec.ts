@@ -87,7 +87,6 @@ describe('SoftDeleteFileUseCase', () => {
         name: 'laudo',
         userId: OWNER,
         folderId: 'folder-default',
-        url: 'https://cdn.example.com/laudo.pdf',
         deletedAt: NOW.toISOString(),
       });
     });

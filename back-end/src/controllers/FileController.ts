@@ -246,7 +246,6 @@ export class FileController {
     return this.updateFileUseCase.execute({
       id: params.id,
       folderId: body.folderId,
-      url: body.url,
     });
   }
 

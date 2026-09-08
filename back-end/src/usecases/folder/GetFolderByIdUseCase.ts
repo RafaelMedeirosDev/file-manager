@@ -40,7 +40,6 @@ export type GetFolderByIdOutput = {
     userId: string;
     folderId: string | null;
     extension: string;
-    url: string;
     createdAt: Date;
     updatedAt: Date;
   }>;
@@ -127,7 +126,6 @@ export class GetFolderByIdUseCase {
         userId: file.userId,
         folderId: file.folderId,
         extension: file.extension,
-        url: file.url,
         createdAt: file.createdAt,
         updatedAt: file.updatedAt,
       })),

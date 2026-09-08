@@ -20,7 +20,6 @@ export type SoftDeleteFileOutput = {
   name: string;
   userId: string;
   folderId: string | null;
-  url: string;
   deletedAt: string;
 };
 
@@ -73,7 +72,6 @@ export class SoftDeleteFileUseCase {
       name: deletedFile.name,
       userId: deletedFile.userId,
       folderId: deletedFile.folderId,
-      url: deletedFile.url,
       deletedAt: deletedAt.toISOString(),
     };
   }

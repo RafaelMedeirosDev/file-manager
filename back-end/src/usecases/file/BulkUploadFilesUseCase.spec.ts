@@ -15,7 +15,7 @@ jest.mock('../../shared/lib/r2Client', () => ({
 // r2Client.send aqui e um jest.fn() do mock acima, nao um metodo real do
 // S3Client — a regra unbound-method nao se aplica.
 // eslint-disable-next-line @typescript-eslint/unbound-method
-const sendMock = jest.mocked(r2Client).send;
+const sendMock = jest.mocked(r2Client).send as unknown as jest.Mock;
 
 // ── Factories ────────────────────────────────────────────
 function folderMock(overrides: Record<string, unknown> = {}) {

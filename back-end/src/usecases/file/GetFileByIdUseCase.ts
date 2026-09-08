@@ -20,7 +20,6 @@ export type GetFileByIdOutput = {
   userId: string;
   folderId: string | null;
   extension: string;
-  url: string;
   folder: {
     id: string;
     name: string;
@@ -67,7 +66,6 @@ export class GetFileByIdUseCase {
       userId: file.userId,
       folderId: file.folderId,
       extension: file.extension,
-      url: file.url,
       folder:
         file.folder &&
         !file.folder.deletedAt &&

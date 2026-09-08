@@ -1,6 +1,5 @@
 import {
   BadGatewayException,
-  BadRequestException,
   ForbiddenException,
   GatewayTimeoutException,
   Injectable,
@@ -8,8 +7,14 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Readable } from 'node:stream';
-import type { ReadableStream } from 'node:stream/web';
+import {
+  GetObjectCommand,
+  NoSuchKey,
+  type GetObjectCommandOutput,
+} from '@aws-sdk/client-s3';
 import { ROLE } from '@prisma/client';
+import { r2Client } from '../../shared/lib/r2Client';
+import { env } from '../../config/env';
 import { FileRepository } from '../../repositories/FileRepository';
 import { ErrorMessagesEnum } from '@file-manager/shared';
 import {
@@ -52,29 +57,31 @@ export class DownloadFileUseCase {
       throw new ForbiddenException(ErrorMessagesEnum.FILE_ACCESS_FORBIDDEN);
     }
 
-    let fileUrl: URL;
+    // O binario e lido com as credenciais da aplicacao, nunca por uma URL
+    // vinda do banco. Isso permite que o bucket seja privado e remove o
+    // vetor de SSRF que existia enquanto o download fazia fetch em file.url.
+    let object: GetObjectCommandOutput;
 
     try {
-      fileUrl = new URL(file.url);
-    } catch {
-      throw new BadRequestException(ErrorMessagesEnum.INVALID_FILE_URL);
-    }
-
-    if (!['http:', 'https:'].includes(fileUrl.protocol)) {
-      throw new BadRequestException(ErrorMessagesEnum.INVALID_FILE_URL);
-    }
-
-    const abortController = new AbortController();
-    const timeoutId = setTimeout(
-      () => abortController.abort(),
-      DownloadFileUseCase.DOWNLOAD_TIMEOUT_MS,
-    );
-    let upstream: globalThis.Response;
-
-    try {
-      upstream = await fetch(fileUrl, { signal: abortController.signal });
+      object = await r2Client.send(
+        new GetObjectCommand({
+          Bucket: env.R2_BUCKET_NAME,
+          Key: file.key,
+        }),
+        {
+          abortSignal: AbortSignal.timeout(
+            DownloadFileUseCase.DOWNLOAD_TIMEOUT_MS,
+          ),
+        },
+      );
     } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
+      // Objeto ausente no bucket: o registro existe no banco mas o binario
+      // nao, entao 404 descreve melhor a situacao do que um erro de gateway.
+      if (error instanceof NoSuchKey) {
+        throw new NotFoundException(ErrorMessagesEnum.FILE_NOT_FOUND);
+      }
+
+      if (error instanceof Error && error.name === 'TimeoutError') {
         throw new GatewayTimeoutException(
           ErrorMessagesEnum.FILE_DOWNLOAD_TIMEOUT,
         );
@@ -83,36 +90,34 @@ export class DownloadFileUseCase {
       throw new BadGatewayException(
         ErrorMessagesEnum.FILE_DOWNLOAD_UNAVAILABLE,
       );
-    } finally {
-      clearTimeout(timeoutId);
     }
 
-    if (!upstream.ok || !upstream.body) {
+    if (!object.Body) {
       throw new BadGatewayException(
         ErrorMessagesEnum.FILE_DOWNLOAD_UNAVAILABLE,
       );
     }
 
-    const upstreamContentType = upstream.headers
-      .get('content-type')
-      ?.split(';')[0]
+    // O Content-Type gravado no upload ja e o canonico da extensao; o mapa
+    // local cobre objetos antigos que subiram sem o cabecalho.
+    const storedContentType = object.ContentType?.split(';')[0]
       .trim()
       .toLowerCase();
     const fallbackContentType =
       MIME_BY_EXTENSION[file.extension.toLowerCase()] ??
       DEFAULT_UPLOAD_CONTENT_TYPE;
     const contentType =
-      !upstreamContentType ||
-      upstreamContentType === DEFAULT_UPLOAD_CONTENT_TYPE
+      !storedContentType || storedContentType === DEFAULT_UPLOAD_CONTENT_TYPE
         ? fallbackContentType
-        : upstreamContentType;
+        : storedContentType;
+
     this.logger.log('[DownloadFileUseCase] Execute finished');
 
     return {
-      stream: Readable.fromWeb(upstream.body as ReadableStream<Uint8Array>),
+      stream: object.Body as Readable,
       fileName: `${file.name}.${file.extension}`,
       contentType,
-      contentLength: upstream.headers.get('content-length') ?? undefined,
+      contentLength: object.ContentLength?.toString(),
     };
   }
 }
