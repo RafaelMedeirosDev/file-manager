@@ -549,7 +549,11 @@ export function FolderDetailsPage() {
       document.removeEventListener('dragover', onDragOver);
       document.removeEventListener('drop', onDrop);
     };
-  }, [isAdmin, addFilesToQueue]);
+    // canUpload, e nao isAdmin: a permissao depende de `folder`, que chega
+    // depois do fetch. Com isAdmin o efeito nunca re-executava e um USER
+    // ficava sem os listeners — sem upload e, pior, sem o preventDefault que
+    // impede o browser de abrir o arquivo solto e sair do SPA.
+  }, [canUpload, addFilesToQueue]);
 
   function onPickFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
