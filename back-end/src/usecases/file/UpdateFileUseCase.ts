@@ -11,7 +11,6 @@ import { ErrorMessagesEnum } from '@file-manager/shared';
 export type UpdateFileInput = {
   id: string;
   folderId?: string;
-  url?: string;
 };
 
 export type UpdateFileOutput = {
@@ -20,7 +19,6 @@ export type UpdateFileOutput = {
   userId: string;
   folderId: string | null;
   extension: string;
-  url: string;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -35,7 +33,7 @@ export class UpdateFileUseCase {
 
   async execute(input: UpdateFileInput): Promise<UpdateFileOutput> {
     this.logger.log('[UpdateFileUseCase] Execute started');
-    if (!input.folderId && !input.url) {
+    if (!input.folderId) {
       throw new BadRequestException(
         ErrorMessagesEnum.AT_LEAST_ONE_FIELD_REQUIRED,
       );
@@ -47,23 +45,20 @@ export class UpdateFileUseCase {
       throw new NotFoundException(ErrorMessagesEnum.FILE_NOT_FOUND);
     }
 
-    if (input.folderId) {
-      const folder = await this.folderRepository.findById(input.folderId);
+    const folder = await this.folderRepository.findById(input.folderId);
 
-      if (!folder || folder.deletedAt) {
-        throw new NotFoundException(ErrorMessagesEnum.FOLDER_NOT_FOUND);
-      }
+    if (!folder || folder.deletedAt) {
+      throw new NotFoundException(ErrorMessagesEnum.FOLDER_NOT_FOUND);
+    }
 
-      if (folder.userId !== file.userId) {
-        throw new BadRequestException(
-          ErrorMessagesEnum.FOLDER_DOES_NOT_BELONG_TO_USER,
-        );
-      }
+    if (folder.userId !== file.userId) {
+      throw new BadRequestException(
+        ErrorMessagesEnum.FOLDER_DOES_NOT_BELONG_TO_USER,
+      );
     }
 
     const updatedFile = await this.fileRepository.updateById(input.id, {
       folderId: input.folderId,
-      url: input.url,
     });
     this.logger.log('[UpdateFileUseCase] Execute finished');
 
@@ -73,7 +68,6 @@ export class UpdateFileUseCase {
       userId: updatedFile.userId,
       folderId: updatedFile.folderId,
       extension: updatedFile.extension,
-      url: updatedFile.url,
       createdAt: updatedFile.createdAt,
       updatedAt: updatedFile.updatedAt,
     };

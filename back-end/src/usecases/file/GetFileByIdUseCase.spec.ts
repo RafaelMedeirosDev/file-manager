@@ -76,7 +76,6 @@ describe('GetFileByIdUseCase', () => {
       const output = await useCase.execute(asOwner);
 
       expect(output.id).toBe('file-uuid-001');
-      expect(output.url).toBe('https://cdn.example.com/laudo.pdf');
       expect(output.folder).toEqual({
         id: 'folder-uuid-001',
         name: 'Exames',

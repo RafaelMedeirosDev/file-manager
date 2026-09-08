@@ -4,7 +4,6 @@ export type FileItem = {
   userId: string;
   folderId: string | null;
   extension: string;
-  url: string;
   createdAt: string;
   updatedAt: string;
 };

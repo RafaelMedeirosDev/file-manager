@@ -14,7 +14,7 @@ export type CreateFileInput = {
   userId: string;
   folderId: string;
   extension: string;
-  url: string;
+  key: string;
 };
 
 export type CreateFileOutput = {
@@ -23,7 +23,6 @@ export type CreateFileOutput = {
   userId: string;
   folderId: string | null;
   extension: string;
-  url: string;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -62,7 +61,9 @@ export class CreateFileUseCase {
       userId: input.userId,
       folderId: input.folderId,
       extension: input.extension,
-      url: input.url,
+      key: input.key,
+      // Sem bucket publico nao ha URL a montar: o registro aponta para a chave.
+      url: '',
     });
     this.logger.log('[CreateFileUseCase] Execute finished');
 
@@ -72,7 +73,6 @@ export class CreateFileUseCase {
       userId: file.userId,
       folderId: file.folderId,
       extension: file.extension,
-      url: file.url,
       createdAt: file.createdAt,
       updatedAt: file.updatedAt,
     };

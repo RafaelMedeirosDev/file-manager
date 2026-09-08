@@ -214,8 +214,8 @@ export function useFolderDetails(): UseFolderDetailsReturn {
 
         const now = new Date().toISOString();
         const incomingFiles = res.results
-          .filter((result): result is { id: string; url: string; name: string; extension: string; error?: string } =>
-            Boolean(result.id && result.url && !result.error),
+          .filter((result): result is { id: string; name: string; extension: string; error?: string } =>
+            Boolean(result.id && !result.error),
           )
           .map((result) => ({
             id: result.id,
@@ -223,7 +223,6 @@ export function useFolderDetails(): UseFolderDetailsReturn {
             userId: prev.userId,
             folderId: prev.id,
             extension: result.extension,
-            url: result.url,
             createdAt: now,
             updatedAt: now,
           }));

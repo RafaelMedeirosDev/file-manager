@@ -1,19 +1,28 @@
 import {
   BadGatewayException,
-  BadRequestException,
   ForbiddenException,
   GatewayTimeoutException,
   NotFoundException,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Readable } from 'node:stream';
+import { NoSuchKey } from '@aws-sdk/client-s3';
 import { ROLE } from '@prisma/client';
 import { ErrorMessagesEnum } from '@file-manager/shared';
 import { DownloadFileUseCase } from './DownloadFileUseCase';
 import { FileRepository } from '../../repositories/FileRepository';
+import { r2Client } from '../../shared/lib/r2Client';
 
 const OWNER = 'user-uuid-001';
 const OTHER = 'user-uuid-999';
+const KEY = '11111111-1111-4111-8111-111111111111.pdf';
+
+jest.mock('../../shared/lib/r2Client', () => ({
+  r2Client: { send: jest.fn() },
+}));
+
+// eslint-disable-next-line @typescript-eslint/unbound-method
+const sendMock = jest.mocked(r2Client).send as unknown as jest.Mock;
 
 // ── Factories ────────────────────────────────────────────
 function fileMock(overrides: Record<string, unknown> = {}) {
@@ -22,29 +31,22 @@ function fileMock(overrides: Record<string, unknown> = {}) {
     name: 'laudo',
     userId: OWNER,
     extension: 'pdf',
-    url: 'https://cdn.example.com/laudo.pdf',
+    key: KEY,
     deletedAt: null,
     ...overrides,
   };
 }
 
 /**
- * O use case faz `Readable.fromWeb(upstream.body)`, que valida em runtime que
- * o body e um web stream de verdade — por isso devolvemos um ReadableStream
- * real em vez de um objeto qualquer.
+ * O use case devolve `object.Body` direto como Readable — o SDK entrega um
+ * stream do Node no runtime, entao o mock precisa ser um Readable de verdade.
  */
-function upstreamMock(headers: Record<string, string> = {}) {
+function objectMock(overrides: Record<string, unknown> = {}) {
   return {
-    ok: true,
-    body: new ReadableStream({
-      start(controller) {
-        controller.enqueue(new Uint8Array([1, 2, 3]));
-        controller.close();
-      },
-    }),
-    headers: {
-      get: (name: string) => headers[name.toLowerCase()] ?? null,
-    },
+    Body: Readable.from([Buffer.from([1, 2, 3])]),
+    ContentType: undefined,
+    ContentLength: undefined,
+    ...overrides,
   };
 }
 
@@ -62,10 +64,6 @@ const asAdmin = {
 // ── Mock repository ──────────────────────────────────────
 const mockFileRepository = { findById: jest.fn() };
 
-// `fetch` e global, nao um modulo: nao ha o que passar para jest.mock.
-const fetchMock = jest.fn();
-global.fetch = fetchMock as unknown as typeof fetch;
-
 // ── Suite ────────────────────────────────────────────────
 describe('DownloadFileUseCase', () => {
   let useCase: DownloadFileUseCase;
@@ -81,33 +79,41 @@ describe('DownloadFileUseCase', () => {
     useCase = module.get<DownloadFileUseCase>(DownloadFileUseCase);
     jest.clearAllMocks();
     mockFileRepository.findById.mockResolvedValue(fileMock());
-    fetchMock.mockResolvedValue(upstreamMock());
+    sendMock.mockResolvedValue(objectMock());
   });
 
   // ── Happy path ─────────────────────────────────────────
   describe('should be able to download a file with success', () => {
-    it('streams the upstream body and builds the file name from name and extension', async () => {
+    it('streams the object body and builds the file name from name and extension', async () => {
       const output = await useCase.execute(asOwner);
 
       expect(output.stream).toBeInstanceOf(Readable);
       expect(output.fileName).toBe('laudo.pdf');
     });
 
-    it('requests the stored url as a URL object', async () => {
+    it('reads the object by its stored key, never by a url', async () => {
       await useCase.execute(asOwner);
 
-      const [requestedUrl, options] = fetchMock.mock.calls[0] as [
-        URL,
-        { signal: AbortSignal },
-      ];
-      expect(requestedUrl).toBeInstanceOf(URL);
-      expect(requestedUrl.toString()).toBe('https://cdn.example.com/laudo.pdf');
-      expect(options.signal).toBeDefined();
+      expect(sendMock).toHaveBeenCalledTimes(1);
+      const command = sendMock.mock.calls[0][0] as {
+        input: Record<string, unknown>;
+      };
+      expect(command.input.Key).toBe(KEY);
+      // A garantia central desta mudanca: nenhum endereco vindo do banco
+      // participa da leitura, entao nao ha destino que um ADMIN possa forjar.
+      expect(JSON.stringify(command.input)).not.toContain('http');
     });
 
-    it('prefers the upstream content-type, stripping parameters', async () => {
-      fetchMock.mockResolvedValue(
-        upstreamMock({ 'content-type': 'text/csv; charset=utf-8' }),
+    it('aborts the read after the configured timeout', async () => {
+      await useCase.execute(asOwner);
+
+      const options = sendMock.mock.calls[0][1] as { abortSignal: AbortSignal };
+      expect(options.abortSignal).toBeDefined();
+    });
+
+    it('prefers the stored content-type, stripping parameters', async () => {
+      sendMock.mockResolvedValue(
+        objectMock({ ContentType: 'text/csv; charset=utf-8' }),
       );
       mockFileRepository.findById.mockResolvedValue(
         fileMock({ extension: 'csv' }),
@@ -118,9 +124,9 @@ describe('DownloadFileUseCase', () => {
       expect(output.contentType).toBe('text/csv');
     });
 
-    it('falls back to the extension map when upstream says octet-stream', async () => {
-      fetchMock.mockResolvedValue(
-        upstreamMock({ 'content-type': 'application/octet-stream' }),
+    it('falls back to the extension map when the object says octet-stream', async () => {
+      sendMock.mockResolvedValue(
+        objectMock({ ContentType: 'application/octet-stream' }),
       );
 
       const output = await useCase.execute(asOwner);
@@ -128,7 +134,7 @@ describe('DownloadFileUseCase', () => {
       expect(output.contentType).toBe('application/pdf');
     });
 
-    it('falls back to octet-stream for an unknown extension without upstream header', async () => {
+    it('falls back to octet-stream for an unknown extension without a stored type', async () => {
       mockFileRepository.findById.mockResolvedValue(
         fileMock({ extension: 'xyz' }),
       );
@@ -139,10 +145,10 @@ describe('DownloadFileUseCase', () => {
     });
 
     it('forwards content-length when present and omits it otherwise', async () => {
-      fetchMock.mockResolvedValue(upstreamMock({ 'content-length': '2048' }));
+      sendMock.mockResolvedValue(objectMock({ ContentLength: 2048 }));
       expect((await useCase.execute(asOwner)).contentLength).toBe('2048');
 
-      fetchMock.mockResolvedValue(upstreamMock());
+      sendMock.mockResolvedValue(objectMock());
       expect((await useCase.execute(asOwner)).contentLength).toBeUndefined();
     });
 
@@ -164,7 +170,7 @@ describe('DownloadFileUseCase', () => {
         new NotFoundException(ErrorMessagesEnum.FILE_NOT_FOUND),
       );
 
-      expect(fetchMock).not.toHaveBeenCalled();
+      expect(sendMock).not.toHaveBeenCalled();
     });
 
     it('the file is soft-deleted', async () => {
@@ -175,6 +181,8 @@ describe('DownloadFileUseCase', () => {
       await expect(useCase.execute(asOwner)).rejects.toThrow(
         new NotFoundException(ErrorMessagesEnum.FILE_NOT_FOUND),
       );
+
+      expect(sendMock).not.toHaveBeenCalled();
     });
 
     it('a USER tries to download a file owned by someone else', async () => {
@@ -186,34 +194,23 @@ describe('DownloadFileUseCase', () => {
         new ForbiddenException(ErrorMessagesEnum.FILE_ACCESS_FORBIDDEN),
       );
 
-      expect(fetchMock).not.toHaveBeenCalled();
+      expect(sendMock).not.toHaveBeenCalled();
     });
 
-    it('the stored url is not parseable', async () => {
-      mockFileRepository.findById.mockResolvedValue(
-        fileMock({ url: 'nao-e-uma-url' }),
+    it('the object is missing from the bucket', async () => {
+      sendMock.mockRejectedValue(
+        new NoSuchKey({ message: 'missing', $metadata: {} }),
       );
 
+      // O registro existe mas o binario nao: 404 descreve melhor do que 502.
       await expect(useCase.execute(asOwner)).rejects.toThrow(
-        new BadRequestException(ErrorMessagesEnum.INVALID_FILE_URL),
+        new NotFoundException(ErrorMessagesEnum.FILE_NOT_FOUND),
       );
     });
 
-    it('the stored url uses a protocol other than http or https', async () => {
-      mockFileRepository.findById.mockResolvedValue(
-        fileMock({ url: 'file:///etc/passwd' }),
-      );
-
-      await expect(useCase.execute(asOwner)).rejects.toThrow(
-        new BadRequestException(ErrorMessagesEnum.INVALID_FILE_URL),
-      );
-
-      expect(fetchMock).not.toHaveBeenCalled();
-    });
-
-    it('the upstream request times out', async () => {
-      fetchMock.mockRejectedValue(
-        Object.assign(new Error('aborted'), { name: 'AbortError' }),
+    it('the read times out', async () => {
+      sendMock.mockRejectedValue(
+        Object.assign(new Error('aborted'), { name: 'TimeoutError' }),
       );
 
       await expect(useCase.execute(asOwner)).rejects.toThrow(
@@ -221,24 +218,16 @@ describe('DownloadFileUseCase', () => {
       );
     });
 
-    it('the upstream request fails for any other reason', async () => {
-      fetchMock.mockRejectedValue(new Error('ECONNREFUSED'));
+    it('the read fails for any other reason', async () => {
+      sendMock.mockRejectedValue(new Error('AccessDenied'));
 
       await expect(useCase.execute(asOwner)).rejects.toThrow(
         new BadGatewayException(ErrorMessagesEnum.FILE_DOWNLOAD_UNAVAILABLE),
       );
     });
 
-    it('the upstream responds with a non-ok status', async () => {
-      fetchMock.mockResolvedValue({ ...upstreamMock(), ok: false });
-
-      await expect(useCase.execute(asOwner)).rejects.toThrow(
-        new BadGatewayException(ErrorMessagesEnum.FILE_DOWNLOAD_UNAVAILABLE),
-      );
-    });
-
-    it('the upstream responds without a body', async () => {
-      fetchMock.mockResolvedValue({ ...upstreamMock(), body: null });
+    it('the object comes back without a body', async () => {
+      sendMock.mockResolvedValue(objectMock({ Body: undefined }));
 
       await expect(useCase.execute(asOwner)).rejects.toThrow(
         new BadGatewayException(ErrorMessagesEnum.FILE_DOWNLOAD_UNAVAILABLE),

@@ -22,8 +22,11 @@ export class CreateFileDTO {
   )
   extension!: string;
 
+  // Chave do objeto dentro do bucket, nao uma URL: o download resolve o
+  // binario por ela, entao nao ha endereco externo a validar.
   @IsString()
   @IsNotEmpty()
+  @MaxLength(255)
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
-  url!: string;
+  key!: string;
 }

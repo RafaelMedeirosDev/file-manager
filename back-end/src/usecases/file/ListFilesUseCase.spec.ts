@@ -73,7 +73,6 @@ describe('ListFilesUseCase', () => {
         userId: file.userId,
         folderId: file.folderId,
         extension: 'png',
-        url: 'https://s3.example.com/photo.png',
         createdAt: file.createdAt,
         updatedAt: file.updatedAt,
       });
