@@ -31,7 +31,6 @@ function fileMock(overrides: Record<string, unknown> = {}) {
     folderId: 'folder-uuid-001',
     extension: 'pdf',
     key: '11111111-1111-4111-8111-111111111111.pdf',
-    url: 'https://cdn.example.com/laudo.pdf',
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     updatedAt: new Date('2026-01-01T00:00:00.000Z'),
     ...overrides,
@@ -83,7 +82,6 @@ describe('CreateFileUseCase', () => {
         folderId: 'folder-uuid-001',
         extension: 'pdf',
         key: '11111111-1111-4111-8111-111111111111.pdf',
-        url: '',
       });
       expect(output).toEqual({
         id: 'file-uuid-001',

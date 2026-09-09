@@ -29,7 +29,6 @@ function fileMock(overrides: Record<string, unknown> = {}) {
     userId: OWNER,
     folderId: 'folder-uuid-001',
     extension: 'pdf',
-    url: 'https://cdn.example.com/laudo.pdf',
     folder: folderRelationMock(),
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     updatedAt: new Date('2026-01-01T00:00:00.000Z'),

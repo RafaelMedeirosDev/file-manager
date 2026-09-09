@@ -91,7 +91,7 @@ Global types live in `src/shared/types/`. Custom Tailwind classes are defined in
 ```
 User  (id, name, email, password, role: ADMIN|USER, deletedAt)
   └─ Folder (id, name, userId, folderId?: parent, deletedAt)
-       └─ File (id, name, userId, folderId?, extension, key, url, deletedAt)
+       └─ File (id, name, userId, folderId?, extension, key, deletedAt)
 
 Exam  (id, name, code: unique, category: ExamCategory, deletedAt)
   ExamCategory: THROMBOPHILIA | MICROBIOLOGY | ENDOCRINE_METABOLIC | IMMUNOLOGY
@@ -101,7 +101,7 @@ ExamRequest  (id, userId, indication, deletedAt)
   └─ exams: Exam[]  (many-to-many — join table _ExamToExamRequest)
 ```
 
-Folders are hierarchical (self-referencing `folderId`). Files live in Cloudflare R2 and are read with `GetObjectCommand` by `key`, so the bucket does not need to be public. `url` is legacy: still written to allow a rollback, never exposed by the API.
+Folders are hierarchical (self-referencing `folderId`). Files live in a private Cloudflare R2 bucket and are read with `GetObjectCommand` by `key`. The `url` column is legacy, no longer written, and awaits removal.
 
 ## Pagination Pattern (Backend)
 
@@ -114,9 +114,8 @@ All list routes return `{ data: T[], meta: { page, limit, total, hasNextPage } }
 
 Copy `.env.example` → `.env` in each sub-directory before running.
 
-Required backend vars: `DATABASE_URL`, `JWT_SECRET`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_PUBLIC_URL`.
+Required backend vars: `DATABASE_URL`, `JWT_SECRET`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`.
 Optional, with defaults: `DATABASE_SCHEMA`, `PORT`, `NODE_ENV`, `LOG_LEVELS`, `MAX_UPLOAD_SIZE_BYTES`, `CORS_ORIGINS`.
-`R2_ENDPOINT` is in `.env.example` but is not read by any code.
 
 Required frontend var: `VITE_API_URL` — no default; the app throws on boot without it. In development: `http://localhost:3000`.
 

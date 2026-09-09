@@ -23,7 +23,6 @@ export class FileRepository {
     folderId: string;
     extension: string;
     key: string;
-    url: string;
   }): Promise<File> {
     return this.prisma.file.create({
       data,

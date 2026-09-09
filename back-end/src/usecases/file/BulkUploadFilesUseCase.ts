@@ -126,15 +126,12 @@ export class BulkUploadFilesUseCase {
             }),
           );
 
-          const url = `${env.R2_PUBLIC_URL}/${key}`;
-
           const file = await this.fileRepository.create({
             name: entry.name,
             userId: fileOwnerId,
             folderId: input.folderId,
             extension: entry.extension,
             key,
-            url,
           });
 
           return {

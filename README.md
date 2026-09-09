@@ -226,7 +226,7 @@ Definida em [back-end/prisma/schema.prisma](back-end/prisma/schema.prisma). Prov
 |---|---|---|
 | `User` | `users` | Usuário do sistema. Campos: `id` (UUID), `name`, `email` (único), `password` (hash bcrypt), `role`. |
 | `Folder` | `folders` | Pasta pertencente a um usuário. Possui `folderId` opcional para auto-relacionamento (pasta pai) e a flag `isDefault`, que marca a pasta padrão criada junto com o usuário. |
-| `File` | `files` | Metadados do arquivo: `name`, `extension`, `key` (chave do objeto no R2, fonte da verdade para leitura), `userId` e `folderId` opcional. A coluna `url` é legado do período em que o bucket era público: continua sendo gravada para permitir rollback, mas não é exposta pela API nem usada para buscar o arquivo. O binário não é armazenado no banco. |
+| `File` | `files` | Metadados do arquivo: `name`, `extension`, `key` (chave do objeto no R2, fonte da verdade para leitura), `userId` e `folderId` opcional. A coluna `url` é legado do período em que o bucket era público: não é mais gravada e aguarda remoção, permanecendo apenas nos registros antigos. O binário não é armazenado no banco. |
 | `Exam` | `exams` | Item do catálogo de exames: `name`, `code` (único) e `category` (enum `ExamCategory`). |
 | `ExamRequest` | `exam_requests` | Solicitação de exames vinculada a um usuário, com o campo textual `indication` e uma coleção de exames. |
 
@@ -377,7 +377,7 @@ O objeto é enviado com `PutObjectCommand` usando uma chave gerada por `randomUU
 
 ### Persistência dos metadados
 
-Após o envio ao R2, é criado um registro na tabela `files` com `name`, `userId`, `folderId`, `extension` e a `key` do objeto (`<uuid>.<extensao>`). A `key` é o que o download usa. A coluna `url` continua sendo preenchida enquanto durar a transição para o bucket privado, apenas para permitir rollback — ela não é exposta pela API. O binário nunca é gravado no PostgreSQL.
+Após o envio ao R2, é criado um registro na tabela `files` com `name`, `userId`, `folderId`, `extension` e a `key` do objeto (`<uuid>.<extensao>`). A `key` é o único endereço do binário. O binário nunca é gravado no PostgreSQL.
 
 ### Download
 
@@ -390,7 +390,7 @@ Após o envio ao R2, é criado um registro na tabela `files` com `name`, `userId
 
 Ler pelo identificador do objeto, e não por um endereço vindo do banco, é o que torna o modelo de autorização efetivo: como nenhuma URL participa da leitura, não há destino que um requisitante possa influenciar — o vetor de SSRF deixa de existir por construção, em vez de depender de validação.
 
-> **Observações honestas sobre o estado atual:** o código não depende mais de leitura pública, mas o acesso público do bucket ainda precisa ser desativado no painel do Cloudflare para que a exposição termine de fato. URLs pré-assinadas não são usadas — e deixaram de ser necessárias, já que a API entrega o binário por streaming mantendo o RBAC no servidor. O soft delete de um arquivo remove apenas o registro lógico no banco; o objeto correspondente permanece no bucket.
+> **Observações honestas sobre o estado atual:** o bucket é privado — o acesso público está desativado e uma requisição anônima ao endereço antigo responde `401`. URLs pré-assinadas não são usadas, e deixaram de ser necessárias: a API entrega o binário por streaming mantendo o RBAC no servidor. O soft delete de um arquivo remove apenas o registro lógico no banco; o objeto correspondente permanece no bucket.
 
 ---
 
@@ -563,8 +563,6 @@ R2_ACCOUNT_ID=
 R2_ACCESS_KEY_ID=
 R2_SECRET_ACCESS_KEY=
 R2_BUCKET_NAME=
-R2_ENDPOINT=
-R2_PUBLIC_URL=
 ```
 
 | Variável | Obrigatória | Descrição |
@@ -581,8 +579,6 @@ R2_PUBLIC_URL=
 | `R2_ACCESS_KEY_ID` | Sim | Access key de acesso ao bucket. |
 | `R2_SECRET_ACCESS_KEY` | Sim | Secret key de acesso ao bucket. |
 | `R2_BUCKET_NAME` | Sim | Nome do bucket de destino dos uploads. |
-| `R2_PUBLIC_URL` | Sim | URL base pública usada para montar o endereço final dos arquivos. |
-| `R2_ENDPOINT` | — | Presente no `.env.example`, mas **atualmente não é lida pelo código** — o endpoint é derivado de `R2_ACCOUNT_ID`. |
 
 A validação e os valores padrão estão centralizados em [back-end/src/config/env.ts](back-end/src/config/env.ts). As variáveis marcadas como obrigatórias interrompem a inicialização da aplicação se estiverem ausentes.
 
@@ -683,7 +679,6 @@ VITE_API_URL=http://localhost:3000
 - Ausência de arquivo de licença.
 
 **Inconsistências conhecidas**
-- `R2_ENDPOINT` aparece no `.env.example` mas não é consumida pelo código.
 - O soft delete de arquivos não remove o objeto correspondente do bucket R2.
 
 ---
@@ -719,7 +714,6 @@ VITE_API_URL=http://localhost:3000
 - Adotar um `ValidationPipe` global e um filtro global de exceções, reduzindo repetição nos controllers e padronizando o corpo das respostas de erro.
 - Implementar refresh token, para que a sessão não expire de uma vez após um dia.
 - Unificar a estratégia de estilos do frontend, eliminando os blocos de CSS injetados em tempo de execução.
-- Remover a variável `R2_ENDPOINT`, que aparece no `.env.example` mas não é lida pelo código.
 - Adicionar capturas de tela da interface ao README.
 - Dar precisão ao rate limiting em ambiente multi-instância, com armazenamento de contagem compartilhado.
 

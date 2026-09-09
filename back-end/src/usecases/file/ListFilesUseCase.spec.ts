@@ -11,7 +11,6 @@ function fileMock(overrides = {}) {
     userId: 'user-uuid-001',
     folderId: 'folder-uuid-001',
     extension: 'pdf',
-    url: 'https://storage.example.com/report.pdf',
     createdAt: new Date('2026-01-15'),
     updatedAt: new Date('2026-01-15'),
     deletedAt: null,
@@ -60,7 +59,6 @@ describe('ListFilesUseCase', () => {
         id: 'f-x',
         name: 'photo.png',
         extension: 'png',
-        url: 'https://s3.example.com/photo.png',
       });
       listFilesActive.mockResolvedValueOnce([file]);
       countFilesActive.mockResolvedValueOnce(1);
