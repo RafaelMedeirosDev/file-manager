@@ -148,23 +148,29 @@ Todas as rotas de listagem seguem este padrão:
 ```
 
 ### UseCase
+Calcula o `skip`, repassa os filtros normalizados ao repositório e monta a resposta.
+**Nunca** carrega a tabela inteira para filtrar em memória.
 ```ts
 const page = input?.page ?? 1;
 const limit = input?.limit ?? 10;
-const all = await this.repository.findAll();
-const filtered = all.filter(item => !item.deletedAt && /* filtros */);
-const sorted = [...filtered].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }));
-const total = sorted.length;
-const start = (page - 1) * limit;
+const skip = (page - 1) * limit;
+const items = await this.repository.listActive(search, skip, limit);
+const total = await this.repository.countActive(search);
 return {
-  data: sorted.slice(start, start + limit).map(/* shape */),
-  meta: { page, limit, total, hasNextPage: start + limit < total },
+  data: items.map(/* shape */),
+  meta: { page, limit, total, hasNextPage: total > skip + limit },
 };
 ```
 
 ### Repository
-`findAll()` retorna todos os registros sem filtro — sem `skip`/`take` no Prisma.
-Toda filtragem e paginação ocorre em memória no UseCase.
+`where`, `orderBy`, `skip` e `take` são parâmetros da query do Prisma.
+O `deletedAt: null` entra no `where`, não num `filter` posterior.
+Cada listagem expõe um `count` irmão com o mesmo `where` (sem `skip`/`take`) para alimentar o `hasNextPage`.
+Busca em vários campos usa o operador `OR`, e filtros opcionais entram por spread condicional.
+
+Os métodos `findAll()` que ainda existem nos repositórios são resíduo de uma
+implementação anterior, que paginava em memória. Não são usados por nenhum use
+case e não devem ser usados em código novo.
 
 ### Output shape (padrão obrigatório)
 ```ts

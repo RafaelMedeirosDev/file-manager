@@ -28,6 +28,7 @@ Módulos de apoio: `src/auth/` (JWT, guards, `@Roles`), `src/database/` (módulo
 ```bash
 cp .env.example .env    # preencha os valores
 pnpm prisma:migrate:dev
+pnpm prisma:seed        # cria o ADMIN e o USER iniciais
 ```
 
 O Prisma Client é gerado pelo `postinstall` durante o `pnpm install`. Rode `pnpm prisma:generate` manualmente apenas após alterar o `schema.prisma`.
@@ -46,8 +47,10 @@ As variáveis obrigatórias são validadas em `src/config/env.ts` na inicializa�
 | `pnpm test:watch` / `test:cov` | Watch e relatório de cobertura. |
 | `pnpm test:e2e` | Testes end-to-end via `test/jest-e2e.json`. |
 | `pnpm lint` | ESLint com `--fix`. |
+| `pnpm lint:ci` | ESLint sem `--fix`, com `--max-warnings 0`. É o que o CI roda. |
 | `pnpm format` | Prettier em `src/` e `test/`. |
 | `pnpm prisma:migrate:dev` | Cria e aplica migrations em desenvolvimento. |
+| `pnpm prisma:seed` | Popula o banco com um ADMIN, um USER e uma amostra do catálogo de exames. Sem ele não há como autenticar. |
 | `pnpm prisma:migrate:deploy` | Aplica migrations pendentes (produção). |
 | `pnpm prisma:generate` | Gera o Prisma Client. |
 | `pnpm prisma:studio` | Abre o Prisma Studio. |
