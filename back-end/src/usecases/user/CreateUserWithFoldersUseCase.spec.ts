@@ -4,7 +4,6 @@ import { ROLE } from '@prisma/client';
 import { ErrorMessagesEnum } from '@file-manager/shared';
 import { CreateUserWithFoldersUseCase } from './CreateUserWithFoldersUseCase';
 import { UserRepository } from '../../repositories/UserRepository';
-import { FolderRepository } from '../../repositories/FolderRepository';
 
 jest.mock('bcrypt', () => ({ hash: jest.fn() }));
 import { hash } from 'bcrypt';
@@ -36,10 +35,9 @@ const input = {
 };
 
 // ── Mock repositories ────────────────────────────────────
-const mockUserRepository = { findByEmail: jest.fn(), create: jest.fn() };
-const mockFolderRepository = {
-  create: jest.fn(),
-  findActiveByUserIdAndName: jest.fn(),
+const mockUserRepository = {
+  findByEmail: jest.fn(),
+  createWithFolders: jest.fn(),
 };
 
 // ── Suite ────────────────────────────────────────────────
@@ -51,7 +49,6 @@ describe('CreateUserWithFoldersUseCase', () => {
       providers: [
         CreateUserWithFoldersUseCase,
         { provide: UserRepository, useValue: mockUserRepository },
-        { provide: FolderRepository, useValue: mockFolderRepository },
       ],
     }).compile();
 
@@ -61,56 +58,73 @@ describe('CreateUserWithFoldersUseCase', () => {
     jest.clearAllMocks();
     hashMock.mockResolvedValue('hashed-password' as never);
     mockUserRepository.findByEmail.mockResolvedValue(null);
-    mockUserRepository.create.mockResolvedValue(userMock());
+    mockUserRepository.createWithFolders.mockResolvedValue({
+      user: userMock(),
+      folders: [folderMock()],
+    });
   });
 
   // ── Happy path ─────────────────────────────────────────
   describe('should be able to create a user with folders with success', () => {
     it('always creates the default folder named after the user', async () => {
-      mockFolderRepository.create.mockResolvedValue(folderMock());
-
       const output = await useCase.execute(input);
 
-      expect(mockFolderRepository.create).toHaveBeenCalledTimes(1);
-      expect(mockFolderRepository.create).toHaveBeenCalledWith({
-        name: 'Alice',
-        userId: 'user-uuid-001',
-        isDefault: true,
+      // Uma unica chamada, transacional: o nome da pasta padrao e o do usuario.
+      expect(mockUserRepository.createWithFolders).toHaveBeenCalledTimes(1);
+      expect(mockUserRepository.createWithFolders).toHaveBeenCalledWith({
+        user: {
+          name: 'Alice',
+          email: 'alice@example.com',
+          password: 'hashed-password',
+          role: ROLE.USER,
+        },
+        defaultFolderName: 'Alice',
+        extraFolderNames: [],
       });
       expect(output.folders).toEqual([{ id: 'folder-default', name: 'Alice' }]);
     });
 
-    it('creates the extra folders without the isDefault flag', async () => {
-      mockFolderRepository.findActiveByUserIdAndName.mockResolvedValue(null);
-      mockFolderRepository.create
-        .mockResolvedValueOnce(folderMock())
-        .mockResolvedValueOnce(
+    it('passes the extra folder names along with the default one', async () => {
+      mockUserRepository.createWithFolders.mockResolvedValue({
+        user: userMock(),
+        folders: [
+          folderMock(),
           folderMock({ id: 'folder-exams', name: 'Exames' }),
-        );
+        ],
+      });
 
       const output = await useCase.execute({ ...input, folders: ['Exames'] });
 
-      expect(mockFolderRepository.create).toHaveBeenLastCalledWith({
-        name: 'Exames',
-        userId: 'user-uuid-001',
-      });
+      expect(mockUserRepository.createWithFolders).toHaveBeenCalledWith(
+        expect.objectContaining({
+          defaultFolderName: 'Alice',
+          extraFolderNames: ['Exames'],
+        }),
+      );
       expect(output.folders).toEqual([
         { id: 'folder-default', name: 'Alice' },
         { id: 'folder-exams', name: 'Exames' },
       ]);
     });
 
-    it('skips a duplicated folder name instead of failing the whole creation', async () => {
-      mockFolderRepository.findActiveByUserIdAndName.mockResolvedValue(
-        folderMock({ id: 'folder-existing', name: 'Exames' }),
+    it('drops a repeated folder name without touching the database', async () => {
+      // A deduplicacao acontece em memoria: nao ha consulta por nome.
+      await useCase.execute({
+        ...input,
+        folders: ['Exames', 'Exames', 'Laudos'],
+      });
+
+      expect(mockUserRepository.createWithFolders).toHaveBeenCalledWith(
+        expect.objectContaining({ extraFolderNames: ['Exames', 'Laudos'] }),
       );
-      mockFolderRepository.create.mockResolvedValueOnce(folderMock());
+    });
 
-      const output = await useCase.execute({ ...input, folders: ['Exames'] });
+    it('drops an extra folder that repeats the default folder name', async () => {
+      await useCase.execute({ ...input, folders: ['Alice', 'Exames'] });
 
-      // apenas a pasta default foi criada
-      expect(mockFolderRepository.create).toHaveBeenCalledTimes(1);
-      expect(output.folders).toHaveLength(1);
+      expect(mockUserRepository.createWithFolders).toHaveBeenCalledWith(
+        expect.objectContaining({ extraFolderNames: ['Exames'] }),
+      );
     });
   });
 
@@ -123,8 +137,20 @@ describe('CreateUserWithFoldersUseCase', () => {
         new ConflictException(ErrorMessagesEnum.EMAIL_ALREADY_REGISTERED),
       );
 
-      expect(mockUserRepository.create).not.toHaveBeenCalled();
-      expect(mockFolderRepository.create).not.toHaveBeenCalled();
+      expect(mockUserRepository.createWithFolders).not.toHaveBeenCalled();
+    });
+
+    it('persists nothing when the transaction fails midway', async () => {
+      // Antes as escritas eram autocommits separados: uma falha na terceira
+      // pasta deixava o usuario criado com o conjunto truncado, e sem retry
+      // possivel -- o e-mail ja estava gravado. Agora a operacao e uma so.
+      mockUserRepository.createWithFolders.mockRejectedValue(
+        new Error('deadlock detected'),
+      );
+
+      await expect(
+        useCase.execute({ ...input, folders: ['A', 'B', 'C'] }),
+      ).rejects.toThrow('deadlock detected');
     });
   });
 });
