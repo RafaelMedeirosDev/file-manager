@@ -65,14 +65,14 @@ export function normalizePaginatedResponse<T>(
   };
 
   const items = Array.isArray(response.data) ? response.data : [];
-  const meta  = response.meta ?? {};
+  const meta = response.meta ?? {};
 
   return {
     items,
     meta: {
-      page:        meta.page        ?? fallbackPage,
-      limit:       meta.limit       ?? fallbackLimit,
-      total:       meta.total       ?? items.length,
+      page: meta.page ?? fallbackPage,
+      limit: meta.limit ?? fallbackLimit,
+      total: meta.total ?? items.length,
       hasNextPage: meta.hasNextPage ?? false,
     },
     isLegacyArray: false,

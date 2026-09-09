@@ -5,8 +5,14 @@ import type { UserItem } from '../shared/types';
 // ── Avatar helpers (mirrors UsersPage) ───────────────────────────────────────
 
 const AVATAR_COLORS = [
-  'av-blue', 'av-indigo', 'av-violet', 'av-teal',
-  'av-amber', 'av-rose', 'av-green', 'av-orange',
+  'av-blue',
+  'av-indigo',
+  'av-violet',
+  'av-teal',
+  'av-amber',
+  'av-rose',
+  'av-green',
+  'av-orange',
 ] as const;
 
 function getAvatarColor(name: string): string {
@@ -595,9 +601,17 @@ const STYLES = `
 
 function SearchIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-      strokeLinejoin="round" aria-hidden="true">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <circle cx="11" cy="11" r="7" />
       <path d="m20 20-3.5-3.5" />
     </svg>
@@ -606,15 +620,29 @@ function SearchIcon() {
 
 function CheckIcon({ size = 18 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
-      strokeLinejoin="round" aria-hidden="true">
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <polyline points="20 6 9 17 4 12" />
     </svg>
   );
 }
 
-function Stepper({ currentStep, submitted }: { currentStep: WizardStep; submitted: boolean }) {
+function Stepper({
+  currentStep,
+  submitted,
+}: {
+  currentStep: WizardStep;
+  submitted: boolean;
+}) {
   if (submitted) return null;
 
   const steps: WizardStep[] = [1, 2, 3, 4];
@@ -644,7 +672,9 @@ function Stepper({ currentStep, submitted }: { currentStep: WizardStep; submitte
             </div>
           </div>
           {i < steps.length - 1 && (
-            <div className={`er-connector ${currentStep > step ? 'done' : ''}`} />
+            <div
+              className={`er-connector ${currentStep > step ? 'done' : ''}`}
+            />
           )}
         </div>
       ))}
@@ -703,14 +733,14 @@ export function ExamRequestPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Nova Solicitação</h1>
-          <p className="page-subtitle">Crie uma solicitação de exames em nome de um paciente.</p>
+          <p className="page-subtitle">
+            Crie uma solicitação de exames em nome de um paciente.
+          </p>
         </div>
       </div>
 
       <div className="page-content">
-        {error && !submitted && (
-          <p className="er-error">{error}</p>
-        )}
+        {error && !submitted && <p className="er-error">{error}</p>}
 
         <div className="er-card">
           {/* ── Stepper ── */}
@@ -723,16 +753,26 @@ export function ExamRequestPage() {
             /* ── SUCCESS ─────────────────────────────────────── */
             <div className="er-success">
               <div className="er-success-icon">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
-                  stroke="#059669" strokeWidth="2.5" strokeLinecap="round"
-                  strokeLinejoin="round">
+                <svg
+                  width="32"
+                  height="32"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#059669"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <polyline points="20 6 9 17 4 12" strokeDasharray="60" />
                 </svg>
               </div>
               <h2 className="er-success-title">Solicitação Enviada!</h2>
               <p className="er-success-subtitle">
-                <strong>{selectedExams.length}</strong> exame{selectedExams.length !== 1 ? 's' : ''} solicitado{selectedExams.length !== 1 ? 's' : ''} para{' '}
-                <strong>{selectedUser?.name}</strong>. O PDF foi gerado automaticamente.
+                <strong>{selectedExams.length}</strong> exame
+                {selectedExams.length !== 1 ? 's' : ''} solicitado
+                {selectedExams.length !== 1 ? 's' : ''} para{' '}
+                <strong>{selectedUser?.name}</strong>. O PDF foi gerado
+                automaticamente.
               </p>
               <div className="er-success-badges">
                 {selectedExams.map((exam, i) => (
@@ -745,14 +785,17 @@ export function ExamRequestPage() {
                   </span>
                 ))}
               </div>
-              <button type="button" className="btn-secondary" onClick={resetWizard}>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={resetWizard}
+              >
                 Nova Solicitação
               </button>
             </div>
           ) : (
             <>
               <div className="er-body" key={currentStep}>
-
                 {/* ── STEP 1: Patient ─────────────────────────── */}
                 {currentStep === 1 && (
                   <>
@@ -771,9 +814,15 @@ export function ExamRequestPage() {
                         autoComplete="off"
                       />
                     </div>
-                    <div className="er-patient-list" role="listbox" aria-label="Pacientes">
+                    <div
+                      className="er-patient-list"
+                      role="listbox"
+                      aria-label="Pacientes"
+                    >
                       {filteredUsers.length === 0 ? (
-                        <div className="er-empty">Nenhum paciente encontrado.</div>
+                        <div className="er-empty">
+                          Nenhum paciente encontrado.
+                        </div>
                       ) : (
                         filteredUsers.map((u) => {
                           const isSelected = selectedUserId === u.id;
@@ -804,17 +853,37 @@ export function ExamRequestPage() {
                 {/* ── STEP 2: Exams ──────────────────────────── */}
                 {currentStep === 2 && (
                   <>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 3 }}>
-                      <p className="er-step-title" style={{ margin: 0 }}>Selecione os Exames</p>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'baseline',
+                        marginBottom: 3,
+                      }}
+                    >
+                      <p className="er-step-title" style={{ margin: 0 }}>
+                        Selecione os Exames
+                      </p>
                       {selectedExamIds.length > 0 && (
-                        <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 12, color: '#0078D4', fontWeight: 600 }}>
-                          {selectedExamIds.length} selecionado{selectedExamIds.length !== 1 ? 's' : ''}
+                        <span
+                          style={{
+                            fontFamily: 'Manrope, sans-serif',
+                            fontSize: 12,
+                            color: '#0078D4',
+                            fontWeight: 600,
+                          }}
+                        >
+                          {selectedExamIds.length} selecionado
+                          {selectedExamIds.length !== 1 ? 's' : ''}
                         </span>
                       )}
                     </div>
                     <p className="er-step-desc">
                       Escolha um ou mais exames para{' '}
-                      <strong style={{ color: '#0d1e35' }}>{selectedUser?.name}</strong>.
+                      <strong style={{ color: '#0d1e35' }}>
+                        {selectedUser?.name}
+                      </strong>
+                      .
                     </p>
                     <div className="er-search-wrap">
                       <SearchIcon />
@@ -829,7 +898,10 @@ export function ExamRequestPage() {
                     </div>
                     <div className="er-exam-grid">
                       {filteredExams.length === 0 ? (
-                        <div className="er-empty" style={{ gridColumn: '1 / -1' }}>
+                        <div
+                          className="er-empty"
+                          style={{ gridColumn: '1 / -1' }}
+                        >
                           Nenhum exame encontrado.
                         </div>
                       ) : (
@@ -843,16 +915,22 @@ export function ExamRequestPage() {
                               role="checkbox"
                               aria-checked={isSelected}
                               tabIndex={0}
-                              onKeyDown={(e) => e.key === 'Enter' && toggleExam(exam.id)}
+                              onKeyDown={(e) =>
+                                e.key === 'Enter' && toggleExam(exam.id)
+                              }
                             >
                               <div className="er-exam-card-top">
-                                <span className="er-exam-code">{exam.code}</span>
+                                <span className="er-exam-code">
+                                  {exam.code}
+                                </span>
                                 <span className="er-exam-check">
                                   <CheckIcon size={16} />
                                 </span>
                               </div>
                               <p className="er-exam-name">{exam.name}</p>
-                              <p className="er-exam-category">{exam.category}</p>
+                              <p className="er-exam-category">
+                                {exam.category}
+                              </p>
                             </div>
                           );
                         })
@@ -870,11 +948,15 @@ export function ExamRequestPage() {
                     </p>
                     <div className="er-summary-bar">
                       <span className="er-summary-label">Paciente:</span>
-                      <span className="er-summary-value">{selectedUser?.name}</span>
+                      <span className="er-summary-value">
+                        {selectedUser?.name}
+                      </span>
                       <span className="er-summary-pipe">·</span>
                       <span className="er-summary-label">Exames:</span>
                       {selectedExams.map((exam) => (
-                        <span key={exam.id} className="er-exam-badge">{exam.code}</span>
+                        <span key={exam.id} className="er-exam-badge">
+                          {exam.code}
+                        </span>
                       ))}
                     </div>
                     <label className="er-label">
@@ -907,19 +989,49 @@ export function ExamRequestPage() {
                       </div>
                       <div className="er-review-row">
                         <dt className="er-review-dt">E-mail</dt>
-                        <dd className="er-review-dd" style={{ fontWeight: 400 }}>
+                        <dd
+                          className="er-review-dd"
+                          style={{ fontWeight: 400 }}
+                        >
                           {selectedUser?.email}
                         </dd>
                       </div>
                       <div className="er-review-row">
                         <dt className="er-review-dt">Exames</dt>
                         <dd className="er-review-dd">
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          <div
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: 8,
+                            }}
+                          >
                             {selectedExams.map((exam) => (
-                              <div key={exam.id} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                                <span className="er-review-exam-name">{exam.name}</span>
-                                <span className="er-exam-badge">{exam.code}</span>
-                                <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>
+                              <div
+                                key={exam.id}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 8,
+                                  flexWrap: 'wrap',
+                                }}
+                              >
+                                <span className="er-review-exam-name">
+                                  {exam.name}
+                                </span>
+                                <span className="er-exam-badge">
+                                  {exam.code}
+                                </span>
+                                <span
+                                  style={{
+                                    fontFamily: 'Manrope, sans-serif',
+                                    fontSize: 11,
+                                    color: '#94a3b8',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.06em',
+                                    fontWeight: 600,
+                                  }}
+                                >
                                   {exam.category}
                                 </span>
                               </div>
@@ -931,16 +1043,19 @@ export function ExamRequestPage() {
                         <dt className="er-review-dt">Indicação</dt>
                         <dd className="er-review-dd">
                           {indication.trim() ? (
-                            <span className="er-review-indication">{indication}</span>
+                            <span className="er-review-indication">
+                              {indication}
+                            </span>
                           ) : (
-                            <span className="er-review-none">Nenhuma indicação informada</span>
+                            <span className="er-review-none">
+                              Nenhuma indicação informada
+                            </span>
                           )}
                         </dd>
                       </div>
                     </dl>
                   </>
                 )}
-
               </div>
 
               {/* ── Footer ─────────────────────────────────────── */}
@@ -974,7 +1089,11 @@ export function ExamRequestPage() {
                     className="btn-primary"
                     onClick={handleSubmit}
                     disabled={submitting}
-                    style={{ fontSize: 13, padding: '8px 20px', background: '#059669' }}
+                    style={{
+                      fontSize: 13,
+                      padding: '8px 20px',
+                      background: '#059669',
+                    }}
                   >
                     {submitting ? 'Enviando…' : 'Confirmar Solicitação'}
                   </button>

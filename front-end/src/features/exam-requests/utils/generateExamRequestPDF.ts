@@ -3,12 +3,23 @@ import jsPDF from 'jspdf';
 export type PdfUser = { name: string; email: string };
 export type PdfExam = { name: string; code: string; category: string };
 
-export function generateExamRequestPDF(user: PdfUser, exams: PdfExam[], indication: string): void {
+export function generateExamRequestPDF(
+  user: PdfUser,
+  exams: PdfExam[],
+  indication: string,
+): void {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
 
   const now = new Date();
-  const dateStr = now.toLocaleDateString('pt-BR', { year: 'numeric', month: 'long', day: 'numeric' });
-  const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const dateStr = now.toLocaleDateString('pt-BR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+  const timeStr = now.toLocaleTimeString('pt-BR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
   const orderNum = 'SOL-' + String(now.getTime()).slice(-6);
 
   const pageW = doc.internal.pageSize.getWidth();
@@ -42,7 +53,12 @@ export function generateExamRequestPDF(user: PdfUser, exams: PdfExam[], indicati
     return yPos + 11;
   };
 
-  const field = (label: string, value: string, yPos: number, labelW = 40): number => {
+  const field = (
+    label: string,
+    value: string,
+    yPos: number,
+    labelW = 40,
+  ): number => {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     doc.setTextColor(120, 120, 120);
@@ -75,7 +91,8 @@ export function generateExamRequestPDF(user: PdfUser, exams: PdfExam[], indicati
   y += 9;
 
   exams.forEach((exam, i) => {
-    const rowBg: [number, number, number] = i % 2 === 0 ? [255, 255, 255] : [248, 250, 255];
+    const rowBg: [number, number, number] =
+      i % 2 === 0 ? [255, 255, 255] : [248, 250, 255];
     doc.setFillColor(...rowBg);
     doc.rect(margin, y - 1, colW, 7, 'F');
 
@@ -105,7 +122,7 @@ export function generateExamRequestPDF(user: PdfUser, exams: PdfExam[], indicati
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     doc.setTextColor(40, 40, 40);
-    const lines = doc.splitTextToSize(indication, colW - 6);
+    const lines = doc.splitTextToSize(indication, colW - 6) as string[];
     doc.text(lines, margin + 3, y);
     y += lines.length * 5.5;
   } else {

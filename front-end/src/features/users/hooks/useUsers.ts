@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getApiErrorMessage, normalizePaginatedResponse } from '../../../shared/utils/apiUtils';
+import {
+  getApiErrorMessage,
+  normalizePaginatedResponse,
+} from '../../../shared/utils/apiUtils';
 import type { UserItem } from '../../../shared/types';
 import { usersService } from '../services/usersService';
 
@@ -49,30 +52,40 @@ export function useUsers(): UseUsersReturn {
 
   // ── Fetch ────────────────────────────────────────────
 
-  const fetchPage = useCallback(async (targetPage: number) => {
-    const requestId = ++requestIdRef.current;
-    setLoading(true);
-    setError(null);
+  const fetchPage = useCallback(
+    async (targetPage: number) => {
+      const requestId = ++requestIdRef.current;
+      setLoading(true);
+      setError(null);
 
-    const params: Record<string, string | number> = { page: targetPage, limit: PAGE_LIMIT };
-    if (debouncedSearch) params.search = debouncedSearch;
+      const params: Record<string, string | number> = {
+        page: targetPage,
+        limit: PAGE_LIMIT,
+      };
+      if (debouncedSearch) params.search = debouncedSearch;
 
-    try {
-      const raw = await usersService.list(params);
-      const parsed = normalizePaginatedResponse<UserItem>(raw, targetPage, PAGE_LIMIT);
+      try {
+        const raw = await usersService.list(params);
+        const parsed = normalizePaginatedResponse<UserItem>(
+          raw,
+          targetPage,
+          PAGE_LIMIT,
+        );
 
-      if (requestId !== requestIdRef.current) return;
+        if (requestId !== requestIdRef.current) return;
 
-      setUsers(parsed.items);
-      setTotalUsers(parsed.meta.total);
-      setTotalPages(Math.max(1, Math.ceil(parsed.meta.total / PAGE_LIMIT)));
-    } catch (err) {
-      if (requestId !== requestIdRef.current) return;
-      setError(getApiErrorMessage(err, 'Erro ao carregar usuários.'));
-    } finally {
-      if (requestId === requestIdRef.current) setLoading(false);
-    }
-  }, [debouncedSearch]);
+        setUsers(parsed.items);
+        setTotalUsers(parsed.meta.total);
+        setTotalPages(Math.max(1, Math.ceil(parsed.meta.total / PAGE_LIMIT)));
+      } catch (err) {
+        if (requestId !== requestIdRef.current) return;
+        setError(getApiErrorMessage(err, 'Erro ao carregar usuários.'));
+      } finally {
+        if (requestId === requestIdRef.current) setLoading(false);
+      }
+    },
+    [debouncedSearch],
+  );
 
   useEffect(() => {
     void fetchPage(page);
@@ -89,7 +102,9 @@ export function useUsers(): UseUsersReturn {
   // ── Ações ────────────────────────────────────────────
 
   async function handleSoftDeleteUser(userId: string, userName: string) {
-    const confirmed = window.confirm(`Deseja realmente excluir o usuário "${userName}"?`);
+    const confirmed = window.confirm(
+      `Deseja realmente excluir o usuário "${userName}"?`,
+    );
     if (!confirmed) return;
 
     setActionError(null);

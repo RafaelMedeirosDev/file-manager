@@ -9,7 +9,13 @@ type ModalProps = {
   children: React.ReactNode;
 };
 
-export function Modal({ isOpen, onClose, title, subtitle, children }: ModalProps) {
+export function Modal({
+  isOpen,
+  onClose,
+  title,
+  subtitle,
+  children,
+}: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -42,7 +48,9 @@ export function Modal({ isOpen, onClose, title, subtitle, children }: ModalProps
       >
         <div className="modal-header">
           <div>
-            <p id="modal-title-id" className="modal-title">{title}</p>
+            <p id="modal-title-id" className="modal-title">
+              {title}
+            </p>
             {subtitle ? <p className="modal-subtitle">{subtitle}</p> : null}
           </div>
           <button

@@ -27,20 +27,14 @@ export type CreateExamPayload = {
 
 export const examsService = {
   list(params?: ListExamsParams): Promise<ListExamsResponse> {
-    return api
-      .get<ListExamsResponse>('/exams', { params })
-      .then((r) => r.data);
+    return api.get<ListExamsResponse>('/exams', { params }).then((r) => r.data);
   },
 
   create(payload: CreateExamPayload): Promise<ExamItem> {
-    return api
-      .post<ExamItem>('/exams', payload)
-      .then((r) => r.data);
+    return api.post<ExamItem>('/exams', payload).then((r) => r.data);
   },
 
   softDelete(id: string): Promise<void> {
-    return api
-      .delete(`/exams/${id}`)
-      .then(() => undefined);
+    return api.delete(`/exams/${id}`).then(() => undefined);
   },
 };

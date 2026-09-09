@@ -84,6 +84,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
           logout();
         }
 
+        // O erro precisa seguir intacto: os chamadores leem
+        // error.response.data.message via getApiErrorMessage, e envolve-lo
+        // num Error perderia essa informacao.
+        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
         return Promise.reject(error);
       },
     );

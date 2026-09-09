@@ -4,9 +4,17 @@ import { useLogin } from '../features/auth/hooks/useLogin';
 
 function ShieldIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"
-      strokeLinejoin="round" aria-hidden="true">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <path d="M12 3 4 7v5c0 5.25 3.5 9.74 8 11 4.5-1.26 8-5.75 8-11V7z" />
     </svg>
   );
@@ -14,9 +22,17 @@ function ShieldIcon() {
 
 function LayersIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"
-      strokeLinejoin="round" aria-hidden="true">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <polygon points="12 2 2 7 12 12 22 7 12 2" />
       <polyline points="2 17 12 22 22 17" />
       <polyline points="2 12 12 17 22 12" />
@@ -26,9 +42,17 @@ function LayersIcon() {
 
 function ZapIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"
-      strokeLinejoin="round" aria-hidden="true">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
     </svg>
   );
@@ -40,10 +64,23 @@ function DotGridPattern() {
   return (
     <svg
       aria-hidden="true"
-      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.18 }}
+      style={{
+        position: 'absolute',
+        inset: 0,
+        width: '100%',
+        height: '100%',
+        opacity: 0.18,
+      }}
     >
       <defs>
-        <pattern id="dots" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
+        <pattern
+          id="dots"
+          x="0"
+          y="0"
+          width="24"
+          height="24"
+          patternUnits="userSpaceOnUse"
+        >
           <circle cx="1.5" cy="1.5" r="1.5" fill="#0078D4" />
         </pattern>
       </defs>
@@ -56,15 +93,25 @@ function AccentLines() {
   return (
     <svg
       aria-hidden="true"
-      style={{ position: 'absolute', bottom: 0, right: 0, width: '260px', height: '260px', opacity: 0.12 }}
+      style={{
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        width: '260px',
+        height: '260px',
+        opacity: 0.12,
+      }}
       viewBox="0 0 260 260"
     >
       {[0, 28, 56, 84, 112, 140, 168, 196, 224].map((offset) => (
         <line
           key={offset}
-          x1={260 - offset} y1="260"
-          x2="260" y2={260 - offset}
-          stroke="#0078D4" strokeWidth="1.5"
+          x1={260 - offset}
+          y1="260"
+          x2="260"
+          y2={260 - offset}
+          stroke="#0078D4"
+          strokeWidth="1.5"
         />
       ))}
     </svg>
@@ -73,7 +120,11 @@ function AccentLines() {
 
 // ─── Feature row ───────────────────────────────────────────────────────────
 
-function FeatureRow({ icon, label, description }: {
+function FeatureRow({
+  icon,
+  label,
+  description,
+}: {
   icon: React.ReactNode;
   label: string;
   description: string;
@@ -92,7 +143,15 @@ function FeatureRow({ icon, label, description }: {
 // ─── Main component ────────────────────────────────────────────────────────
 
 export function LoginPage() {
-  const { email, setEmail, password, setPassword, error, loading, handleSubmit } = useLogin();
+  const {
+    email,
+    setEmail,
+    password,
+    setPassword,
+    error,
+    loading,
+    handleSubmit,
+  } = useLogin();
 
   return (
     <>
@@ -395,18 +454,27 @@ export function LoginPage() {
       `}</style>
 
       <div className="lp-wrapper">
-
         {/* ── Left: Brand panel ── */}
         <div className="lp-left">
           <DotGridPattern />
           <AccentLines />
-          <span className="lp-watermark" aria-hidden="true">FM</span>
+          <span className="lp-watermark" aria-hidden="true">
+            FM
+          </span>
 
           <div className="lp-left-top">
             <div className="lp-brand-mark">
               <div className="lp-brand-square" aria-hidden="true">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                  stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#ffffff"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <path d="M3 7.8A1.8 1.8 0 0 1 4.8 6h5.2l1.6 2h7.4A1.8 1.8 0 0 1 21 9.8v7.4A1.8 1.8 0 0 1 19.2 19H4.8A1.8 1.8 0 0 1 3 17.2z" />
                 </svg>
               </div>
@@ -414,11 +482,13 @@ export function LoginPage() {
             </div>
 
             <h1 className="lp-headline">
-              Seus arquivos.<br />
+              Seus arquivos.
+              <br />
               Seu <span className="lp-headline-accent">controle.</span>
             </h1>
             <p className="lp-tagline">
-              Gerencie documentos e pastas com segurança empresarial — de qualquer lugar.
+              Gerencie documentos e pastas com segurança empresarial — de
+              qualquer lugar.
             </p>
 
             <div className="lp-ruler" aria-hidden="true" />
@@ -443,9 +513,15 @@ export function LoginPage() {
           </div>
 
           <div className="lp-left-bottom">
-            <div className="lp-status" role="status" aria-label="Status do sistema">
+            <div
+              className="lp-status"
+              role="status"
+              aria-label="Status do sistema"
+            >
               <span className="lp-status-dot" aria-hidden="true" />
-              <span className="lp-status-text">Todos os sistemas operacionais</span>
+              <span className="lp-status-text">
+                Todos os sistemas operacionais
+              </span>
             </div>
           </div>
         </div>
@@ -460,7 +536,9 @@ export function LoginPage() {
           <form onSubmit={handleSubmit} noValidate>
             <div className="lp-field-group">
               <div>
-                <label className="lp-label" htmlFor="email">Endereço de email</label>
+                <label className="lp-label" htmlFor="email">
+                  Endereço de email
+                </label>
                 <input
                   id="email"
                   type="email"
@@ -473,7 +551,9 @@ export function LoginPage() {
                 />
               </div>
               <div>
-                <label className="lp-label" htmlFor="password">Senha</label>
+                <label className="lp-label" htmlFor="password">
+                  Senha
+                </label>
                 <input
                   id="password"
                   type="password"
@@ -489,10 +569,18 @@ export function LoginPage() {
 
             {error ? (
               <div className="lp-error" role="alert">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-                  strokeLinejoin="round" aria-hidden="true"
-                  style={{ flexShrink: 0, marginTop: '1px' }}>
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                  style={{ flexShrink: 0, marginTop: '1px' }}
+                >
                   <circle cx="12" cy="12" r="10" />
                   <line x1="12" y1="8" x2="12" y2="12" />
                   <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -509,15 +597,27 @@ export function LoginPage() {
             >
               {loading ? (
                 <>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
                     aria-hidden="true"
-                    style={{ marginRight: '8px', animation: 'lp-spin 0.7s linear infinite' }}>
+                    style={{
+                      marginRight: '8px',
+                      animation: 'lp-spin 0.7s linear infinite',
+                    }}
+                  >
                     <path d="M21 12a9 9 0 1 1-6.219-8.56" />
                   </svg>
                   Entrando...
                 </>
-              ) : 'Entrar'}
+              ) : (
+                'Entrar'
+              )}
             </button>
           </form>
 
@@ -526,7 +626,6 @@ export function LoginPage() {
             <span className="lp-footer-version">v1.0</span>
           </div>
         </div>
-
       </div>
     </>
   );

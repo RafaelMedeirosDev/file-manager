@@ -37,12 +37,12 @@ export const router = createBrowserRouter([
       {
         element: <AppLayout />,
         children: [
-          { path: '/users',             element: <UsersPage />              },
-          { path: '/users/new',         element: <CreateUserPage />         },
-          { path: '/folders/new',       element: <FoldersBulkCreatePage />  },
-          { path: '/exams',             element: <ExamsPage />              },
-          { path: '/exam-requests',     element: <ExamRequestsPage />       },
-          { path: '/exam-requests/new', element: <ExamRequestPage />        },
+          { path: '/users', element: <UsersPage /> },
+          { path: '/users/new', element: <CreateUserPage /> },
+          { path: '/folders/new', element: <FoldersBulkCreatePage /> },
+          { path: '/exams', element: <ExamsPage /> },
+          { path: '/exam-requests', element: <ExamRequestsPage /> },
+          { path: '/exam-requests/new', element: <ExamRequestPage /> },
         ],
       },
     ],
