@@ -7,36 +7,23 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
+import { parseIntegerValue, trimValue } from '../transforms';
 
 export class ListUsersQueryDTO {
   @IsOptional()
   @IsString()
   @MaxLength(50)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(trimValue)
   search?: string;
 
   @IsOptional()
-  @Transform(({ value }) => {
-    if (value === undefined) {
-      return undefined;
-    }
-
-    const parsed = Number.parseInt(String(value), 10);
-    return Number.isNaN(parsed) ? value : parsed;
-  })
+  @Transform(parseIntegerValue)
   @IsInt()
   @Min(1)
   page?: number;
 
   @IsOptional()
-  @Transform(({ value }) => {
-    if (value === undefined) {
-      return undefined;
-    }
-
-    const parsed = Number.parseInt(String(value), 10);
-    return Number.isNaN(parsed) ? value : parsed;
-  })
+  @Transform(parseIntegerValue)
   @IsInt()
   @Min(1)
   @Max(100)

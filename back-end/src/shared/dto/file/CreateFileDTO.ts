@@ -1,11 +1,12 @@
 import { Transform } from 'class-transformer';
 import { IsNotEmpty, IsString, IsUUID, MaxLength } from 'class-validator';
+import { trimLowerCase, trimValue } from '../transforms';
 
 export class CreateFileDTO {
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(trimValue)
   name!: string;
 
   @IsUUID()
@@ -17,9 +18,7 @@ export class CreateFileDTO {
   @IsString()
   @IsNotEmpty()
   @MaxLength(20)
-  @Transform(({ value }) =>
-    typeof value === 'string' ? value.trim().toLowerCase() : value,
-  )
+  @Transform(trimLowerCase)
   extension!: string;
 
   // Chave do objeto dentro do bucket, nao uma URL: o download resolve o
@@ -27,6 +26,6 @@ export class CreateFileDTO {
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(trimValue)
   key!: string;
 }

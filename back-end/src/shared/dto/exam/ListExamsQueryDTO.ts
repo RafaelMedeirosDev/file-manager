@@ -9,18 +9,19 @@ import {
   Min,
 } from 'class-validator';
 import { ExamCategory } from '@prisma/client';
+import { parseIntegerValue, trimValue } from '../transforms';
 
 export class ListExamsQueryDTO {
   @IsOptional()
   @IsString()
   @MaxLength(100)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(trimValue)
   name?: string;
 
   @IsOptional()
   @IsString()
   @MaxLength(50)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(trimValue)
   code?: string;
 
   @IsOptional()
@@ -28,21 +29,13 @@ export class ListExamsQueryDTO {
   category?: ExamCategory;
 
   @IsOptional()
-  @Transform(({ value }) => {
-    if (value === undefined) return undefined;
-    const parsed = Number.parseInt(String(value), 10);
-    return Number.isNaN(parsed) ? value : parsed;
-  })
+  @Transform(parseIntegerValue)
   @IsInt()
   @Min(1)
   page?: number;
 
   @IsOptional()
-  @Transform(({ value }) => {
-    if (value === undefined) return undefined;
-    const parsed = Number.parseInt(String(value), 10);
-    return Number.isNaN(parsed) ? value : parsed;
-  })
+  @Transform(parseIntegerValue)
   @IsInt()
   @Min(1)
   @Max(100)

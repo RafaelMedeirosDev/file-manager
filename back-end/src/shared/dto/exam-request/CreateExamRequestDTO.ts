@@ -7,12 +7,13 @@ import {
   IsUUID,
   MaxLength,
 } from 'class-validator';
+import { trimValue } from '../transforms';
 
 export class CreateExamRequestDTO {
   @IsOptional()
   @IsString()
   @MaxLength(500)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(trimValue)
   indication?: string;
 
   @IsOptional()
