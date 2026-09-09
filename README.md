@@ -6,6 +6,7 @@
 Aplicação full stack em TypeScript para gestão de arquivos por usuário, organizada como um monorepo com API REST em NestJS, SPA em React e um pacote de contratos compartilhados entre as duas pontas.
 
 **Aplicação no ar:** [file-manager.up.railway.app](https://file-manager.up.railway.app)
+**Documentação da API:** [`/docs`](https://file-manager-production-355f.up.railway.app/docs) — Swagger UI, com as 27 rotas e o botão *Authorize* para colar um token
 
 > O acesso de demonstração será liberado junto com a organização de demo, atualmente em preparação. Para explorar o sistema completo agora, siga [Como executar o projeto](#como-executar-o-projeto) — o seed cria um `ADMIN` e um `USER` prontos para uso.
 
@@ -84,6 +85,7 @@ Trata-se de um **monorepo full stack**: backend (API REST), frontend (SPA) e um 
 - **`@aws-sdk/client-s3`** como cliente de armazenamento de objetos
 - **Multer** (via `FileInterceptor` / `FilesInterceptor` do `@nestjs/platform-express`) para multipart/form-data
 - **dotenv** para carregamento de variáveis de ambiente
+- **`@nestjs/swagger`** para a documentação OpenAPI, com o plugin de CLI inferindo os schemas dos DTOs a partir dos decoradores do `class-validator`
 - **ESLint 9** (flat config, `typescript-eslint` com `recommendedTypeChecked`) e **Prettier**
 
 ### Frontend
@@ -323,6 +325,34 @@ O RBAC não para no guard: os use cases aplicam verificações adicionais de pro
 ### No frontend
 
 A sessão (`accessToken` + dados do usuário) é persistida em `localStorage` sob a chave `file-manager:session` e exposta pelo `AuthProvider`. O interceptor de requisição do Axios injeta o header `Authorization` automaticamente. O componente `ProtectedRoute` redireciona para `/login` quando não há sessão e para `/` quando o papel do usuário não está entre os permitidos para a rota.
+
+### Documentação da API
+
+`GET /docs` serve o Swagger UI e `GET /docs-json` o documento OpenAPI. As 27 rotas
+aparecem agrupadas por domínio, e o botão *Authorize* aceita um token do
+`POST /auth/login`, o que permite exercitar as rotas protegidas pela própria
+página.
+
+Os schemas de entrada não foram escritos à mão: o plugin de CLI do
+`@nestjs/swagger` os deriva dos DTOs, traduzindo os decoradores do
+`class-validator` em constraints — `@IsUUID` vira `format: uuid`, `@IsEmail`
+vira `format: email`, `@MaxLength` vira `maxLength`, e o enum de categoria de
+exame sai com os oito valores. Como os sufixos de arquivo do projeto
+(`CreateUserDTO.ts`, `UserController.ts`) diferem dos que o plugin procura por
+padrão, eles estão declarados no `nest-cli.json` — sem isso o plugin não
+documenta nada, e falha em silêncio.
+
+Duas exceções foram escritas manualmente, porque o plugin não as alcança: o
+corpo `multipart/form-data` das duas rotas de upload (o tipo do arquivo vem de
+`node_modules` e é descartado na inferência) e a resposta binária do download.
+
+> **Sobre as respostas:** estão documentadas por status e descrição, não por
+> schema. Os contratos vivem em `@file-manager/shared` como `type`, para
+> atravessarem a fronteira HTTP sem carregar runtime no frontend, e OpenAPI
+> precisa de classes para gerar schema de resposta. Duplicar os contratos em
+> classes só para a documentação criaria duas fontes de verdade que divergem
+> com o tempo — a escolha foi manter uma fonte só e documentar as respostas em
+> texto.
 
 ---
 
@@ -704,7 +734,6 @@ VITE_API_URL=http://localhost:3000
 ## Melhorias futuras
 
 - Introduzir um runner de testes no frontend e cobrir hooks e utilitários.
-- Documentar a API com Swagger/OpenAPI a partir dos DTOs já existentes.
 - Adicionar CD ao pipeline de CI, para que o deploy passe pelo mesmo gate dos testes.
 - Abrir uma organização de demonstração, com credenciais de acesso para visitantes.
 - Containerizar a API e o front, e subir um S3 local (MinIO) para que o upload funcione sem credenciais reais do R2.

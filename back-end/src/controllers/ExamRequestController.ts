@@ -36,7 +36,21 @@ import {
   UpdateExamRequestOutput,
   UpdateExamRequestUseCase,
 } from '../usecases/exam-request/UpdateExamRequestUseCase';
+import {
+  ApiBearerAuth,
+  ApiForbiddenResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 
+@ApiTags('exam-requests')
+@ApiBearerAuth('bearer')
+@ApiUnauthorizedResponse({
+  description: 'Token ausente, invalido ou de usuario excluido',
+})
+@ApiForbiddenResponse({
+  description: 'Papel do usuario nao autorizado para a rota',
+})
 @Controller('exam-requests')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ExamRequestController {

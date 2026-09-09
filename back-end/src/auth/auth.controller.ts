@@ -2,7 +2,9 @@ import { Body, Controller, Post, ValidationPipe } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { LoginDTO } from '../shared/dto/auth/LoginDTO';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
