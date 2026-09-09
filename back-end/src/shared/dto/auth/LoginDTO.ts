@@ -1,18 +1,17 @@
 import { Transform } from 'class-transformer';
 import { IsEmail, IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { trimLowerCase, trimValue } from '../transforms';
 
 export class LoginDTO {
   @IsEmail()
   @IsNotEmpty()
   @MaxLength(50)
-  @Transform(({ value }) =>
-    typeof value === 'string' ? value.trim().toLowerCase() : value,
-  )
+  @Transform(trimLowerCase)
   email!: string;
 
   @IsString()
   @IsNotEmpty()
   @MaxLength(50)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(trimValue)
   password!: string;
 }

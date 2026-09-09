@@ -26,12 +26,19 @@ export default tseslint.config(
   },
   {
     rules: {
+      // `any` escrito a mao nao aparece no codigo de producao, e a regra so
+      // criaria atrito nos mocks de teste -- que o override abaixo ja relaxa.
       '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-floating-promises': 'warn',
-      '@typescript-eslint/no-unsafe-argument': 'warn',
-      '@typescript-eslint/no-unsafe-assignment': 'off',
-      '@typescript-eslint/no-unsafe-return': 'off',
-      '@typescript-eslint/no-unsafe-call': 'off'
+      '@typescript-eslint/no-floating-promises': 'error',
+      // As quatro regras abaixo estavam desligadas ou rebaixadas, o que
+      // esvaziava o preset recommendedTypeChecked. Voltaram junto com o
+      // `strict` do tsconfig: o `any` que sobrava vinha de
+      // TransformFnParams.value, do class-transformer, e agora para nos
+      // helpers de shared/dto/transforms.ts.
+      '@typescript-eslint/no-unsafe-argument': 'error',
+      '@typescript-eslint/no-unsafe-assignment': 'error',
+      '@typescript-eslint/no-unsafe-return': 'error',
+      '@typescript-eslint/no-unsafe-call': 'error'
     },
   },
   {
@@ -45,6 +52,9 @@ export default tseslint.config(
       '@typescript-eslint/require-await': 'off',
       '@typescript-eslint/no-unsafe-argument': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
+      // Os fakes de JwtAuthGuard escrevem em `request.user`, que o Express
+      // tipa como any -- e o ponto do fake e justamente simular o payload.
+      '@typescript-eslint/no-unsafe-assignment': 'off',
     },
   },
 );

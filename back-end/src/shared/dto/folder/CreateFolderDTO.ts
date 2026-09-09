@@ -6,12 +6,13 @@ import {
   IsUUID,
   MaxLength,
 } from 'class-validator';
+import { trimValue } from '../transforms';
 
 export class CreateFolderDTO {
   @IsString()
   @IsNotEmpty()
   @MaxLength(50)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(trimValue)
   name!: string;
 
   @IsUUID()

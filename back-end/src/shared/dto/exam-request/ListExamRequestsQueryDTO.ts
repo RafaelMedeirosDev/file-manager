@@ -8,6 +8,7 @@ import {
   Max,
   Min,
 } from 'class-validator';
+import { parseIntegerValue, toArrayValue } from '../transforms';
 
 export class ListExamRequestsQueryDTO {
   @IsOptional()
@@ -25,28 +26,17 @@ export class ListExamRequestsQueryDTO {
   @IsOptional()
   @IsArray()
   @IsUUID('4', { each: true })
-  @Transform(({ value }) => {
-    if (value === undefined || value === null) return undefined;
-    return Array.isArray(value) ? value : [value];
-  })
+  @Transform(toArrayValue)
   examIds?: string[];
 
   @IsOptional()
-  @Transform(({ value }) => {
-    if (value === undefined) return undefined;
-    const parsed = Number.parseInt(String(value), 10);
-    return Number.isNaN(parsed) ? value : parsed;
-  })
+  @Transform(parseIntegerValue)
   @IsInt()
   @Min(1)
   page?: number;
 
   @IsOptional()
-  @Transform(({ value }) => {
-    if (value === undefined) return undefined;
-    const parsed = Number.parseInt(String(value), 10);
-    return Number.isNaN(parsed) ? value : parsed;
-  })
+  @Transform(parseIntegerValue)
   @IsInt()
   @Min(1)
   @Max(100)

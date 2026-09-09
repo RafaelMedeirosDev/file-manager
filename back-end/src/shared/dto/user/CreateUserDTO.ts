@@ -8,26 +8,25 @@ import {
   IsString,
   MaxLength,
 } from 'class-validator';
+import { trimArrayValues, trimLowerCase, trimValue } from '../transforms';
 
 export class CreateUserDTO {
   @IsString()
   @IsNotEmpty()
   @MaxLength(50)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(trimValue)
   name!: string;
 
   @IsEmail()
   @IsNotEmpty()
   @MaxLength(50)
-  @Transform(({ value }) =>
-    typeof value === 'string' ? value.trim().toLowerCase() : value,
-  )
+  @Transform(trimLowerCase)
   email!: string;
 
   @IsString()
   @IsNotEmpty()
   @MaxLength(50)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(trimValue)
   password!: string;
 
   @IsOptional()
@@ -35,10 +34,6 @@ export class CreateUserDTO {
   @IsString({ each: true })
   @MaxLength(50, { each: true })
   @ArrayMaxSize(20)
-  @Transform(({ value }) =>
-    Array.isArray(value)
-      ? value.map((v: unknown) => (typeof v === 'string' ? v.trim() : v))
-      : value,
-  )
+  @Transform(trimArrayValues)
   folders?: string[];
 }

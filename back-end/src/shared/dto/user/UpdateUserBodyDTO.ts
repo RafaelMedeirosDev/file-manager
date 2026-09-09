@@ -1,18 +1,17 @@
 import { Transform } from 'class-transformer';
 import { IsEmail, IsOptional, IsString, MaxLength } from 'class-validator';
+import { trimLowerCase, trimValue } from '../transforms';
 
 export class UpdateUserBodyDTO {
   @IsOptional()
   @IsEmail()
   @MaxLength(50)
-  @Transform(({ value }) =>
-    typeof value === 'string' ? value.trim().toLowerCase() : value,
-  )
+  @Transform(trimLowerCase)
   email?: string;
 
   @IsOptional()
   @IsString()
   @MaxLength(50)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(trimValue)
   password?: string;
 }
