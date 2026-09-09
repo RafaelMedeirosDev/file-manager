@@ -27,6 +27,15 @@ export const DEFAULT_UPLOAD_CONTENT_TYPE = 'application/octet-stream';
 
 export const BULK_UPLOAD_MAX_FILES = 20;
 
+/**
+ * Quantos arquivos do lote sao processados ao mesmo tempo.
+ *
+ * O limite existe pelo pool de conexoes, nao pelo R2: enviar os 20 de uma vez
+ * disputa 20 conexoes de um pool de 10 e mantem todos os buffers residentes
+ * (ate BULK_UPLOAD_MAX_FILES x MAX_UPLOAD_SIZE_BYTES).
+ */
+export const BULK_UPLOAD_CONCURRENCY = 4;
+
 export const DEFAULT_MAX_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024;
 
 /**
