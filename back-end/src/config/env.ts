@@ -52,9 +52,13 @@ function parseCorsOrigins(): string[] {
     return [DEFAULT_CORS_ORIGIN];
   }
 
+  // A barra final e removida porque o header Origin nunca a envia e a
+  // comparacao do CORS e literal: `https://app.com/` configurado aqui nunca
+  // casaria com `https://app.com` vindo do browser, e o sintoma (requisicao
+  // bloqueada) nao aponta para a causa.
   const origins = value
     .split(',')
-    .map((item) => item.trim())
+    .map((item) => item.trim().replace(/\/+$/, ''))
     .filter(Boolean);
 
   return origins.length > 0 ? origins : [DEFAULT_CORS_ORIGIN];
