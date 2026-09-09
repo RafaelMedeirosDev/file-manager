@@ -1,6 +1,13 @@
 # File Manager
 
+[![CI](https://github.com/RafaelMedeirosDev/file-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/RafaelMedeirosDev/file-manager/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Aplicação full stack em TypeScript para gestão de arquivos por usuário, organizada como um monorepo com API REST em NestJS, SPA em React e um pacote de contratos compartilhados entre as duas pontas.
+
+**Aplicação no ar:** [file-manager.up.railway.app](https://file-manager.up.railway.app)
+
+> O acesso de demonstração será liberado junto com a organização de demo, atualmente em preparação. Para explorar o sistema completo agora, siga [Como executar o projeto](#como-executar-o-projeto) — o seed cria um `ADMIN` e um `USER` prontos para uso.
 
 | Pacote | Stack | Porta padrão |
 |---|---|---|
@@ -84,31 +91,31 @@ Trata-se de um **monorepo full stack**: backend (API REST), frontend (SPA) e um 
 - **Vite 5** (`@vitejs/plugin-react`)
 - **TypeScript 5.7** em modo `strict`
 - **React Router 6** (`createBrowserRouter`)
-- **Axios** com instância única e interceptor de requisição para injeção do token
+- **Axios** com instância única, interceptor de requisição para injeção do token e interceptor de resposta que encerra a sessão em `401` de token expirado
 - **Tailwind CSS 3** + **PostCSS** + **Autoprefixer**, complementados por um conjunto próprio de classes de componente em `src/styles.css`
 - **jsPDF** para geração do PDF de solicitação de exames
 - **serve** para servir o build estático em produção
 
 ### Banco de dados
 - **PostgreSQL** como provider do datasource.
-- **Prisma ORM** como camada de acesso, com **Prisma Migrate** — o histórico conta com **10 migrations** versionadas em `back-end/prisma/migrations/`.
+- **Prisma ORM** como camada de acesso, com **Prisma Migrate** — o histórico conta com **11 migrations** versionadas em `back-end/prisma/migrations/`.
 - Modelagem relacional com 5 entidades, chaves primárias em **UUID**, colunas e tabelas em `snake_case` via `@map`/`@@map`, e timestamps (`created_at`, `updated_at`) e soft delete (`deleted_at`) em todas as tabelas.
 - A conexão é injetada em tempo de execução pelo **driver adapter** (`PrismaPg` sobre um `Pool` do `pg`), incluindo a seleção do schema — o bloco `datasource` do schema não declara `url`.
 
 ### Monorepo e ferramentas
 - **pnpm 10** com workspaces (`back-end`, `front-end`, `shared`).
-- **Turborepo 2** orquestrando as tasks `build`, `lint`, `format`, `test`, `test:e2e`, `dev`, `start:dev` e as tasks de Prisma, com cache e dependências entre pacotes (`dependsOn: ["^build"]`).
+- **Turborepo 2** orquestrando as tasks `build`, `lint`, `lint:ci`, `format`, `test`, `test:e2e`, `dev`, `start:dev` e as tasks de Prisma, com cache e dependências entre pacotes (`dependsOn: ["^build"]`).
 - **`@file-manager/shared`**: pacote interno compilado com `tsc` que centraliza enums (`Role`, `ExamCategory`, `ErrorMessagesEnum`) e contratos de API (`ListResponse<T>`, `PaginatedMeta`, `UserItem`, `FolderItem`, `FolderDetails`, `FileItem`, `ExamItem`, `ExamRequestItem`), consumidos pelos dois lados.
-- ESLint e Prettier estão configurados no `back-end/`. O `front-end/` ainda não possui configuração própria de lint/format.
+- ESLint 9 (flat config) e Prettier estão configurados nos dois workspaces. No `front-end/`, a configuração espelha a do backend e adiciona `eslint-plugin-react-hooks` — com `exhaustive-deps` como **erro**, não aviso.
 
 ### Armazenamento externo
 - **Cloudflare R2**, acessado pela API compatível com S3 através do `@aws-sdk/client-s3`.
 - O cliente é instanciado em `back-end/src/shared/lib/r2Client.ts` com `region: 'auto'` e endpoint montado a partir de `R2_ACCOUNT_ID`.
-- O upload usa `PutObjectCommand`; o download é feito via HTTP a partir da URL pública armazenada, sem uso de URLs pré-assinadas.
+- O upload usa `PutObjectCommand` e o download usa `GetObjectCommand`, ambos autenticados com as credenciais da aplicação. O objeto é resolvido pela chave (`key`) guardada no banco, e não por uma URL — o que permite manter o bucket privado e elimina a possibilidade de SSRF que existia quando o download buscava um endereço vindo do banco.
 
 ### Testes
-- **Jest 30** + **ts-jest** para testes unitários no backend (9 arquivos `*.spec.ts`, concentrados nos use cases de listagem e no domínio de solicitações de exames).
-- **Supertest 7** + **`@nestjs/testing`** para testes end-to-end (2 arquivos em `back-end/test/`), incluindo uma suíte dedicada a **RBAC** que valida os códigos 403/200/201 por papel nas rotas de usuários, pastas e arquivos.
+- **Jest 30** + **ts-jest** para testes unitários no backend: **172 testes em 29 suítes**, cobrindo os 26 use cases (leitura, escrita, upload, download e soft delete) além do fluxo de autenticação.
+- **Supertest 7** + **`@nestjs/testing`** para testes end-to-end (3 arquivos em `back-end/test/`): uma suíte dedicada a **RBAC**, que valida os códigos 403/200/201 por papel nas rotas de usuários, pastas e arquivos, e uma de **limites de upload**, que confirma o 413 e o 415 antes de o handler executar.
 - Não há suíte de testes no frontend nem no pacote `shared/`.
 
 ---
@@ -167,7 +174,7 @@ Rotas registradas:
 file-manager/
 ├── back-end/
 │   ├── prisma/
-│   │   ├── migrations/           # 10 migrations versionadas
+│   │   ├── migrations/           # 11 migrations versionadas
 │   │   └── schema.prisma
 │   ├── src/
 │   │   ├── auth/                 # AuthService, JwtStrategy, guards, @Roles
@@ -219,7 +226,7 @@ Definida em [back-end/prisma/schema.prisma](back-end/prisma/schema.prisma). Prov
 |---|---|---|
 | `User` | `users` | Usuário do sistema. Campos: `id` (UUID), `name`, `email` (único), `password` (hash bcrypt), `role`. |
 | `Folder` | `folders` | Pasta pertencente a um usuário. Possui `folderId` opcional para auto-relacionamento (pasta pai) e a flag `isDefault`, que marca a pasta padrão criada junto com o usuário. |
-| `File` | `files` | Metadados do arquivo: `name`, `extension`, `url` (endereço público no R2), `userId` e `folderId` opcional. O binário não é armazenado no banco. |
+| `File` | `files` | Metadados do arquivo: `name`, `extension`, `key` (chave do objeto no R2, fonte da verdade para leitura), `userId` e `folderId` opcional. A coluna `url` é legado do período em que o bucket era público: continua sendo gravada para permitir rollback, mas não é exposta pela API nem usada para buscar o arquivo. O binário não é armazenado no banco. |
 | `Exam` | `exams` | Item do catálogo de exames: `name`, `code` (único) e `category` (enum `ExamCategory`). |
 | `ExamRequest` | `exam_requests` | Solicitação de exames vinculada a um usuário, com o campo textual `indication` e uma coleção de exames. |
 
@@ -249,8 +256,6 @@ Pastas raiz são identificadas por `folder_id IS NULL`, o que permite navegaçã
 - **Restrições de unicidade**: `users.email` e `exams.code`.
 - **Nomenclatura**: modelos em `PascalCase` no Prisma, tabelas e colunas em `snake_case` no banco via `@map` e `@@map`.
 
-> Não há script de seed no projeto.
-
 ---
 
 ## Autenticação e autorização
@@ -267,11 +272,20 @@ O token tem validade de **1 dia** e é assinado com `JWT_SECRET`. **Não há ref
 
 ### Guards e papéis
 
-- **`JwtAuthGuard`** — estende `AuthGuard('jwt')`. A `JwtStrategy` extrai o token do header `Authorization: Bearer`, valida a expiração e disponibiliza o payload em `req.user`.
+- **`JwtAuthGuard`** — estende `AuthGuard('jwt')`. A `JwtStrategy` extrai o token do header `Authorization: Bearer`, valida a expiração e **confere o usuário no banco a cada requisição**: se ele foi excluído, o token é recusado na hora, sem esperar a expiração. O papel também é lido do banco, então rebaixar um usuário passa a valer imediatamente.
 - **`RolesGuard`** — lê os papéis exigidos com `Reflector.getAllAndOverride`, de modo que um `@Roles(...)` no handler **sobrescreve** o do controller. Sem metadata de papéis, a rota é liberada para qualquer usuário autenticado; sem `req.user`, o acesso é negado.
 - **`@Roles(ROLE.ADMIN, ROLE.USER)`** — decorator que declara os papéis permitidos por rota.
 
-Os guards são aplicados por controller com `@UseGuards(JwtAuthGuard, RolesGuard)`; não há guard global registrado.
+Os guards de autenticação e papel são aplicados por controller com `@UseGuards(JwtAuthGuard, RolesGuard)`. Há um guard global de rate limiting registrado via `APP_GUARD`.
+
+### Proteções de transporte
+
+- **Rate limiting** (`@nestjs/throttler`): teto global de 100 requisições por minuto e limite estrito de **5 por minuto no `POST /auth/login`**, que é a única rota pública que recebe credenciais. Excesso devolve **429**.
+- **CORS por allowlist**: a variável `CORS_ORIGINS` define as origens aceitas, no lugar de refletir qualquer `Origin`.
+- **`helmet`**: aplica `X-Content-Type-Options: nosniff`, HSTS e `X-Frame-Options`. A CSP fica desativada porque a API não serve HTML, e o `Cross-Origin-Resource-Policy` é afrouxado para `cross-origin` de propósito — sem isso o front, que roda em outro domínio, não conseguiria consumir o binário do download.
+- **`trust proxy`**: em produção a API fica atrás do proxy da plataforma. Sem essa configuração o Express veria o IP do proxy em toda requisição, e o rate limiting agruparia todos os clientes no mesmo balde — barraria gente legítima sem conter ninguém.
+
+> **Limitação conhecida do rate limiting:** o contador do throttler é mantido em memória. Com mais de uma instância da API atendendo, cada uma mantém a própria contagem e o limite efetivo passa a ser "limite × número de instâncias". Contém abuso automatizado grosseiro, mas não é um limite preciso. Um limite exato exigiria armazenamento compartilhado entre as instâncias.
 
 ### Matriz de permissões por rota
 
@@ -329,7 +343,7 @@ Cada arquivo é limitado a `MAX_UPLOAD_SIZE_BYTES` (padrão 10 MiB), aplicado pe
 
 > Como o armazenamento é em memória, o limite relevante é o agregado: `BULK_UPLOAD_MAX_FILES` × `MAX_UPLOAD_SIZE_BYTES` é o pior caso de heap por requisição de bulk — 200 MiB com os valores padrão. Ao aumentar o limite por arquivo, reduza a quantidade máxima na mesma proporção.
 
-Só são aceitas as extensões do mapa canônico `MIME_BY_EXTENSION` (`xlsx`, `xls`, `pdf`, `csv`, `txt`, `json`, `zip`, `png`, `jpg`, `jpeg`). Formatos que o browser renderiza como documento ativo — `svg`, `html` — ficam deliberadamente de fora, porque os objetos são servidos publicamente a partir de `R2_PUBLIC_URL` e permitiriam XSS armazenado no domínio da aplicação. Um tipo rejeitado devolve **415**.
+Só são aceitas as extensões do mapa canônico `MIME_BY_EXTENSION` (`xlsx`, `xls`, `pdf`, `csv`, `txt`, `json`, `zip`, `png`, `jpg`, `jpeg`). Formatos que o browser renderiza como documento ativo — `svg`, `html` — ficam deliberadamente de fora. A whitelist nasceu quando os objetos eram servidos publicamente e um arquivo ativo permitiria XSS armazenado; hoje o bucket pode ser privado, mas a restrição continua valendo como defesa em profundidade. Um tipo rejeitado devolve **415**.
 
 O `Content-Type` gravado no R2 é sempre o canônico derivado da extensão, **nunca** o mimetype declarado pelo cliente. Esse é o controle que efetivamente fecha o vetor: sem ele, um `foto.png` anunciado como `text/html` seria servido como HTML mesmo passando pela whitelist de extensão.
 
@@ -363,18 +377,60 @@ O objeto é enviado com `PutObjectCommand` usando uma chave gerada por `randomUU
 
 ### Persistência dos metadados
 
-Após o envio ao R2, é criado um registro na tabela `files` com `name`, `userId`, `folderId`, `extension` e `url`, sendo a URL montada como `${R2_PUBLIC_URL}/${key}`. O binário nunca é gravado no PostgreSQL.
+Após o envio ao R2, é criado um registro na tabela `files` com `name`, `userId`, `folderId`, `extension` e a `key` do objeto (`<uuid>.<extensao>`). A `key` é o que o download usa. A coluna `url` continua sendo preenchida enquanto durar a transição para o bucket privado, apenas para permitir rollback — ela não é exposta pela API. O binário nunca é gravado no PostgreSQL.
 
 ### Download
 
 `GET /files/:id/download` é servido pela própria API, e não por redirecionamento:
 
 - Um requisitante que não seja `ADMIN` precisa ser o dono do arquivo.
-- A URL armazenada é validada (precisa ser `http:` ou `https:`) e requisitada com `fetch` sob um `AbortController` com timeout de **15 segundos**.
-- A resposta é devolvida como `StreamableFile` a partir de `Readable.fromWeb`, com `Content-Type` resolvido por um mapa de extensões conhecidas (xlsx, xls, pdf, csv, txt, json, zip, png, jpg, jpeg) e fallback para `application/octet-stream`, além de `Content-Length` e `Content-Disposition`.
-- Falhas de origem são traduzidas em `GatewayTimeoutException` ou `BadGatewayException`.
+- O objeto é lido com `GetObjectCommand`, pela `key` guardada no banco, usando as credenciais da aplicação — sob um `AbortSignal.timeout` de **15 segundos**.
+- A resposta é devolvida como `StreamableFile` a partir do corpo retornado pelo SDK, com `Content-Type` preferindo o tipo gravado no próprio objeto e caindo no mapa de extensões conhecidas como fallback, além de `Content-Length` e `Content-Disposition`.
+- Falhas são traduzidas em `NotFoundException` (objeto ausente no bucket), `GatewayTimeoutException` (timeout) ou `BadGatewayException` (demais casos).
 
-> **Observações honestas sobre o estado atual:** não são usadas URLs pré-assinadas — o download depende de o objeto ser publicamente legível através de `R2_PUBLIC_URL`. Além disso, o soft delete de um arquivo remove apenas o registro lógico no banco; o objeto correspondente permanece no bucket.
+Ler pelo identificador do objeto, e não por um endereço vindo do banco, é o que torna o modelo de autorização efetivo: como nenhuma URL participa da leitura, não há destino que um requisitante possa influenciar — o vetor de SSRF deixa de existir por construção, em vez de depender de validação.
+
+> **Observações honestas sobre o estado atual:** o código não depende mais de leitura pública, mas o acesso público do bucket ainda precisa ser desativado no painel do Cloudflare para que a exposição termine de fato. URLs pré-assinadas não são usadas — e deixaram de ser necessárias, já que a API entrega o binário por streaming mantendo o RBAC no servidor. O soft delete de um arquivo remove apenas o registro lógico no banco; o objeto correspondente permanece no bucket.
+
+---
+
+## Decisões técnicas
+
+Algumas escolhas do projeto só fazem sentido junto com o problema que resolvem. Estas são as que mais influenciaram o código.
+
+### Ler o arquivo pela chave, não pela URL
+
+O download antes buscava, com `fetch`, o endereço guardado na coluna `url`. Isso trazia dois problemas ao mesmo tempo: obrigava o bucket a ser publicamente legível — o que tornava as checagens de dono meramente decorativas, já que a URL contornava todas — e, como um `ADMIN` podia gravar qualquer endereço via `PATCH /files/:id`, o servidor podia ser induzido a buscar destinos internos (SSRF).
+
+A solução foi guardar a `key` do objeto e ler com `GetObjectCommand`. Nenhum endereço vindo do banco participa da leitura, então o SSRF deixa de existir **por construção**, e não por validação. A migration derivou a `key` das URLs já existentes (a chave sempre foi o último segmento), então nada precisou ser reprocessado. A coluna `url` continua sendo gravada para permitir rollback.
+
+### Falhar na inicialização quando falta configuração
+
+`VITE_API_URL` não tem valor padrão: o módulo lança erro no boot se ela estiver ausente. O motivo é que as duas alternativas escondem o erro. Um fallback fixo para `localhost` faz um build de produção mal configurado chamar a máquina de quem abriu o site; sem `baseURL`, o Axios monta URLs relativas e as chamadas batem na origem do próprio front. Nos dois casos o sintoma aparece como "falha no login", longe da causa real.
+
+Isso espelha o `required()` de `back-end/src/config/env.ts`, que já derrubava a API na ausência de variável obrigatória.
+
+### `CORS_ORIGINS` é opcional de propósito
+
+Parece incoerente com a decisão anterior, mas não é: `env.ts` é validado no momento do *import*, e os testes importam esse módulo. Uma variável obrigatória nova derrubaria build, testes unitários e e2e de uma vez — o próprio `ci.yml` registra esse comportamento em comentário. Como o CI não tem por que conhecer as origens de produção, a variável tem default de desenvolvimento.
+
+### Nem todo 401 significa sessão expirada
+
+O interceptor de resposta encerra a sessão em `401`, mas com duas exceções explícitas: `POST /auth/login` (credencial errada, onde a tela já mostra o erro inline e deslogar apagaria a mensagem) e `PATCH /users/me/password` (senha atual incorreta, onde o usuário está plenamente autenticado). Sem essa distinção, errar a senha antiga no modal deslogaria a pessoa.
+
+O interceptor também é registrado de dentro do `AuthProvider`, e não no módulo do Axios: limpar o `localStorage` de fora não derrubaria o estado do React, e o app continuaria se comportando como autenticado até um reload.
+
+### `trust proxy` é parte do rate limiting
+
+Em produção a API fica atrás do proxy da plataforma. Sem `trust proxy`, o Express vê o IP do proxy em toda requisição e o throttler agrupa todos os clientes no mesmo balde — barrando gente legítima sem conter ninguém. A configuração não é um detalhe de infraestrutura: sem ela o limite aparenta funcionar e não funciona.
+
+### Containerizar apenas o banco
+
+O `docker-compose.yml` sobe só o PostgreSQL. O gargalo de quem clona o projeto é provisionar o banco, não rodar Node — e containerizar o monorepo inteiro seria trabalho de outra ordem para um ganho pequeno. A API e o front seguem em `pnpm dev`.
+
+### `lint:ci` separado de `lint`
+
+O script `lint` roda com `--fix`, o que em CI corrigiria o problema em silêncio em vez de reprovar o pull request. Por isso existe o `lint:ci`, com `--max-warnings 0`, e é ele que o workflow executa.
 
 ---
 
@@ -500,6 +556,7 @@ PORT=3000
 NODE_ENV=development
 LOG_LEVELS=log,error,warn
 MAX_UPLOAD_SIZE_BYTES=10485760
+CORS_ORIGINS=http://localhost:5173
 
 # Cloudflare R2
 R2_ACCOUNT_ID=
@@ -519,6 +576,7 @@ R2_PUBLIC_URL=
 | `NODE_ENV` | Não | Ambiente de execução. Padrão: `development`. |
 | `LOG_LEVELS` | Não | Lista separada por vírgula entre `log`, `error`, `warn`, `debug`, `verbose`, `fatal`. Padrão: `log,error,warn`. |
 | `MAX_UPLOAD_SIZE_BYTES` | Não | Tamanho máximo aceito por arquivo no upload, em bytes. Padrão: `10485760` (10 MiB). |
+| `CORS_ORIGINS` | Não | Origens aceitas pelo CORS, separadas por vírgula. Padrão: `http://localhost:5173`. Uma barra ao final é ignorada. **Em produção precisa listar o domínio do frontend**, senão a API rejeita as chamadas dele. |
 | `R2_ACCOUNT_ID` | Sim | Account ID do Cloudflare R2 — usado para montar o endpoint do cliente S3. |
 | `R2_ACCESS_KEY_ID` | Sim | Access key de acesso ao bucket. |
 | `R2_SECRET_ACCESS_KEY` | Sim | Secret key de acesso ao bucket. |
@@ -531,12 +589,12 @@ A validação e os valores padrão estão centralizados em [back-end/src/config/
 ### Frontend — `front-end/.env`
 
 ```env
-VITE_API_URL=
+VITE_API_URL=http://localhost:3000
 ```
 
 | Variável | Obrigatória | Descrição |
 |---|---|---|
-| `VITE_API_URL` | Não | URL base da API. Se não for informada, o código usa o fallback `http://localhost:3001`. |
+| `VITE_API_URL` | **Sim** | URL base da API. Não há fallback: o módulo lança erro na inicialização se a variável estiver ausente, em vez de tentar uma origem errada em silêncio. Em desenvolvimento, `http://localhost:3000`. |
 
 > Nenhum valor real de credencial deve ser versionado. Os arquivos `.env` estão listados no `.gitignore`; apenas os `.env.example` são rastreados.
 
@@ -550,7 +608,8 @@ VITE_API_URL=
 |---|---|
 | `pnpm dev` | Executa `dev` e `start:dev` em todos os workspaces (API em watch + Vite). |
 | `pnpm build` | Builda todos os workspaces respeitando a ordem de dependências. |
-| `pnpm lint` | Executa o lint nos workspaces que possuem o script. |
+| `pnpm lint` | Executa o ESLint com `--fix` nos workspaces que possuem o script. |
+| `pnpm lint:ci` | Executa o ESLint sem `--fix` e com `--max-warnings 0`. É o comando que o CI usa. |
 | `pnpm format` | Executa a formatação nos workspaces que possuem o script. |
 | `pnpm test` | Executa os testes unitários dos workspaces. |
 | `pnpm test:e2e` | Executa os testes end-to-end. |
@@ -569,6 +628,7 @@ VITE_API_URL=
 | `start` / `start:dev` / `start:debug` | Sobe a API em modo normal, watch ou debug. |
 | `start:prod` | Executa o build compilado (`node dist/src/main.js`). |
 | `lint` | Executa o ESLint com `--fix`. |
+| `lint:ci` | Executa o ESLint sem `--fix`, com `--max-warnings 0`. |
 | `format` | Formata `src/` e `test/` com Prettier. |
 | `test` / `test:watch` / `test:cov` / `test:debug` | Testes unitários com Jest, em suas variações. |
 | `test:e2e` | Testes end-to-end via `test/jest-e2e.json`. |
@@ -581,6 +641,9 @@ VITE_API_URL=
 |---|---|
 | `dev` | Servidor de desenvolvimento do Vite (porta 5173, `strictPort`). |
 | `build` | Type-check com `tsc -b` seguido do build do Vite. |
+| `lint` | ESLint com `--fix` sobre `src/**/*.{ts,tsx}`. |
+| `lint:ci` | ESLint sem `--fix`, com `--max-warnings 0`. |
+| `format` | Prettier sobre `src/**/*.{ts,tsx}`. |
 | `preview` | Serve localmente o build gerado. |
 | `start` | Serve o diretório `dist` com `serve` na porta definida por `$PORT`. |
 
@@ -603,19 +666,23 @@ VITE_API_URL=
 - Soft delete uniforme em todas as entidades, sem nenhuma exclusão física no backend.
 - Paginação, filtro e contagem executados no banco, com contrato de resposta padronizado.
 - Contratos de API compartilhados entre backend e frontend por um pacote único, evitando divergência de tipos.
+- **172 testes unitários em 29 suítes**, cobrindo os 26 use cases e o fluxo de autenticação, mais 10 testes e2e em 3 suítes.
+- Leitura dos arquivos autenticada pelo SDK, sem depender de endereço público, o que elimina o SSRF por construção.
+- Rate limiting, CORS por allowlist e `helmet` no transporte; sessão e papel conferidos no banco a cada requisição.
+- Ambiente publicado, com CI rodando build, lint e as duas suítes de teste em todo pull request.
 
 **O que está parcial ou pendente**
-- **Cobertura de testes parcial**: 55 testes unitários em 11 suítes e 10 testes e2e em 3 suítes. Ainda assim, 16 dos 26 use cases não têm spec — o caminho de escrita (criação, atualização e soft delete) é o mais descoberto.
-- **Sem testes no frontend** — não há runner configurado.
-- **Sem lint/format no frontend** — ESLint e Prettier existem apenas no backend, e o `front-end/` não expõe scripts `lint`/`test`, de modo que `pnpm lint` e `pnpm test` na raiz cobrem apenas a API.
+- **Sem testes no frontend** — não há runner configurado. O lint cobre o workspace (com `react-hooks/exhaustive-deps` como erro), mas não há teste de hook ou de componente.
 - **Sem documentação de API** (Swagger/OpenAPI não está instalado) — o contrato precisa ser lido nos controllers e DTOs.
-- **Sem deploy publicado.** Existe CI (GitHub Actions rodando build, lint e as duas suítes de teste a cada pull request) e um `docker-compose.yml` para o PostgreSQL local, mas nenhum ambiente de demonstração no ar. O único artefato relacionado a deploy é um `railpack.json` no backend.
+- **Sem CD.** O deploy existe e está no ar, mas é acionado fora do pipeline: o CI valida o pull request e não publica nada.
+- **Sem acesso de demonstração aberto.** O ambiente está publicado, mas ainda não há uma organização de demo com credenciais para visitantes.
+- **Rate limiting sem precisão em ambiente multi-instância** — o contador vive em memória, então cada instância mantém a própria contagem (ver a nota em Proteções de transporte).
+- **Sem capturas de tela** no repositório.
 - Camada de estilos mista no frontend: classes utilitárias do Tailwind, um design system em CSS puro e blocos de estilo injetados em tempo de execução em algumas páginas convivem no mesmo projeto.
 - `DashboardPage.tsx` existe mas não está registrada no roteador.
 - Ausência de arquivo de licença.
 
 **Inconsistências conhecidas**
-- A porta padrão da API no código é `3000`, enquanto o fallback do frontend aponta para `http://localhost:3001` — em desenvolvimento é necessário definir `PORT` ou `VITE_API_URL` de forma coerente.
 - `R2_ENDPOINT` aparece no `.env.example` mas não é consumida pelo código.
 - O soft delete de arquivos não remove o objeto correspondente do bucket R2.
 
@@ -627,7 +694,7 @@ VITE_API_URL=
 - **API REST com NestJS 11** aplicando injeção de dependência, módulos, interceptors e uma arquitetura em camadas explícita (`controller → DTO → use case → repository`).
 - **Autenticação JWT** com Passport e hash de senhas com bcrypt.
 - **Controle de acesso por papéis** implementado em duas frentes complementares: guard declarativo por rota e verificação de propriedade dentro das regras de negócio.
-- **Modelagem relacional com Prisma**, incluindo auto-relacionamento para hierarquia de pastas, relação N–N e um histórico de 10 migrations que evidencia evolução incremental do schema.
+- **Modelagem relacional com Prisma**, incluindo auto-relacionamento para hierarquia de pastas, relação N–N e um histórico de 11 migrations que evidencia evolução incremental do schema.
 - **Uso de driver adapter do Prisma** (`@prisma/adapter-pg`) com controle explícito de pool e schema.
 - **Paginação, busca e contagem no banco de dados**, evitando filtragem em memória, com contrato de resposta padronizado `{ data, meta }`.
 - **Integração com armazenamento de objetos** via SDK compatível com S3, incluindo geração de chave, preservação de mimetype, upload em lote com tolerância a falhas parciais e download por streaming com timeout.
@@ -641,22 +708,20 @@ VITE_API_URL=
 
 ## Melhorias futuras
 
-- Ampliar a cobertura de testes unitários para os use cases de escrita (criação, atualização, upload e soft delete).
 - Introduzir um runner de testes no frontend e cobrir hooks e utilitários.
-- Adicionar ESLint e Prettier ao `front-end/`, junto dos scripts `lint`, `format` e `test`, para que os comandos da raiz cubram todo o monorepo.
 - Documentar a API com Swagger/OpenAPI a partir dos DTOs já existentes.
-- Publicar um ambiente de demonstração e adicionar CD ao pipeline de CI existente.
-- Substituir o acesso público aos arquivos por **URLs pré-assinadas**, restringindo a leitura direta do bucket.
+- Adicionar CD ao pipeline de CI, para que o deploy passe pelo mesmo gate dos testes.
+- Abrir uma organização de demonstração, com credenciais de acesso para visitantes.
 - Containerizar a API e o front, e subir um S3 local (MinIO) para que o upload funcione sem credenciais reais do R2.
 - Validar o conteúdo real dos arquivos por *magic bytes*, complementando a checagem de extensão e mimetype.
 - Enviar os uploads em streaming direto para o R2, eliminando o buffer em memória e o limite agregado do bulk.
 - Remover o objeto no R2 (ou movê-lo para uma área de retenção) quando o arquivo for excluído logicamente.
 - Adotar um `ValidationPipe` global e um filtro global de exceções, reduzindo repetição nos controllers e padronizando o corpo das respostas de erro.
-- Implementar refresh token e tratamento automático de `401` no interceptor do Axios.
-- Restringir a origem do CORS por ambiente, hoje configurada para refletir qualquer origem.
+- Implementar refresh token, para que a sessão não expire de uma vez após um dia.
 - Unificar a estratégia de estilos do frontend, eliminando os blocos de CSS injetados em tempo de execução.
-- Alinhar a porta padrão da API entre backend e frontend, e remover a variável `R2_ENDPOINT` não utilizada.
-- Adicionar arquivo de licença, capturas de tela da interface e um ambiente de demonstração publicado.
+- Remover a variável `R2_ENDPOINT`, que aparece no `.env.example` mas não é lida pelo código.
+- Adicionar capturas de tela da interface ao README.
+- Dar precisão ao rate limiting em ambiente multi-instância, com armazenamento de contagem compartilhado.
 
 ---
 

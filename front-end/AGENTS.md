@@ -4,8 +4,9 @@
 - React 18 + Vite + TypeScript
 - Tailwind CSS (classes customizadas em styles.css: app-card, btn-primary, app-input, etc.)
 - React Router v6
-- Axios (instância em src/shared/lib/api.ts)
+- Axios (instância em src/services/api.ts)
 - SEM React Query por enquanto — estado local com useState/useCallback
+- ESLint 9 (flat config) + Prettier configurados: `react-hooks/exhaustive-deps` é **error**
 
 ## Arquitetura (Feature-Based)
 src/
@@ -13,10 +14,16 @@ src/
 │   ├── components/   → UI pura, só recebe props
 │   ├── hooks/        → lógica, estado, chamadas via service
 │   └── services/     → APENAS chamadas HTTP, sem estado
+│   ├── contexts/     → estado compartilhado da feature (quando necessário)
+│   └── utils/        → funções puras da feature
 ├── shared/
+│   ├── components/   → UI reutilizável entre features (Modal)
 │   ├── types/        → interfaces e types globais
-│   ├── utils/        → funções puras reutilizáveis
-│   └── lib/          → instância axios
+│   └── utils/        → funções puras reutilizáveis (apiUtils)
+├── services/         → instância axios (api.ts)
+├── app/              → App, router, guards, layouts
+├── components/       → legado: Sidebar, Icons
+├── types/            → legado: auth
 └── pages/            → montam features, sem lógica própria
 
 ## Regras obrigatórias
@@ -25,25 +32,26 @@ src/
 3. Componentes recebem props e renderizam — sem api.get() dentro
 4. Types globais ficam em shared/types/ — nunca redeclarar o mesmo type
 5. Funções utilitárias reutilizáveis ficam em shared/utils/
-6. Nunca usar `any` — tipar corretamente
+6. Evitar `any` — narrow o tipo ou crie uma interface local (a regra do ESLint está desligada para espelhar o backend, mas a orientação vale)
 7. Classes CSS customizadas já existem em styles.css — usar antes de criar novas
 
 ## Backend (já pronto)
-- Base URL: http://localhost:3001
+- Base URL: http://localhost:3000 (definida por VITE_API_URL, obrigatória)
 - Auth: Bearer token no header Authorization
 - Paginação: { data: T[], meta: { page, limit, total, hasNextPage } }
 - Soft delete: registros têm deletedAt
-- Roles: ADMIN (tudo) | USER (listar + download)
+- Roles: ADMIN (tudo) | USER (lista e baixa os próprios arquivos, faz upload na pasta padrão, exclui os próprios arquivos, troca a própria senha e cria solicitações de exames)
+- 401 de sessão expirada encerra a sessão automaticamente, exceto em /auth/login e /users/me/password
 
 ## Endpoints principais
 - POST /auth/login
 - GET/POST/PATCH/DELETE /users
 - PATCH /users/me/password
 - GET/POST/PATCH/DELETE /folders
-- GET/POST/PATCH/DELETE /files
+- GET/PATCH/DELETE /files, POST /files/upload, POST /files/bulk-upload
 - GET /files/:id/download
-- GET /exams, POST /exams
-- POST /exam-requests
+- GET /exams, POST /exams, DELETE /exams/:id
+- GET/POST/PATCH /exam-requests, GET /exam-requests/:id
 
 ## Login Page Layout Pattern — "Control Room"
 
@@ -71,103 +79,12 @@ Mobile (≤768px): stacks vertically, feature rows hidden.
 
 ---
 
-## 🚀 A Sequência de Trabalho com Agentes
-
-### Etapa 1 — Criar a infraestrutura shared (sem quebrar nada)
-```
-Leia o AGENTS.md. Vamos começar pela infraestrutura shared.
-
-Crie APENAS src/shared/types/index.ts com os types globais
-que estão duplicados nas pages: FileItem, FolderItem, UserItem,
-FolderDetails, FolderChild, ListResponse<T>, PaginatedMeta.
-
-Não crie mais nenhum arquivo. Explique cada type e por que
-ele deve ser compartilhado em vez de redeclarado por arquivo.
-```
-
-### Etapa 2 — Criar os utils compartilhados
-```
-Types aprovados. Agora crie APENAS src/shared/utils/apiUtils.ts com:
-- getApiErrorMessage(error, fallback): string
-- normalizePaginatedResponse<T>(payload, page, limit): PaginatedResult<T>
-
-Essas funções existem copiadas em FoldersPage, FilesPage e UsersPage.
-Explique por que isso é um problema e como centralizar resolve.
-```
-
-### Etapa 3 — Criar o primeiro service
-```
-Agora crie APENAS src/features/folders/services/foldersService.ts
-
-Ele deve ter funções para todos os endpoints de /folders:
-list, getById, create, update, softDelete.
-
-Use a instância axios de src/shared/lib/api.ts.
-Use os types de src/shared/types/index.ts.
-Sem lógica de estado — só HTTP.
-```
-
-### Etapa 4 — Extrair o hook de useFolders
-```
-Service aprovado. Agora crie APENAS
-src/features/folders/hooks/useFolders.ts
-
-Extraia deste hook TODA a lógica que hoje está no FoldersPage:
-- estado de folders, loading, error, paginação
-- IntersectionObserver para scroll infinito
-- handleCreateFolder
-- handleSoftDeleteFolder
-
-A FoldersPage vai virar só JSX que usa este hook.
-Explique o que sai da Page e o que entra no hook.
-```
-
-### Etapa 5 — Limpar a Page
-```
-Hook aprovado. Agora refatore FoldersPage.tsx para que ela:
-- Importe e use useFolders()
-- Contenha APENAS JSX
-- Não tenha nenhum useState ou useEffect próprio
-- Não faça nenhuma chamada api.get() direta
-
-Mostre antes e depois da quantidade de linhas.
-```
-
----
-
-## ⚡ Regras de Ouro para usar agentes neste projeto
-
-**Sempre comece a sessão assim:**
-```
-Leia o AGENTS.md antes de qualquer coisa.
-```
-
-**Quando não entender algo, pergunte assim:**
-```
-Antes de criarmos o hook useFiles, me explica:
-- Por que o hook não deve chamar api.get() diretamente?
-- Qual é a diferença entre o que o service faz e o que o hook faz?
-- O que acontece se eu colocar essa lógica direto no componente?
-```
-
-**Quando o agente criar mais do que pediu:**
-```
-Você criou mais arquivos do que eu pedi.
-Apague tudo que não foi solicitado e vamos fazer um arquivo por vez.
-```
-
-**Para revisar se seguiu a arquitetura:**
-```
-Revise todos os arquivos da feature folders e me diz
-se algum está violando as regras do AGENTS.md.
-Liste os problemas antes de corrigir qualquer coisa.
-```
-
 ## Skills (Plugin: boss-skills)
 
-> Este projeto usa o plugin `boss-skills`. As skills são **OBRIGATÓRIAS** — não opcionais.
-> O agente **DEVE** invocar a skill correspondente antes de escrever qualquer código.
-> Nunca pule uma skill — elas definem os padrões de código e arquitetura do time.
+> Este projeto referencia o plugin `boss-skills`. Se as skills estiverem disponíveis
+> no ambiente, invoque a correspondente antes de editar. Se não estiverem, siga as
+> regras equivalentes em `.claude/rules/` e siga com a tarefa — a ausência da skill
+> não deve bloquear o trabalho.
 >
 > **Auto-ativação:** skills de engenharia ativam automaticamente por contexto (arquivo criado/modificado ou keyword detectada).
 > **Skills disponíveis:** `eng-test`, `eng-solid`, `eng-dto`, `frontend-design`, `claudemd-sync`.
