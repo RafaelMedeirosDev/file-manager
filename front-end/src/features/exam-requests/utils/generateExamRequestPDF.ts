@@ -105,7 +105,7 @@ export function generateExamRequestPDF(user: PdfUser, exams: PdfExam[], indicati
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     doc.setTextColor(40, 40, 40);
-    const lines = doc.splitTextToSize(indication, colW - 6);
+    const lines = doc.splitTextToSize(indication, colW - 6) as string[];
     doc.text(lines, margin + 3, y);
     y += lines.length * 5.5;
   } else {

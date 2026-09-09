@@ -70,7 +70,7 @@ export function useExamRequests(): UseExamRequestsReturn {
       }
     }
 
-    loadOptions();
+    void loadOptions();
     return () => { cancelled = true; };
   }, []);
 

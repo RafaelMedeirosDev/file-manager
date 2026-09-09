@@ -93,7 +93,7 @@ export function useExamRequestWizard(): UseExamRequestWizardReturn {
       }
     }
 
-    load();
+    void load();
     return () => { cancelled = true; };
   }, []);
 
