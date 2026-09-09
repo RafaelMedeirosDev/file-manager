@@ -3,9 +3,12 @@
  *
  * Esta lista e a fonte unica de verdade tanto para a whitelist de upload quanto
  * para o Content-Type devolvido no download. Formatos renderizados pelo browser
- * como documento ativo (svg, html, xhtml) ficam deliberadamente de fora: os
- * objetos sao servidos publicamente a partir de R2_PUBLIC_URL, entao aceita-los
- * permitiria XSS armazenado no dominio da aplicacao.
+ * como documento ativo (svg, html, xhtml) ficam deliberadamente de fora.
+ *
+ * A restricao nasceu quando os objetos eram servidos publicamente e um arquivo
+ * ativo permitiria XSS armazenado. Hoje o bucket e privado e o download sai da
+ * API com Content-Disposition: attachment, mas a whitelist continua valendo
+ * como defesa em profundidade.
  */
 export const MIME_BY_EXTENSION: Record<string, string> = {
   xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

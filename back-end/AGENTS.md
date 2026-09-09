@@ -126,15 +126,17 @@ src/
 ## Cloudflare R2
 - SDK: @aws-sdk/client-s3 (compatível com API S3)
 - Client: src/shared/lib/r2Client.ts
-- Variáveis: R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY,
-             R2_BUCKET_NAME, R2_ENDPOINT, R2_PUBLIC_URL
-- Chave do objeto: {uuid}.{extension}
-- URL pública: {R2_PUBLIC_URL}/{chave}
+- Variáveis: R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME
+- Chave do objeto: {uuid}.{extension}, gravada na coluna `files.key`
+- O bucket é privado. Upload com PutObjectCommand, download com
+  GetObjectCommand pela `key` — nunca por URL. A coluna `url` é legado,
+  não é mais gravada e aguarda remoção.
 
-## Variáveis de ambiente obrigatórias
-DATABASE_URL, DATABASE_SCHEMA, JWT_SECRET, PORT, NODE_ENV,
-R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY,
-R2_BUCKET_NAME, R2_ENDPOINT, R2_PUBLIC_URL
+## Variáveis de ambiente
+Obrigatórias: DATABASE_URL, JWT_SECRET, R2_ACCOUNT_ID, R2_ACCESS_KEY_ID,
+R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME.
+Opcionais com default: DATABASE_SCHEMA, PORT, NODE_ENV, LOG_LEVELS,
+MAX_UPLOAD_SIZE_BYTES, CORS_ORIGINS.
 
 ## Padrão de paginação
 

@@ -62,8 +62,6 @@ export class CreateFileUseCase {
       folderId: input.folderId,
       extension: input.extension,
       key: input.key,
-      // Sem bucket publico nao ha URL a montar: o registro aponta para a chave.
-      url: '',
     });
     this.logger.log('[CreateFileUseCase] Execute finished');
 

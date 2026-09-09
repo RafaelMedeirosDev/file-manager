@@ -93,7 +93,6 @@ describe('UploadFileUseCase', () => {
         userId: 'user-uuid-001',
         folderId: 'folder-uuid-001',
         extension: 'png',
-        url: 'https://cdn.example.com/key.png',
         createdAt: new Date(),
         updatedAt: new Date(),
       });

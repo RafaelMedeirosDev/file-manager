@@ -26,7 +26,6 @@ jobs:
       R2_ACCESS_KEY_ID: ci-placeholder
       R2_SECRET_ACCESS_KEY: ci-placeholder
       R2_BUCKET_NAME: ci-placeholder
-      R2_PUBLIC_URL: https://example.invalid
 
     steps:
       - uses: actions/checkout@v4

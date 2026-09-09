@@ -119,18 +119,13 @@ export class UploadFileUseCase {
     this.logger.log(`[UploadFileUseCase] Uploaded to R2 with key: ${key}`);
 
     // ── Persiste no banco ────────────────────────────────
-    // A `key` e o que o download usa. A `url` continua sendo gravada apenas
-    // enquanto durar a transicao para o bucket privado, para permitir rollback;
-    // ela nao e mais exposta pela API nem usada para buscar o arquivo.
-    const url = `${env.R2_PUBLIC_URL}/${key}`;
-
+    // Somente a `key`: e por ela que o download resolve o binario.
     const file = await this.fileRepository.create({
       name: input.name,
       userId: fileOwnerId,
       folderId: input.folderId,
       extension: input.extension,
       key,
-      url,
     });
 
     this.logger.log('[UploadFileUseCase] Execute finished');

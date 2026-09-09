@@ -67,10 +67,11 @@ model File {
   // Chave do objeto no R2 (`<uuid>.<ext>`). E a fonte da verdade para ler o
   // binario: o download usa GetObjectCommand com esta chave, nunca uma URL.
   key       String    @db.VarChar(255)
-  // Legado: URL publica montada quando o bucket era publico. Continua sendo
-  // preenchida para permitir rollback, mas nao e mais exposta pela API nem
-  // usada para buscar o arquivo. Removivel numa migration futura.
-  url       String    @db.Text
+  // Legado do periodo em que o bucket era publico. Nao e mais gravada, exposta
+  // pela API nem usada para buscar o arquivo: quem resolve o binario e `key`.
+  // Opcional aqui para que os registros antigos preservem o valor enquanto a
+  // coluna aguarda o DROP, previsto para a proxima migration.
+  url       String?   @db.Text
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
