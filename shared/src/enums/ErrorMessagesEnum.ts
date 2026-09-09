@@ -11,6 +11,7 @@ export enum ErrorMessagesEnum {
   FILE_DOWNLOAD_TIMEOUT = 'Tempo limite excedido ao baixar arquivo',
   FILE_DOWNLOAD_UNAVAILABLE = 'Nao foi possivel realizar o download do arquivo',
   FOLDER_DOES_NOT_BELONG_TO_USER = 'A pasta informada nao pertence ao usuario',
+  CANNOT_DELETE_DEFAULT_FOLDER = 'A pasta padrao do usuario nao pode ser excluida',
   AT_LEAST_ONE_FIELD_REQUIRED = 'Informe ao menos um campo para atualizacao',
   INVALID_FOLDER_LIST_FILTER = 'Informe apenas folderId ou rootsOnly',
   INVALID_CURRENT_PASSWORD = 'Senha atual invalida',
