@@ -15,10 +15,30 @@ jobs:
     name: build, lint e testes
     runs-on: ubuntu-latest
 
+    # Postgres real para validar as migrations. As suites de teste continuam
+    # mockando repositorios e o cliente R2, mas migration e DDL: um SQL
+    # invalido ou incompativel com dado existente nao aparece em teste
+    # mockado, so na hora do `migrate deploy`.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
     # src/config/env.ts valida as variaveis obrigatorias no momento do import,
     # e os specs importam esse modulo, entao a suite nem carrega sem elas.
-    # Os valores abaixo sao placeholders sem efeito algum: os testes mockam os
-    # repositorios e o cliente R2, nao abrindo conexao com banco nem bucket.
+    # DATABASE_URL aponta para o servico acima e e usada de verdade pelo passo
+    # de migrations; as R2_* seguem sendo placeholders, porque o cliente R2 e
+    # mockado nos testes.
     env:
       DATABASE_URL: postgresql://ci:ci@localhost:5432/ci?schema=public
       JWT_SECRET: ci-placeholder-not-a-real-secret
@@ -55,6 +75,16 @@ jobs:
       # corrigiria o problema em silencio em vez de reprovar o PR.
       - name: Lint
         run: pnpm lint:ci
+
+      # Aplica o historico inteiro num banco vazio. Pega SQL invalido, ordem
+      # de migration quebrada e schema fora de sincronia -- nenhum deles
+      # visivel para as suites mockadas.
+      - name: Migrations
+        run: pnpm --dir back-end prisma:migrate:deploy
+
+      # De graca, valida tambem o seed, que e passo obrigatorio do onboarding.
+      - name: Seed
+        run: pnpm --dir back-end prisma:seed
 
       - name: Testes unitarios
         run: pnpm test

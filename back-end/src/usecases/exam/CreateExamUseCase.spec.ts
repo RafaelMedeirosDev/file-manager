@@ -90,5 +90,21 @@ describe('CreateExamUseCase', () => {
 
       expect(mockExamRepository.create).not.toHaveBeenCalled();
     });
+
+    it('the code belongs to a soft-deleted exam', async () => {
+      // O repositorio consulta todas as linhas, inclusive as excluidas, porque
+      // a unique do banco tambem nao recorta por deletedAt. Antes o filtro
+      // deixava a guarda passar e o INSERT estourava a constraint: o cliente
+      // recebia 500 no lugar de 409.
+      mockExamRepository.findByCode.mockResolvedValue(
+        examMock({ deletedAt: new Date('2026-02-01T00:00:00.000Z') }),
+      );
+
+      await expect(useCase.execute(inputMock())).rejects.toThrow(
+        new ConflictException(ErrorMessagesEnum.EXAM_CODE_ALREADY_REGISTERED),
+      );
+
+      expect(mockExamRepository.create).not.toHaveBeenCalled();
+    });
   });
 });
