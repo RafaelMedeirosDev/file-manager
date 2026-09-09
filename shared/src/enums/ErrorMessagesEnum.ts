@@ -7,7 +7,6 @@ export enum ErrorMessagesEnum {
   FILE_NOT_FOUND = 'Arquivo nao encontrado',
   FILE_ACCESS_FORBIDDEN = 'Voce nao tem permissao para acessar este arquivo',
   FOLDER_ACCESS_FORBIDDEN = 'Voce nao tem permissao para acessar esta pasta',
-  INVALID_FILE_URL = 'URL do arquivo invalida',
   FILE_DOWNLOAD_TIMEOUT = 'Tempo limite excedido ao baixar arquivo',
   FILE_DOWNLOAD_UNAVAILABLE = 'Nao foi possivel realizar o download do arquivo',
   FOLDER_DOES_NOT_BELONG_TO_USER = 'A pasta informada nao pertence ao usuario',

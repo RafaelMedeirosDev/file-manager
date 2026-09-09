@@ -7,7 +7,6 @@ import { UserController } from './controllers/UserController';
 import { FolderController } from './controllers/FolderController';
 import { FileController } from './controllers/FileController';
 import { AuthModule } from './auth/auth.module';
-import { CreateUserUseCase } from './usecases/user/CreateUserUseCase';
 import { CreateUserWithFoldersUseCase } from './usecases/user/CreateUserWithFoldersUseCase';
 import { PrismaModule } from './database/prisma.module';
 import { UserRepository } from './repositories/UserRepository';
@@ -65,7 +64,6 @@ import { UpdateExamRequestUseCase } from './usecases/exam-request/UpdateExamRequ
     // AppModule, entao nao enxergam este guard e seguem passando.
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     AppService,
-    CreateUserUseCase,
     CreateUserWithFoldersUseCase,
     ListUsersUseCase,
     UpdateUserUseCase,

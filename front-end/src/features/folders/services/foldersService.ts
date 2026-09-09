@@ -1,9 +1,5 @@
 import { api } from '../../../services/api';
-import type {
-  FolderDetails,
-  FolderItem,
-  ListResponse,
-} from '../../../shared/types';
+import type { FolderItem, ListResponse } from '../../../shared/types';
 
 // ── Params & Payloads ────────────────────────────────────
 
@@ -20,10 +16,6 @@ export type CreateFolderPayload = {
   folderId?: string;
 };
 
-export type UpdateFolderPayload = {
-  name: string;
-};
-
 // ── Service ──────────────────────────────────────────────
 
 export const foldersService = {
@@ -35,16 +27,8 @@ export const foldersService = {
       .then((r) => r.data);
   },
 
-  getById(id: string): Promise<FolderDetails> {
-    return api.get<FolderDetails>(`/folders/${id}`).then((r) => r.data);
-  },
-
   create(payload: CreateFolderPayload): Promise<FolderItem> {
     return api.post<FolderItem>('/folders', payload).then((r) => r.data);
-  },
-
-  update(id: string, payload: UpdateFolderPayload): Promise<FolderItem> {
-    return api.patch<FolderItem>(`/folders/${id}`, payload).then((r) => r.data);
   },
 
   softDelete(id: string): Promise<void> {

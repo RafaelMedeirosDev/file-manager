@@ -107,7 +107,7 @@ Folders are hierarchical (self-referencing `folderId`). Files live in a private 
 
 All list routes return `{ data: T[], meta: { page, limit, total, hasNextPage } }`.
 - QueryDTO: `page?` (default 1), `limit?` (default 10, max 100) + domain filters
-- Filtering and pagination happen **in-memory in the UseCase** — repositories expose `findAll()` with no skip/take
+- Filtering, sorting and pagination happen **in the database** — the repository builds `where`/`orderBy`/`skip`/`take`, and each list has a sibling `count()` with the same `where` to feed `hasNextPage`
 - Sorted by `name` using `localeCompare('pt-BR', { sensitivity: 'base' })`
 
 ## Environment Setup

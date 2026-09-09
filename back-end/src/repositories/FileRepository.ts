@@ -29,10 +29,6 @@ export class FileRepository {
     });
   }
 
-  findAll(): Promise<File[]> {
-    return this.prisma.file.findMany();
-  }
-
   listFilesActive(
     requestUserId: string,
     requestRole: ROLE,

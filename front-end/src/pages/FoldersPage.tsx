@@ -43,6 +43,7 @@ export function FoldersPage() {
     folderById,
     loading,
     error,
+    deleteError,
     deletingFolderId,
     selectedDeleteFolderId,
     setSelectedDeleteFolderId,
@@ -155,6 +156,18 @@ export function FoldersPage() {
               {deletingFolderId ? 'Excluindo...' : 'Excluir'}
             </button>
           </div>
+          {deleteError ? (
+            <p
+              style={{
+                marginTop: 8,
+                fontSize: 13,
+                color: '#e11d48',
+                fontFamily: 'Manrope, sans-serif',
+              }}
+            >
+              {deleteError}
+            </p>
+          ) : null}
         </div>
       ) : null}
 

@@ -1384,7 +1384,7 @@ export function ExamRequestsPage() {
             <span className="erl-result-count">
               {loading
                 ? '…'
-                : `${total} solicitação${total !== 1 ? 'ões' : ''}`}
+                : `${total} ${total === 1 ? 'solicitação' : 'solicitações'}`}
             </span>
           </div>
 
