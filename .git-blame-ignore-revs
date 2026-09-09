@@ -1,0 +1,9 @@
+# Commits puramente mecanicos, que devem ser ignorados pelo `git blame`.
+#
+# Uso local (uma vez por clone):
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+#
+# O GitHub aplica este arquivo automaticamente na visualizacao de blame.
+
+# style(front-end): format the source with prettier
+6de056fb6250b847c6c2f588654d6773dd1fb376
