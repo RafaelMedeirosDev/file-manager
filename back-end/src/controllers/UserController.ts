@@ -42,7 +42,21 @@ import {
   ChangeOwnPasswordOutput,
   ChangeOwnPasswordUseCase,
 } from '../usecases/user/ChangeOwnPasswordUseCase';
+import {
+  ApiBearerAuth,
+  ApiForbiddenResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 
+@ApiTags('users')
+@ApiBearerAuth('bearer')
+@ApiUnauthorizedResponse({
+  description: 'Token ausente, invalido ou de usuario excluido',
+})
+@ApiForbiddenResponse({
+  description: 'Papel do usuario nao autorizado para a rota',
+})
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(ROLE.ADMIN)

@@ -65,7 +65,25 @@ import {
   UpdateFileUseCase,
 } from '../usecases/file/UpdateFileUseCase';
 import type { JwtPayload } from '../auth/jwt.strategy';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiForbiddenResponse,
+  ApiOkResponse,
+  ApiProduces,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 
+@ApiTags('files')
+@ApiBearerAuth('bearer')
+@ApiUnauthorizedResponse({
+  description: 'Token ausente, invalido ou de usuario excluido',
+})
+@ApiForbiddenResponse({
+  description: 'Papel do usuario nao autorizado para a rota',
+})
 @Controller('files')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class FileController {
@@ -82,6 +100,21 @@ export class FileController {
 
   @Post('upload')
   @Roles(ROLE.USER, ROLE.ADMIN)
+  // O plugin nao infere multipart: o tipo Express.Multer.File vem de
+  // node_modules e e descartado. Sem este schema a doc diria que a rota
+  // recebe JSON -- errado, e justamente na rota mais interessante.
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['file', 'name', 'folderId'],
+      properties: {
+        file: { type: 'string', format: 'binary' },
+        name: { type: 'string', maxLength: 255 },
+        folderId: { type: 'string', format: 'uuid' },
+      },
+    },
+  })
   @UseInterceptors(
     FileInterceptor('file', {
       limits: { fileSize: env.MAX_UPLOAD_SIZE_BYTES },
@@ -115,6 +148,21 @@ export class FileController {
 
   @Post('bulk-upload')
   @Roles(ROLE.USER, ROLE.ADMIN)
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['files', 'folderId'],
+      properties: {
+        files: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
+          maxItems: BULK_UPLOAD_MAX_FILES,
+        },
+        folderId: { type: 'string', format: 'uuid' },
+      },
+    },
+  })
   @UseInterceptors(
     FilesInterceptor('files', BULK_UPLOAD_MAX_FILES, {
       limits: { fileSize: env.MAX_UPLOAD_SIZE_BYTES },
@@ -183,6 +231,12 @@ export class FileController {
 
   @Get(':id/download')
   @Roles(ROLE.USER, ROLE.ADMIN)
+  @ApiProduces('application/octet-stream')
+  @ApiOkResponse({
+    description:
+      'Binario do arquivo, lido do bucket com as credenciais da aplicacao',
+    schema: { type: 'string', format: 'binary' },
+  })
   async download(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Req() req: Request & { user: JwtPayload },

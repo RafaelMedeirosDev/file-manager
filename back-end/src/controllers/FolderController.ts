@@ -42,7 +42,21 @@ import {
   UpdateFolderUseCase,
 } from '../usecases/folder/UpdateFolderUseCase';
 import type { JwtPayload } from '../auth/jwt.strategy';
+import {
+  ApiBearerAuth,
+  ApiForbiddenResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 
+@ApiTags('folders')
+@ApiBearerAuth('bearer')
+@ApiUnauthorizedResponse({
+  description: 'Token ausente, invalido ou de usuario excluido',
+})
+@ApiForbiddenResponse({
+  description: 'Papel do usuario nao autorizado para a rota',
+})
 @Controller('folders')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class FolderController {

@@ -28,7 +28,21 @@ import {
   SoftDeleteExamOutput,
   SoftDeleteExamUseCase,
 } from '../usecases/exam/SoftDeleteExamUseCase';
+import {
+  ApiBearerAuth,
+  ApiForbiddenResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 
+@ApiTags('exams')
+@ApiBearerAuth('bearer')
+@ApiUnauthorizedResponse({
+  description: 'Token ausente, invalido ou de usuario excluido',
+})
+@ApiForbiddenResponse({
+  description: 'Papel do usuario nao autorizado para a rota',
+})
 @Controller('exams')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ExamController {
