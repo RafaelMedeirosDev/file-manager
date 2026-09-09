@@ -34,10 +34,6 @@ export class ExamRepository {
     });
   }
 
-  findAll(): Promise<Exam[]> {
-    return this.prisma.exam.findMany();
-  }
-
   listExamsActive(
     name?: string,
     code?: string,

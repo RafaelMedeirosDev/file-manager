@@ -34,15 +34,6 @@ export class FolderRepository {
     });
   }
 
-  findAll(): Promise<FolderWithRelations[]> {
-    return this.prisma.folder.findMany({
-      include: {
-        parent: true,
-        children: true,
-      },
-    });
-  }
-
   findActiveByUserIdAndName(input: {
     userId: string;
     name: string;

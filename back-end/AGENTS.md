@@ -170,10 +170,6 @@ O `deletedAt: null` entra no `where`, não num `filter` posterior.
 Cada listagem expõe um `count` irmão com o mesmo `where` (sem `skip`/`take`) para alimentar o `hasNextPage`.
 Busca em vários campos usa o operador `OR`, e filtros opcionais entram por spread condicional.
 
-Os métodos `findAll()` que ainda existem nos repositórios são resíduo de uma
-implementação anterior, que paginava em memória. Não são usados por nenhum use
-case e não devem ser usados em código novo.
-
 ### Output shape (padrão obrigatório)
 ```ts
 { data: T[], meta: { page: number, limit: number, total: number, hasNextPage: boolean } }

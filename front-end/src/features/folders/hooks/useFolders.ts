@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../auth/hooks/useAuth';
 import {
   getApiErrorMessage,
@@ -35,7 +35,6 @@ async function fetchAllRootFolders(): Promise<FolderItem[]> {
 
 type UseFoldersReturn = {
   // Dados
-  folders: FolderItem[];
   usersOptions: UserOption[];
   visibleFolders: FolderItem[];
   usersById: Map<string, string>;
@@ -43,66 +42,41 @@ type UseFoldersReturn = {
 
   // Estados
   loading: boolean;
-  loadingMore: boolean;
   error: string | null;
-  createError: string | null;
-  creating: boolean;
+  deleteError: string | null;
   deletingFolderId: string | null;
 
-  // Filtro e seleção
-  filterUserId: string;
-  setFilterUserId: (id: string) => void;
-  selectedCreateUserId: string;
-  setSelectedCreateUserId: (id: string) => void;
+  // Seleção para exclusão
   selectedDeleteFolderId: string;
   setSelectedDeleteFolderId: (id: string) => void;
-  newFolderName: string;
-  setNewFolderName: (name: string) => void;
 
   // Ações
-  handleCreateFolder: (
-    event: React.FormEvent<HTMLFormElement>,
-  ) => Promise<void>;
   handleSoftDeleteFolder: (
     folderId: string,
     folderName: string,
   ) => Promise<void>;
-
-  // Ref para scroll infinito
-  sentinelRef: React.RefObject<HTMLDivElement>;
 };
 
 // ── Hook ────────────────────────────────────────────────
 
 export function useFolders(): UseFoldersReturn {
   const { user } = useAuth();
-  const { refreshSidebar, selectedUserId, setSelectedUserId, selectUser } =
-    useSidebarContext();
+  const { selectedUserId, selectUser } = useSidebarContext();
 
   const [folders, setFolders] = useState<FolderItem[]>([]);
   const [usersOptions, setUsersOptions] = useState<UserOption[]>([]);
 
   const [loading, setLoading] = useState(false);
-  const [loadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [newFolderName, setNewFolderName] = useState('');
-  const [createError, setCreateError] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
+  // Erro da exclusão fica separado do `error` de carga: `error` substitui a
+  // listagem inteira no render, e uma exclusão que falha não deve esconder as
+  // pastas que continuam lá.
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deletingFolderId, setDeletingFolderId] = useState<string | null>(null);
   const [selectedDeleteFolderId, setSelectedDeleteFolderId] = useState('');
-  const [selectedCreateUserId, setSelectedCreateUserId] = useState('');
-  // filterUserId é alias para selectedUserId do contexto (para compat com FoldersPage até Etapa 4)
-  const filterUserId = selectedUserId ?? '';
-  const setFilterUserId = useCallback(
-    (id: string) => {
-      setSelectedUserId(id || null);
-    },
-    [setSelectedUserId],
-  );
 
   const [reloadKey, setReloadKey] = useState(0);
-  const sentinelRef = useRef<HTMLDivElement>(null);
 
   // ── Dados derivados ──────────────────────────────────
 
@@ -191,9 +165,6 @@ export function useFolders(): UseFoldersReturn {
       try {
         const users = await fetchAllUsers();
         setUsersOptions(users);
-        if (users.length > 0) {
-          setSelectedCreateUserId((prev) => prev || users[0].id);
-        }
       } catch (err) {
         setError(getApiErrorMessage(err, 'Erro ao carregar usuários.'));
       }
@@ -204,40 +175,13 @@ export function useFolders(): UseFoldersReturn {
 
   // ── Ações ────────────────────────────────────────────
 
-  async function handleCreateFolder(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!user) return;
-
-    if (user.role === 'ADMIN' && !selectedCreateUserId) {
-      setCreateError('Selecione um usuário para criar a pasta.');
-      return;
-    }
-
-    setCreating(true);
-    setCreateError(null);
-
-    try {
-      await foldersService.create({
-        name: newFolderName,
-        userId: user.role === 'ADMIN' ? selectedCreateUserId : user.id,
-      });
-      setNewFolderName('');
-      setReloadKey((prev) => prev + 1);
-      refreshSidebar();
-    } catch (err) {
-      setCreateError(getApiErrorMessage(err, 'Erro ao criar pasta.'));
-    } finally {
-      setCreating(false);
-    }
-  }
-
   async function handleSoftDeleteFolder(folderId: string, folderName: string) {
     const confirmed = window.confirm(
       `Deseja realmente excluir a pasta "${folderName}"?`,
     );
     if (!confirmed) return;
 
-    setCreateError(null);
+    setDeleteError(null);
     setDeletingFolderId(folderId);
 
     try {
@@ -245,7 +189,7 @@ export function useFolders(): UseFoldersReturn {
       setSelectedDeleteFolderId('');
       setReloadKey((prev) => prev + 1);
     } catch (err) {
-      setCreateError(getApiErrorMessage(err, 'Erro ao excluir pasta.'));
+      setDeleteError(getApiErrorMessage(err, 'Erro ao excluir pasta.'));
     } finally {
       setDeletingFolderId(null);
     }
@@ -254,27 +198,16 @@ export function useFolders(): UseFoldersReturn {
   // ── Retorno ──────────────────────────────────────────
 
   return {
-    folders,
     usersOptions,
     visibleFolders,
     usersById,
     folderById,
     loading,
-    loadingMore,
     error,
-    createError,
-    creating,
+    deleteError,
     deletingFolderId,
-    filterUserId,
-    setFilterUserId,
-    selectedCreateUserId,
-    setSelectedCreateUserId,
     selectedDeleteFolderId,
     setSelectedDeleteFolderId,
-    newFolderName,
-    setNewFolderName,
-    handleCreateFolder,
     handleSoftDeleteFolder,
-    sentinelRef,
   };
 }

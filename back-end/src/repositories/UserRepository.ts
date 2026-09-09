@@ -70,10 +70,6 @@ export class UserRepository {
     });
   }
 
-  findAll(): Promise<User[]> {
-    return this.prisma.user.findMany();
-  }
-
   listUsersActive(
     search?: string,
     skip?: number,

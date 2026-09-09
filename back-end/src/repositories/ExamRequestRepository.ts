@@ -21,12 +21,6 @@ export type ExamSummary = {
 export class ExamRequestRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAll(): Promise<ExamRequestWithExamsAndUser[]> {
-    return this.prisma.examRequest.findMany({
-      include: { exams: true, user: true },
-    });
-  }
-
   findById(id: string): Promise<ExamRequestWithExamsAndUser | null> {
     return this.prisma.examRequest.findUnique({
       where: { id },

@@ -30,6 +30,34 @@ Trata-se de um **monorepo full stack**: backend (API REST), frontend (SPA) e um 
 
 ---
 
+## Telas
+
+### Login
+
+Ponto de entrada da aplicação. A autenticação é via JWT Bearer, e o token guardado na sessão é enviado por um interceptor do Axios em toda chamada subsequente.
+
+![Tela de login](docs/screenshots/login.png)
+
+### Pastas e arquivos
+
+A barra lateral monta a hierarquia de pastas por usuário, carregada sob demanda conforme os nós são expandidos. O breadcrumb reflete o caminho da pasta aberta, e cada arquivo é baixado por uma chamada autenticada — o bucket é privado, e o binário é resolvido pela `key` do objeto, nunca por URL pública.
+
+![Listagem de pastas e arquivos de um usuário](docs/screenshots/folder-details.png)
+
+### Usuários
+
+Gestão de contas restrita a ADMIN, com o papel de cada usuário visível na listagem. O cadastro cria automaticamente a pasta padrão do usuário na mesma transação, junto de quaisquer pastas extras informadas.
+
+![Listagem de usuários com o papel de cada conta](docs/screenshots/users.png)
+
+### Solicitações de exames
+
+Segundo domínio da aplicação: histórico de solicitações com filtros por período, paciente e exame. Cada solicitação relaciona vários exames do catálogo (relação muitos-para-muitos) e uma indicação clínica. Um ADMIN vê todas as solicitações; um USER vê apenas as próprias.
+
+![Histórico de solicitações de exames com filtros](docs/screenshots/exam-requests.png)
+
+---
+
 ## Principais funcionalidades
 
 ### Autenticação e controle de acesso
@@ -116,7 +144,7 @@ Trata-se de um **monorepo full stack**: backend (API REST), frontend (SPA) e um 
 - O upload usa `PutObjectCommand` e o download usa `GetObjectCommand`, ambos autenticados com as credenciais da aplicação. O objeto é resolvido pela chave (`key`) guardada no banco, e não por uma URL — o que permite manter o bucket privado e elimina a possibilidade de SSRF que existia quando o download buscava um endereço vindo do banco.
 
 ### Testes
-- **Jest 30** + **ts-jest** para testes unitários no backend: **172 testes em 29 suítes**, cobrindo os 26 use cases (leitura, escrita, upload, download e soft delete) além do fluxo de autenticação.
+- **Jest 30** + **ts-jest** para testes unitários no backend: **187 testes em 30 suítes**, cobrindo os 25 use cases (leitura, escrita, upload, download e soft delete) além do fluxo de autenticação.
 - **Supertest 7** + **`@nestjs/testing`** para testes end-to-end (3 arquivos em `back-end/test/`): uma suíte dedicada a **RBAC**, que valida os códigos 403/200/201 por papel nas rotas de usuários, pastas e arquivos, e uma de **limites de upload**, que confirma o 413 e o 415 antes de o handler executar.
 - Não há suíte de testes no frontend nem no pacote `shared/`.
 
@@ -692,24 +720,23 @@ VITE_API_URL=http://localhost:3000
 - Soft delete uniforme em todas as entidades, sem nenhuma exclusão física no backend.
 - Paginação, filtro e contagem executados no banco, com contrato de resposta padronizado.
 - Contratos de API compartilhados entre backend e frontend por um pacote único, evitando divergência de tipos.
-- **172 testes unitários em 29 suítes**, cobrindo os 26 use cases e o fluxo de autenticação, mais 10 testes e2e em 3 suítes.
+- **187 testes unitários em 30 suítes**, cobrindo os 25 use cases e o fluxo de autenticação, mais 10 testes e2e em 3 suítes.
 - Leitura dos arquivos autenticada pelo SDK, sem depender de endereço público, o que elimina o SSRF por construção.
 - Rate limiting, CORS por allowlist e `helmet` no transporte; sessão e papel conferidos no banco a cada requisição.
 - Ambiente publicado, com CI rodando build, lint e as duas suítes de teste em todo pull request.
 
 **O que está parcial ou pendente**
 - **Sem testes no frontend** — não há runner configurado. O lint cobre o workspace (com `react-hooks/exhaustive-deps` como erro), mas não há teste de hook ou de componente.
-- **Sem documentação de API** (Swagger/OpenAPI não está instalado) — o contrato precisa ser lido nos controllers e DTOs.
+- **Respostas do OpenAPI sem schema.** O plugin de CLI infere os schemas dos DTOs de entrada a partir do `class-validator`, mas os corpos de resposta não estão declarados: o `/docs` mostra os parâmetros de cada rota, não o formato do retorno.
 - **Sem CD.** O deploy existe e está no ar, mas é acionado fora do pipeline: o CI valida o pull request e não publica nada.
 - **Sem acesso de demonstração aberto.** O ambiente está publicado, mas ainda não há uma organização de demo com credenciais para visitantes.
 - **Rate limiting sem precisão em ambiente multi-instância** — o contador vive em memória, então cada instância mantém a própria contagem (ver a nota em Proteções de transporte).
-- **Sem capturas de tela** no repositório.
 - Camada de estilos mista no frontend: classes utilitárias do Tailwind, um design system em CSS puro e blocos de estilo injetados em tempo de execução em algumas páginas convivem no mesmo projeto.
-- `DashboardPage.tsx` existe mas não está registrada no roteador.
 - Ausência de arquivo de licença.
 
 **Inconsistências conhecidas**
 - O soft delete de arquivos não remove o objeto correspondente do bucket R2.
+- `PATCH /folders/:id` (renomear pasta) existe na API, com RBAC e teste, mas nenhuma tela do frontend chama a rota.
 
 ---
 
