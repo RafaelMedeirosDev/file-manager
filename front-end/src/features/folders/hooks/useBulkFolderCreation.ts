@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { getApiErrorMessage, normalizePaginatedResponse } from '../../../shared/utils/apiUtils';
+import {
+  getApiErrorMessage,
+  normalizePaginatedResponse,
+} from '../../../shared/utils/apiUtils';
 import type { FolderItem, UserOption } from '../../../shared/types';
 import { foldersService } from '../services/foldersService';
 import { usersService } from '../../users/services/usersService';
@@ -58,7 +61,11 @@ async function fetchAllRootFolders(): Promise<FolderItem[]> {
   let hasMore = true;
 
   while (hasMore) {
-    const raw = await foldersService.list({ rootsOnly: true, page, limit: 100 });
+    const raw = await foldersService.list({
+      rootsOnly: true,
+      page,
+      limit: 100,
+    });
     const parsed = normalizePaginatedResponse<FolderItem>(raw, page, 100);
     all.push(...parsed.items);
     hasMore = parsed.isLegacyArray ? false : parsed.meta.hasNextPage;
@@ -96,7 +103,9 @@ export function useBulkFolderCreation(): UseBulkFolderCreationReturn {
 
   // ── Etapa 2 ──────────────────────────────────────────
   const [usersOptions, setUsersOptions] = useState<UserOption[]>([]);
-  const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
+  const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(
+    new Set(),
+  );
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -131,7 +140,9 @@ export function useBulkFolderCreation(): UseBulkFolderCreationReturn {
       setFolderInputError('Digite um nome para a pasta.');
       return;
     }
-    const duplicate = folderNames.some((n) => n.toLowerCase() === name.toLowerCase());
+    const duplicate = folderNames.some(
+      (n) => n.toLowerCase() === name.toLowerCase(),
+    );
     if (duplicate) {
       setFolderInputError('Já existe uma pasta com esse nome na lista.');
       return;
@@ -190,7 +201,9 @@ export function useBulkFolderCreation(): UseBulkFolderCreationReturn {
       for (const folderName of folderNames) {
         for (const userId of userIds) {
           const conflict = allFolders.some(
-            (f) => f.userId === userId && f.name.toLowerCase() === folderName.toLowerCase(),
+            (f) =>
+              f.userId === userId &&
+              f.name.toLowerCase() === folderName.toLowerCase(),
           );
           combos.push({ folderName, userId, conflict });
         }
@@ -218,19 +231,34 @@ export function useBulkFolderCreation(): UseBulkFolderCreationReturn {
     const tasks = valid.map((c) =>
       foldersService
         .create({ name: c.folderName, userId: c.userId })
-        .then((): CreationResult => ({ folderName: c.folderName, userId: c.userId, status: 'fulfilled' }))
-        .catch((err): CreationResult => ({
-          folderName: c.folderName,
-          userId: c.userId,
-          status: 'rejected',
-          error: getApiErrorMessage(err, 'Erro ao criar pasta.'),
-        })),
+        .then(
+          (): CreationResult => ({
+            folderName: c.folderName,
+            userId: c.userId,
+            status: 'fulfilled',
+          }),
+        )
+        .catch(
+          (err): CreationResult => ({
+            folderName: c.folderName,
+            userId: c.userId,
+            status: 'rejected',
+            error: getApiErrorMessage(err, 'Erro ao criar pasta.'),
+          }),
+        ),
     );
 
     const settled = await Promise.allSettled(tasks);
 
     const results: CreationResult[] = settled.map((r) =>
-      r.status === 'fulfilled' ? r.value : { folderName: '', userId: '', status: 'rejected', error: 'Erro inesperado.' },
+      r.status === 'fulfilled'
+        ? r.value
+        : {
+            folderName: '',
+            userId: '',
+            status: 'rejected',
+            error: 'Erro inesperado.',
+          },
     );
 
     setCreationResults(results);

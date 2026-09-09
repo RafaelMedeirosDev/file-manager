@@ -94,7 +94,9 @@ export function useExamRequestWizard(): UseExamRequestWizardReturn {
     }
 
     void load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Derived values
@@ -118,9 +120,11 @@ export function useExamRequestWizard(): UseExamRequestWizardReturn {
     : exams;
 
   const canAdvance =
-    currentStep === 1 ? selectedUserId !== null :
-    currentStep === 2 ? selectedExamIds.length > 0 :
-    true;
+    currentStep === 1
+      ? selectedUserId !== null
+      : currentStep === 2
+        ? selectedExamIds.length > 0
+        : true;
 
   const toggleExam = useCallback((id: string) => {
     setSelectedExamIds((prev) =>
@@ -141,7 +145,8 @@ export function useExamRequestWizard(): UseExamRequestWizardReturn {
   }, [currentStep]);
 
   const handleSubmit = useCallback(async () => {
-    if (!selectedUserId || selectedExamIds.length === 0 || !selectedUser) return;
+    if (!selectedUserId || selectedExamIds.length === 0 || !selectedUser)
+      return;
 
     setSubmitting(true);
     setError(null);
@@ -160,7 +165,13 @@ export function useExamRequestWizard(): UseExamRequestWizardReturn {
     } finally {
       setSubmitting(false);
     }
-  }, [selectedUserId, selectedExamIds, indication, selectedUser, selectedExams]);
+  }, [
+    selectedUserId,
+    selectedExamIds,
+    indication,
+    selectedUser,
+    selectedExams,
+  ]);
 
   const resetWizard = useCallback(() => {
     setCurrentStep(1);

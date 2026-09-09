@@ -1,5 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { ExamRequestItem, ExamItem, UserItem } from '../../../shared/types';
+import type {
+  ExamRequestItem,
+  ExamItem,
+  UserItem,
+} from '../../../shared/types';
 import { examRequestsService } from '../services/examRequestsService';
 import { examsService } from '../../exams/services/examsService';
 import { usersService } from '../../users/services/usersService';
@@ -71,7 +75,9 @@ export function useExamRequests(): UseExamRequestsReturn {
     }
 
     void loadOptions();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Fetch exam requests, debounced on filter changes
@@ -123,7 +129,7 @@ export function useExamRequests(): UseExamRequestsReturn {
   }, []);
 
   const updateRequest = useCallback((updated: ExamRequestItem) => {
-    setRequests((prev) => prev.map((r) => r.id === updated.id ? updated : r));
+    setRequests((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
   }, []);
 
   return {

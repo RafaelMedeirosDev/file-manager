@@ -55,7 +55,11 @@ export function useExamManagement() {
     setCreating(true);
     setCreateError(null);
     try {
-      await examsService.create({ name: name.trim(), code: code.trim().toUpperCase(), category });
+      await examsService.create({
+        name: name.trim(),
+        code: code.trim().toUpperCase(),
+        category,
+      });
       setName('');
       setCode('');
       setCategory('');
@@ -69,7 +73,9 @@ export function useExamManagement() {
   }
 
   async function handleDelete(id: string, examName: string) {
-    const confirmed = window.confirm(`Deseja realmente excluir o exame "${examName}"?`);
+    const confirmed = window.confirm(
+      `Deseja realmente excluir o exame "${examName}"?`,
+    );
     if (!confirmed) return;
 
     setActionError(null);
@@ -88,12 +94,24 @@ export function useExamManagement() {
   }
 
   return {
-    exams, total, page, totalPages, loading, error,
-    name, setName,
-    code, setCode,
-    category, setCategory,
-    creating, createError,
-    deletingId, actionError,
-    goToPage, handleCreate, handleDelete,
+    exams,
+    total,
+    page,
+    totalPages,
+    loading,
+    error,
+    name,
+    setName,
+    code,
+    setCode,
+    category,
+    setCategory,
+    creating,
+    createError,
+    deletingId,
+    actionError,
+    goToPage,
+    handleCreate,
+    handleDelete,
   };
 }

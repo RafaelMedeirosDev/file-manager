@@ -10,16 +10,16 @@ export function useCreateUser() {
   const navigate = useNavigate();
 
   // ── Wizard navigation ─────────────────────────────────
-  const [step, setStep]           = useState<Step>(1);
+  const [step, setStep] = useState<Step>(1);
   const [direction, setDirection] = useState<Direction>('forward');
 
   // ── Step 1: Identity ──────────────────────────────────
-  const [name, setName]                       = useState('');
-  const [email, setEmail]                     = useState('');
-  const [password, setPassword]               = useState('');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  const passwordsMatch     = password === confirmPassword;
+  const passwordsMatch = password === confirmPassword;
   const passwordLongEnough = password.length >= 6;
   const step1Valid =
     name.trim().length > 0 &&
@@ -28,7 +28,7 @@ export function useCreateUser() {
     passwordsMatch;
 
   // ── Step 2: Folders ───────────────────────────────────
-  const [folders, setFolders]         = useState<string[]>([]);
+  const [folders, setFolders] = useState<string[]>([]);
   const [folderInput, setFolderInput] = useState('');
 
   function addFolder() {
@@ -50,7 +50,7 @@ export function useCreateUser() {
   }
 
   // ── Step 3: Submit ────────────────────────────────────
-  const [loading, setLoading]       = useState(false);
+  const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   // ── Navigation ────────────────────────────────────────
@@ -87,19 +87,32 @@ export function useCreateUser() {
 
   return {
     // Navigation
-    step, direction,
-    goNext, goBack,
+    step,
+    direction,
+    goNext,
+    goBack,
     // Step 1
-    name, setName,
-    email, setEmail,
-    password, setPassword,
-    confirmPassword, setConfirmPassword,
-    step1Valid, passwordsMatch, passwordLongEnough,
+    name,
+    setName,
+    email,
+    setEmail,
+    password,
+    setPassword,
+    confirmPassword,
+    setConfirmPassword,
+    step1Valid,
+    passwordsMatch,
+    passwordLongEnough,
     // Step 2
-    folders, folderInput, setFolderInput,
-    addFolder, removeFolder, handleFolderKeyDown,
+    folders,
+    folderInput,
+    setFolderInput,
+    addFolder,
+    removeFolder,
+    handleFolderKeyDown,
     // Step 3
-    loading, submitError,
+    loading,
+    submitError,
     handleSubmit,
   };
 }

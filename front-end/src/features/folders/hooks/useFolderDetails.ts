@@ -45,8 +45,14 @@ type UseFolderDetailsReturn = {
   uploading: boolean;
 
   // Ações
-  handleCreateSubFolder: (event: React.FormEvent<HTMLFormElement>) => Promise<void>;
-  handleDownload: (fileId: string, fileName: string, extension: string) => Promise<void>;
+  handleCreateSubFolder: (
+    event: React.FormEvent<HTMLFormElement>,
+  ) => Promise<void>;
+  handleDownload: (
+    fileId: string,
+    fileName: string,
+    extension: string,
+  ) => Promise<void>;
   handleDeleteFile: (fileId: string, fileName: string) => Promise<void>;
 };
 
@@ -63,7 +69,9 @@ export function useFolderDetails(): UseFolderDetailsReturn {
   const [actionError, setActionError] = useState<string | null>(null);
   const [newFolderName, setNewFolderName] = useState('');
   const [creatingFolder, setCreatingFolder] = useState(false);
-  const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
+  const [downloadingFileId, setDownloadingFileId] = useState<string | null>(
+    null,
+  );
   const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [uploadQueue, setUploadQueue] = useState<UploadQueueItem[]>([]);
@@ -107,23 +115,45 @@ export function useFolderDetails(): UseFolderDetailsReturn {
     if (!folder) return [];
 
     const normalizedSearch = searchTerm.trim().toLowerCase();
-    const rawChildren = (
-      (folder as FolderDetails & { subfolders?: FolderDetails['children']; folders?: FolderDetails['children'] }).children
-      ?? (folder as FolderDetails & { subfolders?: FolderDetails['children']; folders?: FolderDetails['children'] }).subfolders
-      ?? (folder as FolderDetails & { subfolders?: FolderDetails['children']; folders?: FolderDetails['children'] }).folders
-      ?? []
-    );
+    const rawChildren =
+      (
+        folder as FolderDetails & {
+          subfolders?: FolderDetails['children'];
+          folders?: FolderDetails['children'];
+        }
+      ).children ??
+      (
+        folder as FolderDetails & {
+          subfolders?: FolderDetails['children'];
+          folders?: FolderDetails['children'];
+        }
+      ).subfolders ??
+      (
+        folder as FolderDetails & {
+          subfolders?: FolderDetails['children'];
+          folders?: FolderDetails['children'];
+        }
+      ).folders ??
+      [];
 
     const folders = rawChildren
       .filter((child) =>
-        normalizedSearch ? child.name.toLowerCase().includes(normalizedSearch) : true,
+        normalizedSearch
+          ? child.name.toLowerCase().includes(normalizedSearch)
+          : true,
       )
-      .map<ExplorerEntry>((child) => ({ type: 'folder', id: child.id, name: child.name }));
+      .map<ExplorerEntry>((child) => ({
+        type: 'folder',
+        id: child.id,
+        name: child.name,
+      }));
 
     const files = folder.files
       .filter((file) => {
         if (!normalizedSearch) return true;
-        return `${file.name}.${file.extension}`.toLowerCase().includes(normalizedSearch);
+        return `${file.name}.${file.extension}`
+          .toLowerCase()
+          .includes(normalizedSearch);
       })
       .map<ExplorerEntry>((file) => ({
         type: 'file',
@@ -137,7 +167,9 @@ export function useFolderDetails(): UseFolderDetailsReturn {
 
   // ── Ações ────────────────────────────────────────────
 
-  async function handleCreateSubFolder(event: React.FormEvent<HTMLFormElement>) {
+  async function handleCreateSubFolder(
+    event: React.FormEvent<HTMLFormElement>,
+  ) {
     event.preventDefault();
     if (!user || !id || !folder) return;
 
@@ -146,12 +178,18 @@ export function useFolderDetails(): UseFolderDetailsReturn {
 
     try {
       const ownerId = user.role === 'ADMIN' ? folder.userId : user.id;
-      await folderDetailsService.createSubFolder({ name: newFolderName, userId: ownerId, folderId: id });
+      await folderDetailsService.createSubFolder({
+        name: newFolderName,
+        userId: ownerId,
+        folderId: id,
+      });
       setNewFolderName('');
       refreshSidebar();
       await fetchFolder();
     } catch (err) {
-      setActionError(getApiErrorMessage(err, 'Não foi possível criar a pasta.'));
+      setActionError(
+        getApiErrorMessage(err, 'Não foi possível criar a pasta.'),
+      );
     } finally {
       setCreatingFolder(false);
     }
@@ -214,8 +252,15 @@ export function useFolderDetails(): UseFolderDetailsReturn {
 
         const now = new Date().toISOString();
         const incomingFiles = res.results
-          .filter((result): result is { id: string; name: string; extension: string; error?: string } =>
-            Boolean(result.id && !result.error),
+          .filter(
+            (
+              result,
+            ): result is {
+              id: string;
+              name: string;
+              extension: string;
+              error?: string;
+            } => Boolean(result.id && !result.error),
           )
           .map((result) => ({
             id: result.id,
@@ -230,7 +275,9 @@ export function useFolderDetails(): UseFolderDetailsReturn {
         if (incomingFiles.length === 0) return prev;
 
         const existingIds = new Set(prev.files.map((file) => file.id));
-        const uniqueIncoming = incomingFiles.filter((file) => !existingIds.has(file.id));
+        const uniqueIncoming = incomingFiles.filter(
+          (file) => !existingIds.has(file.id),
+        );
 
         if (uniqueIncoming.length === 0) return prev;
 
@@ -249,14 +296,21 @@ export function useFolderDetails(): UseFolderDetailsReturn {
             : item,
         ),
       );
-      setActionError(getApiErrorMessage(err, 'Não foi possível fazer o upload dos arquivos.'));
+      setActionError(
+        getApiErrorMessage(
+          err,
+          'Não foi possível fazer o upload dos arquivos.',
+        ),
+      );
     } finally {
       setUploading(false);
     }
   }
 
   async function handleDeleteFile(fileId: string, fileName: string) {
-    const confirmed = window.confirm(`Deseja realmente excluir o arquivo "${fileName}"?`);
+    const confirmed = window.confirm(
+      `Deseja realmente excluir o arquivo "${fileName}"?`,
+    );
     if (!confirmed) return;
 
     setActionError(null);
@@ -269,13 +323,19 @@ export function useFolderDetails(): UseFolderDetailsReturn {
         return { ...prev, files: prev.files.filter((f) => f.id !== fileId) };
       });
     } catch (err) {
-      setActionError(getApiErrorMessage(err, 'Não foi possível excluir o arquivo.'));
+      setActionError(
+        getApiErrorMessage(err, 'Não foi possível excluir o arquivo.'),
+      );
     } finally {
       setDeletingFileId(null);
     }
   }
 
-  async function handleDownload(fileId: string, fileName: string, extension: string) {
+  async function handleDownload(
+    fileId: string,
+    fileName: string,
+    extension: string,
+  ) {
     setActionError(null);
     setDownloadingFileId(fileId);
 
@@ -290,7 +350,9 @@ export function useFolderDetails(): UseFolderDetailsReturn {
       anchor.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      setActionError(getApiErrorMessage(err, 'Não foi possível baixar o arquivo.'));
+      setActionError(
+        getApiErrorMessage(err, 'Não foi possível baixar o arquivo.'),
+      );
     } finally {
       setDownloadingFileId(null);
     }

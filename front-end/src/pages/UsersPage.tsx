@@ -8,14 +8,27 @@ function buildPages(current: number, total: number): (number | '...')[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
   const pages: (number | '...')[] = [1];
   if (current > 3) pages.push('...');
-  for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) pages.push(i);
+  for (
+    let i = Math.max(2, current - 1);
+    i <= Math.min(total - 1, current + 1);
+    i++
+  )
+    pages.push(i);
   if (current < total - 2) pages.push('...');
   pages.push(total);
   return pages;
 }
 
-function Pagination({ page, totalPages, totalUsers, onPage }: {
-  page: number; totalPages: number; totalUsers: number; onPage: (p: number) => void;
+function Pagination({
+  page,
+  totalPages,
+  totalUsers,
+  onPage,
+}: {
+  page: number;
+  totalPages: number;
+  totalUsers: number;
+  onPage: (p: number) => void;
 }) {
   if (totalPages <= 1) return null;
   const pages = buildPages(page, totalPages);
@@ -24,26 +37,68 @@ function Pagination({ page, totalPages, totalUsers, onPage }: {
 
   return (
     <div className="pagination">
-      <span className="pagination-info">{from}–{to} de {totalUsers} usuário{totalUsers !== 1 ? 's' : ''}</span>
+      <span className="pagination-info">
+        {from}–{to} de {totalUsers} usuário{totalUsers !== 1 ? 's' : ''}
+      </span>
       <div className="pagination-controls">
-        <button className="pagination-btn" onClick={() => onPage(page - 1)} disabled={page === 1}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <button
+          className="pagination-btn"
+          onClick={() => onPage(page - 1)}
+          disabled={page === 1}
+        >
+          <svg
+            width="13"
+            height="13"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
             <path d="M15 18l-6-6 6-6" />
           </svg>
-          <span className="pagination-btn-label" style={{ marginLeft: 4 }}>Anterior</span>
+          <span className="pagination-btn-label" style={{ marginLeft: 4 }}>
+            Anterior
+          </span>
         </button>
 
         {pages.map((p, i) =>
-          p === '...'
-            ? <span key={`e${i}`} className="pagination-ellipsis">…</span>
-            : <button key={p} className={`pagination-btn${p === page ? ' active' : ''}`} onClick={() => onPage(p)}>{p}</button>
+          p === '...' ? (
+            <span key={`e${i}`} className="pagination-ellipsis">
+              …
+            </span>
+          ) : (
+            <button
+              key={p}
+              className={`pagination-btn${p === page ? ' active' : ''}`}
+              onClick={() => onPage(p)}
+            >
+              {p}
+            </button>
+          ),
         )}
 
-        <button className="pagination-btn" onClick={() => onPage(page + 1)} disabled={page === totalPages}>
-          <span className="pagination-btn-label" style={{ marginRight: 4 }}>Próxima</span>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <button
+          className="pagination-btn"
+          onClick={() => onPage(page + 1)}
+          disabled={page === totalPages}
+        >
+          <span className="pagination-btn-label" style={{ marginRight: 4 }}>
+            Próxima
+          </span>
+          <svg
+            width="13"
+            height="13"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
             <path d="M9 18l6-6-6-6" />
           </svg>
         </button>
@@ -53,8 +108,14 @@ function Pagination({ page, totalPages, totalUsers, onPage }: {
 }
 
 const AVATAR_COLORS = [
-  'av-blue', 'av-indigo', 'av-violet', 'av-teal',
-  'av-amber', 'av-rose', 'av-green', 'av-orange',
+  'av-blue',
+  'av-indigo',
+  'av-violet',
+  'av-teal',
+  'av-amber',
+  'av-rose',
+  'av-green',
+  'av-orange',
 ] as const;
 
 function getAvatarColor(name: string): string {
@@ -70,9 +131,17 @@ function getInitials(name: string): string {
 
 function SearchIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-      strokeLinejoin="round" aria-hidden="true">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <circle cx="11" cy="11" r="7" />
       <path d="m20 20-3.5-3.5" />
     </svg>
@@ -81,9 +150,17 @@ function SearchIcon() {
 
 function EmptySearchIcon() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"
-      strokeLinejoin="round" aria-hidden="true">
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <circle cx="11" cy="11" r="7" />
       <path d="m20 20-3.5-3.5" />
       <path d="M8 11h6" opacity="0.5" />
@@ -94,9 +171,17 @@ function EmptySearchIcon() {
 export function UsersPage() {
   const { user } = useAuth();
   const {
-    users, totalUsers, loading, error, actionError, deletingUserId,
-    searchTerm, setSearchTerm,
-    page, totalPages, goToPage,
+    users,
+    totalUsers,
+    loading,
+    error,
+    actionError,
+    deletingUserId,
+    searchTerm,
+    setSearchTerm,
+    page,
+    totalPages,
+    goToPage,
     handleSoftDeleteUser,
   } = useUsers();
 
@@ -106,10 +191,15 @@ export function UsersPage() {
   return (
     <>
       {/* Page Header */}
-      <div className="page-header" style={{ paddingBottom: 4, flexWrap: 'wrap' }}>
+      <div
+        className="page-header"
+        style={{ paddingBottom: 4, flexWrap: 'wrap' }}
+      >
         <div>
           <h1 className="page-title">Usuários</h1>
-          <p className="page-subtitle">Gerencie contas, permissões e acesso ao workspace.</p>
+          <p className="page-subtitle">
+            Gerencie contas, permissões e acesso ao workspace.
+          </p>
         </div>
         {isAdmin ? (
           <button
@@ -126,12 +216,26 @@ export function UsersPage() {
       {/* Content */}
       <div className="page-content">
         {error ? (
-          <p style={{ fontSize: 13, color: '#e11d48', fontFamily: 'Manrope, sans-serif', marginBottom: 12 }}>
+          <p
+            style={{
+              fontSize: 13,
+              color: '#e11d48',
+              fontFamily: 'Manrope, sans-serif',
+              marginBottom: 12,
+            }}
+          >
             {error}
           </p>
         ) : null}
         {actionError ? (
-          <p style={{ fontSize: 13, color: '#e11d48', fontFamily: 'Manrope, sans-serif', marginBottom: 12 }}>
+          <p
+            style={{
+              fontSize: 13,
+              color: '#e11d48',
+              fontFamily: 'Manrope, sans-serif',
+              marginBottom: 12,
+            }}
+          >
             {actionError}
           </p>
         ) : null}
@@ -151,7 +255,9 @@ export function UsersPage() {
               />
             </div>
             <span className="users-count">
-              {loading ? '…' : `${totalUsers} usuário${totalUsers !== 1 ? 's' : ''}`}
+              {loading
+                ? '…'
+                : `${totalUsers} usuário${totalUsers !== 1 ? 's' : ''}`}
             </span>
           </div>
 
@@ -218,13 +324,25 @@ export function UsersPage() {
               ) : null}
             </>
           ) : (
-            <div style={{ padding: '24px 20px', fontFamily: 'Manrope, sans-serif', fontSize: 13, color: '#94a3b8' }}>
+            <div
+              style={{
+                padding: '24px 20px',
+                fontFamily: 'Manrope, sans-serif',
+                fontSize: 13,
+                color: '#94a3b8',
+              }}
+            >
               Carregando...
             </div>
           )}
         </div>
 
-        <Pagination page={page} totalPages={totalPages} totalUsers={totalUsers} onPage={goToPage} />
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          totalUsers={totalUsers}
+          onPage={goToPage}
+        />
       </div>
     </>
   );

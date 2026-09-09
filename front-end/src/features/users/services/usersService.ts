@@ -34,20 +34,14 @@ export const usersService = {
   },
 
   create(payload: CreateUserPayload): Promise<UserItem> {
-    return api
-      .post<UserItem>('/users', payload)
-      .then((r) => r.data);
+    return api.post<UserItem>('/users', payload).then((r) => r.data);
   },
 
   changeOwnPassword(payload: ChangeOwnPasswordPayload): Promise<void> {
-    return api
-      .patch('/users/me/password', payload)
-      .then(() => undefined);
+    return api.patch('/users/me/password', payload).then(() => undefined);
   },
 
   softDelete(id: string): Promise<void> {
-    return api
-      .delete(`/users/${id}`)
-      .then(() => undefined);
+    return api.delete(`/users/${id}`).then(() => undefined);
   },
 };

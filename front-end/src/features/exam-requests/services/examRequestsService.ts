@@ -48,12 +48,13 @@ export const examRequestsService = {
   },
 
   getById(id: string): Promise<ExamRequestItem> {
-    return api
-      .get<ExamRequestItem>(`/exam-requests/${id}`)
-      .then((r) => r.data);
+    return api.get<ExamRequestItem>(`/exam-requests/${id}`).then((r) => r.data);
   },
 
-  update(id: string, payload: { indication?: string; examIds?: string[] }): Promise<ExamRequestItem> {
+  update(
+    id: string,
+    payload: { indication?: string; examIds?: string[] },
+  ): Promise<ExamRequestItem> {
     return api
       .patch<ExamRequestItem>(`/exam-requests/${id}`, payload)
       .then((r) => r.data);

@@ -6,8 +6,14 @@ import type { ExamItem } from '../shared/types';
 // ── Avatar helpers (mirrors UsersPage) ───────────────────────────────────────
 
 const AVATAR_COLORS = [
-  'av-blue', 'av-indigo', 'av-violet', 'av-teal',
-  'av-amber', 'av-rose', 'av-green', 'av-orange',
+  'av-blue',
+  'av-indigo',
+  'av-violet',
+  'av-teal',
+  'av-amber',
+  'av-rose',
+  'av-green',
+  'av-orange',
 ] as const;
 
 function getAvatarColor(name: string): string {
@@ -22,14 +28,19 @@ function getInitials(name: string): string {
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('pt-BR', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
   });
 }
 
 function formatDateTime(iso: string): string {
   return new Date(iso).toLocaleString('pt-BR', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 }
 
@@ -853,19 +864,38 @@ const STYLES = `
 
 function ChevronDown() {
   return (
-    <svg className="erl-filter-chevron" width="12" height="8" viewBox="0 0 12 8"
-      fill="none" aria-hidden="true">
-      <path d="M1 1l5 5 5-5" stroke="currentColor" strokeWidth="1.6"
-        strokeLinecap="round" strokeLinejoin="round" />
+    <svg
+      className="erl-filter-chevron"
+      width="12"
+      height="8"
+      viewBox="0 0 12 8"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M1 1l5 5 5-5"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
 
 function EmptyIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"
-      strokeLinejoin="round" aria-hidden="true">
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
       <rect x="9" y="3" width="6" height="4" rx="1" />
       <path d="M9 12h6M9 16h4" />
@@ -877,9 +907,17 @@ function EmptyIcon() {
 
 function EditIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-      strokeLinejoin="round" aria-hidden="true">
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
     </svg>
@@ -905,23 +943,57 @@ type EditModalProps = {
 };
 
 function EditExamRequestModal({
-  isOpen, indication, selectedExamIds, submitting, error, awaitingDownload,
-  allExams, onClose, onToggleExam, onSetIndication, onSubmit, onDownload, onSkipDownload,
+  isOpen,
+  indication,
+  selectedExamIds,
+  submitting,
+  error,
+  awaitingDownload,
+  allExams,
+  onClose,
+  onToggleExam,
+  onSetIndication,
+  onSubmit,
+  onDownload,
+  onSkipDownload,
 }: EditModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="erm-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="erm-dialog" role="dialog" aria-modal="true" aria-labelledby="erm-title">
+    <div
+      className="erm-overlay"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        className="erm-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="erm-title"
+      >
         {/* Header */}
         <div className="erm-header">
           <h2 className="erm-title" id="erm-title">
             {awaitingDownload ? 'Solicitação Atualizada' : 'Editar Solicitação'}
           </h2>
-          <button type="button" className="erm-close" onClick={onClose} aria-label="Fechar">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
-              strokeLinejoin="round" aria-hidden="true">
+          <button
+            type="button"
+            className="erm-close"
+            onClick={onClose}
+            aria-label="Fechar"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
           </button>
@@ -930,42 +1002,94 @@ function EditExamRequestModal({
         {awaitingDownload ? (
           /* ── Download prompt ── */
           <>
-            <div className="erm-body" style={{ alignItems: 'center', textAlign: 'center', padding: '32px 22px' }}>
-              <div style={{
-                width: 52, height: 52, borderRadius: 14,
-                background: '#e8f3fb', display: 'flex', alignItems: 'center',
-                justifyContent: 'center', margin: '0 auto 16px',
-              }}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
-                  stroke="#0078D4" strokeWidth="2" strokeLinecap="round"
-                  strokeLinejoin="round" aria-hidden="true">
+            <div
+              className="erm-body"
+              style={{
+                alignItems: 'center',
+                textAlign: 'center',
+                padding: '32px 22px',
+              }}
+            >
+              <div
+                style={{
+                  width: 52,
+                  height: 52,
+                  borderRadius: 14,
+                  background: '#e8f3fb',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px',
+                }}
+              >
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#0078D4"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
               </div>
-              <p style={{
-                fontFamily: 'Manrope, sans-serif', fontSize: 14, fontWeight: 700,
-                color: '#0d1e35', margin: '0 0 6px',
-              }}>
+              <p
+                style={{
+                  fontFamily: 'Manrope, sans-serif',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: '#0d1e35',
+                  margin: '0 0 6px',
+                }}
+              >
                 Deseja baixar a solicitação atualizada?
               </p>
-              <p style={{
-                fontFamily: 'Manrope, sans-serif', fontSize: 12,
-                color: '#94a3b8', margin: 0,
-              }}>
-                As alterações foram salvas. Você pode baixar o PDF atualizado agora ou depois.
+              <p
+                style={{
+                  fontFamily: 'Manrope, sans-serif',
+                  fontSize: 12,
+                  color: '#94a3b8',
+                  margin: 0,
+                }}
+              >
+                As alterações foram salvas. Você pode baixar o PDF atualizado
+                agora ou depois.
               </p>
             </div>
             <div className="erm-footer">
-              <button type="button" className="erm-btn-cancel" onClick={onSkipDownload}>
+              <button
+                type="button"
+                className="erm-btn-cancel"
+                onClick={onSkipDownload}
+              >
                 Não, obrigado
               </button>
-              <button type="button" className="erm-btn-save" onClick={onDownload}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
-                  strokeLinejoin="round" aria-hidden="true"
-                  style={{ display: 'inline', marginRight: 5, verticalAlign: 'middle' }}>
+              <button
+                type="button"
+                className="erm-btn-save"
+                onClick={onDownload}
+              >
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                  style={{
+                    display: 'inline',
+                    marginRight: 5,
+                    verticalAlign: 'middle',
+                  }}
+                >
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
@@ -980,7 +1104,9 @@ function EditExamRequestModal({
             <div className="erm-body">
               {/* Indication */}
               <div>
-                <label className="erm-field-label" htmlFor="erm-indication">Indicação</label>
+                <label className="erm-field-label" htmlFor="erm-indication">
+                  Indicação
+                </label>
                 <textarea
                   id="erm-indication"
                   className="erm-textarea"
@@ -1014,7 +1140,12 @@ function EditExamRequestModal({
             </div>
 
             <div className="erm-footer">
-              <button type="button" className="erm-btn-cancel" onClick={onClose} disabled={submitting}>
+              <button
+                type="button"
+                className="erm-btn-cancel"
+                onClick={onClose}
+                disabled={submitting}
+              >
                 Cancelar
               </button>
               <button
@@ -1055,11 +1186,21 @@ function SkeletonRows() {
 
 export function ExamRequestsPage() {
   const {
-    requests, total, loading, error,
-    users, exams,
-    dateFrom, dateTo, userId, selectedExamIds,
-    setDateFrom, setDateTo, setUserId,
-    toggleExamFilter, clearFilters,
+    requests,
+    total,
+    loading,
+    error,
+    users,
+    exams,
+    dateFrom,
+    dateTo,
+    userId,
+    selectedExamIds,
+    setDateFrom,
+    setDateTo,
+    setUserId,
+    toggleExamFilter,
+    clearFilters,
     updateRequest,
   } = useExamRequests();
 
@@ -1080,7 +1221,10 @@ export function ExamRequestsPage() {
     if (!examDropOpen) return;
 
     function handleClick(e: MouseEvent) {
-      if (examDropRef.current && !examDropRef.current.contains(e.target as Node)) {
+      if (
+        examDropRef.current &&
+        !examDropRef.current.contains(e.target as Node)
+      ) {
         setExamDropOpen(false);
       }
     }
@@ -1097,19 +1241,27 @@ export function ExamRequestsPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Solicitações de Exames</h1>
-          <p className="page-subtitle">Histórico e acompanhamento de todas as solicitações.</p>
+          <p className="page-subtitle">
+            Histórico e acompanhamento de todas as solicitações.
+          </p>
         </div>
       </div>
 
       <div className="page-content">
         {error && (
-          <p style={{ fontFamily: 'Manrope, sans-serif', fontSize: 13, color: '#e11d48', marginBottom: 12 }}>
+          <p
+            style={{
+              fontFamily: 'Manrope, sans-serif',
+              fontSize: 13,
+              color: '#e11d48',
+              marginBottom: 12,
+            }}
+          >
             {error}
           </p>
         )}
 
         <div className="users-panel">
-
           {/* ── Filter bar ──────────────────────────────────── */}
           <div className="erl-filters">
             <span className="erl-filter-label">Filtros</span>
@@ -1124,7 +1276,15 @@ export function ExamRequestsPage() {
               style={{ width: 138 }}
             />
 
-            <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 11, color: '#cbd5e1' }}>–</span>
+            <span
+              style={{
+                fontFamily: 'Manrope, sans-serif',
+                fontSize: 11,
+                color: '#cbd5e1',
+              }}
+            >
+              –
+            </span>
 
             {/* Date to */}
             <input
@@ -1144,7 +1304,9 @@ export function ExamRequestsPage() {
             >
               <option value="">Todos os pacientes</option>
               {users.map((u) => (
-                <option key={u.id} value={u.id}>{u.name}</option>
+                <option key={u.id} value={u.id}>
+                  {u.name}
+                </option>
               ))}
             </select>
 
@@ -1159,15 +1321,28 @@ export function ExamRequestsPage() {
                   {selectedExamIds.length === 0 ? 'Exames' : `Exames`}
                 </span>
                 {selectedExamIds.length > 0 && (
-                  <span className="erl-filter-count-badge">{selectedExamIds.length}</span>
+                  <span className="erl-filter-count-badge">
+                    {selectedExamIds.length}
+                  </span>
                 )}
                 <ChevronDown />
               </button>
 
               {examDropOpen && (
-                <div className="erl-exam-dropdown" role="listbox" aria-multiselectable="true">
+                <div
+                  className="erl-exam-dropdown"
+                  role="listbox"
+                  aria-multiselectable="true"
+                >
                   {exams.length === 0 ? (
-                    <div style={{ padding: '12px 14px', fontFamily: 'Manrope, sans-serif', fontSize: 12, color: '#94a3b8' }}>
+                    <div
+                      style={{
+                        padding: '12px 14px',
+                        fontFamily: 'Manrope, sans-serif',
+                        fontSize: 12,
+                        color: '#94a3b8',
+                      }}
+                    >
                       Nenhum exame disponível
                     </div>
                   ) : (
@@ -1183,8 +1358,12 @@ export function ExamRequestsPage() {
                           checked={selectedExamIds.includes(exam.id)}
                           onChange={() => toggleExamFilter(exam.id)}
                         />
-                        <span className="erl-exam-option-code">{exam.code}</span>
-                        <span className="erl-exam-option-name">{exam.name}</span>
+                        <span className="erl-exam-option-code">
+                          {exam.code}
+                        </span>
+                        <span className="erl-exam-option-name">
+                          {exam.name}
+                        </span>
                       </label>
                     ))
                   )}
@@ -1203,7 +1382,9 @@ export function ExamRequestsPage() {
 
             {/* Result count */}
             <span className="erl-result-count">
-              {loading ? '…' : `${total} solicitação${total !== 1 ? 'ões' : ''}`}
+              {loading
+                ? '…'
+                : `${total} solicitação${total !== 1 ? 'ões' : ''}`}
             </span>
           </div>
 
@@ -1221,7 +1402,9 @@ export function ExamRequestsPage() {
             <SkeletonRows />
           ) : requests.length === 0 ? (
             <div className="erl-empty">
-              <div className="erl-empty-icon"><EmptyIcon /></div>
+              <div className="erl-empty-icon">
+                <EmptyIcon />
+              </div>
               <h3>Nenhuma solicitação encontrada</h3>
               <p>
                 {hasFilters
@@ -1261,27 +1444,40 @@ export function ExamRequestsPage() {
                     {/* Exams — max 6 */}
                     <div className="erl-cell-exams">
                       {visibleExams.map((exam) => (
-                        <span key={exam.id} className="erl-exam-badge">{exam.code}</span>
+                        <span key={exam.id} className="erl-exam-badge">
+                          {exam.code}
+                        </span>
                       ))}
                       {hiddenCount > 0 && (
-                        <span className="erl-exam-badge-more">+{hiddenCount}</span>
+                        <span className="erl-exam-badge-more">
+                          +{hiddenCount}
+                        </span>
                       )}
                     </div>
 
                     {/* Indication — max 25 chars */}
-                    <div className={`erl-cell-indication${!req.indication ? ' empty' : ''}`}>
-                      {req.indication ? truncate(req.indication, 25) : 'Sem indicação'}
+                    <div
+                      className={`erl-cell-indication${!req.indication ? ' empty' : ''}`}
+                    >
+                      {req.indication
+                        ? truncate(req.indication, 25)
+                        : 'Sem indicação'}
                     </div>
 
                     {/* Date */}
-                    <div className="erl-cell-date">{formatDate(req.createdAt)}</div>
+                    <div className="erl-cell-date">
+                      {formatDate(req.createdAt)}
+                    </div>
 
                     {/* Actions */}
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                       <button
                         type="button"
                         className="erl-btn-edit"
-                        onClick={(e) => { e.stopPropagation(); edit.open(req); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          edit.open(req);
+                        }}
                         title="Editar solicitação"
                       >
                         <EditIcon />
@@ -1296,7 +1492,14 @@ export function ExamRequestsPage() {
                       {/* Patient */}
                       <div>
                         <p className="erl-expand-section-label">Paciente</p>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 10,
+                            marginBottom: 8,
+                          }}
+                        >
                           <div
                             className={`users-avatar ${getAvatarColor(req.user.name)}`}
                             style={{ flexShrink: 0 }}
@@ -1305,11 +1508,17 @@ export function ExamRequestsPage() {
                             {getInitials(req.user.name)}
                           </div>
                           <div>
-                            <p className="erl-expand-patient-name">{req.user.name}</p>
-                            <p className="erl-expand-patient-email">{req.user.email}</p>
+                            <p className="erl-expand-patient-name">
+                              {req.user.name}
+                            </p>
+                            <p className="erl-expand-patient-email">
+                              {req.user.email}
+                            </p>
                           </div>
                         </div>
-                        <p className="erl-expand-date">Criado em {formatDateTime(req.createdAt)}</p>
+                        <p className="erl-expand-date">
+                          Criado em {formatDateTime(req.createdAt)}
+                        </p>
                       </div>
 
                       {/* Exams — all */}
@@ -1317,16 +1526,31 @@ export function ExamRequestsPage() {
                         <p className="erl-expand-section-label">
                           Exames ({req.exams.length})
                         </p>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 6,
+                          }}
+                        >
                           {req.exams.map((exam) => (
                             <div key={exam.id} className="erl-expand-exam-row">
-                              <span className="erl-exam-badge">{exam.code}</span>
-                              <span className="erl-expand-exam-name">{exam.name}</span>
-                              <span style={{
-                                fontFamily: 'Manrope, sans-serif', fontSize: 10,
-                                color: '#94a3b8', marginLeft: 2,
-                              }}>
-                                {EXAM_CATEGORY_LABEL[exam.category] ?? exam.category}
+                              <span className="erl-exam-badge">
+                                {exam.code}
+                              </span>
+                              <span className="erl-expand-exam-name">
+                                {exam.name}
+                              </span>
+                              <span
+                                style={{
+                                  fontFamily: 'Manrope, sans-serif',
+                                  fontSize: 10,
+                                  color: '#94a3b8',
+                                  marginLeft: 2,
+                                }}
+                              >
+                                {EXAM_CATEGORY_LABEL[exam.category] ??
+                                  exam.category}
                               </span>
                             </div>
                           ))}
@@ -1336,7 +1560,9 @@ export function ExamRequestsPage() {
                       {/* Indication — full */}
                       <div>
                         <p className="erl-expand-section-label">Indicação</p>
-                        <p className={`erl-expand-indication${!req.indication ? ' empty' : ''}`}>
+                        <p
+                          className={`erl-expand-indication${!req.indication ? ' empty' : ''}`}
+                        >
                           {req.indication || 'Sem indicação'}
                         </p>
                       </div>
@@ -1346,7 +1572,6 @@ export function ExamRequestsPage() {
               );
             })
           )}
-
         </div>
       </div>
 

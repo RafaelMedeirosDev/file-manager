@@ -32,8 +32,16 @@ async function fetchAllRootFolders(): Promise<FolderItem[]> {
   let hasNextPage = true;
 
   while (hasNextPage) {
-    const raw = await foldersService.list({ rootsOnly: true, limit: 100, page });
-    const { items, meta } = normalizePaginatedResponse<FolderItem>(raw, page, 100);
+    const raw = await foldersService.list({
+      rootsOnly: true,
+      limit: 100,
+      page,
+    });
+    const { items, meta } = normalizePaginatedResponse<FolderItem>(
+      raw,
+      page,
+      100,
+    );
     all.push(...items);
     hasNextPage = meta.hasNextPage;
     page += 1;
@@ -51,7 +59,8 @@ function updateNodeInTree(
   files: FileNode[],
 ): FolderNode[] {
   return nodes.map((node) => {
-    if (node.id === targetId) return { ...node, children, files, isLoaded: true };
+    if (node.id === targetId)
+      return { ...node, children, files, isLoaded: true };
     return {
       ...node,
       children: updateNodeInTree(node.children, targetId, children, files),
@@ -101,7 +110,14 @@ export type UseSidebarReturn = {
 
 export function useSidebar(): UseSidebarReturn {
   const { user } = useAuth();
-  const { sidebarVersion, expandedFolderIds, expandToFolder, collapseFolder, expandedUsers, selectUser } = useSidebarContext();
+  const {
+    sidebarVersion,
+    expandedFolderIds,
+    expandToFolder,
+    collapseFolder,
+    expandedUsers,
+    selectUser,
+  } = useSidebarContext();
   const isAdmin = user?.role === 'ADMIN';
 
   // ── Estado USER ──────────────────────────────────────
@@ -109,7 +125,9 @@ export function useSidebar(): UseSidebarReturn {
 
   // ── Estado ADMIN ─────────────────────────────────────
   const [users, setUsers] = useState<UserOption[]>([]);
-  const [foldersByUserId, setFoldersByUserId] = useState<Map<string, FolderNode[]>>(new Map());
+  const [foldersByUserId, setFoldersByUserId] = useState<
+    Map<string, FolderNode[]>
+  >(new Map());
 
   const [loading, setLoading] = useState(true);
 
@@ -119,10 +137,7 @@ export function useSidebar(): UseSidebarReturn {
     setLoading(true);
 
     if (isAdmin) {
-      Promise.all([
-        usersService.list({ limit: 100 }),
-        fetchAllRootFolders(),
-      ])
+      Promise.all([usersService.list({ limit: 100 }), fetchAllRootFolders()])
         .then(([usersRaw, folderItems]) => {
           const userItems = Array.isArray(usersRaw) ? usersRaw : usersRaw.data;
 
@@ -136,7 +151,14 @@ export function useSidebar(): UseSidebarReturn {
           for (const f of folderItems) {
             const list = grouped.get(f.userId);
             if (list) {
-              list.push({ id: f.id, name: f.name, userId: f.userId, children: [], files: [], isLoaded: false });
+              list.push({
+                id: f.id,
+                name: f.name,
+                userId: f.userId,
+                children: [],
+                files: [],
+                isLoaded: false,
+              });
             }
           }
 
@@ -150,7 +172,14 @@ export function useSidebar(): UseSidebarReturn {
         .then((raw) => {
           const items = Array.isArray(raw) ? raw : raw.data;
           setRoots(
-            items.map((f) => ({ id: f.id, name: f.name, userId: f.userId, children: [], files: [], isLoaded: false })),
+            items.map((f) => ({
+              id: f.id,
+              name: f.name,
+              userId: f.userId,
+              children: [],
+              files: [],
+              isLoaded: false,
+            })),
           );
         })
         .catch(() => {})
@@ -160,36 +189,42 @@ export function useSidebar(): UseSidebarReturn {
 
   // ── Lazy load de filhos + arquivos ───────────────────
 
-  const loadChildren = useCallback(async (folderId: string) => {
-    const data = await folderDetailsService.getById(folderId);
+  const loadChildren = useCallback(
+    async (folderId: string) => {
+      const data = await folderDetailsService.getById(folderId);
 
-    const children: FolderNode[] = (data.children ?? []).map((c) => ({
-      id: c.id,
-      name: c.name,
-      userId: c.userId,
-      children: [],
-      files: [],
-      isLoaded: false,
-    }));
+      const children: FolderNode[] = (data.children ?? []).map((c) => ({
+        id: c.id,
+        name: c.name,
+        userId: c.userId,
+        children: [],
+        files: [],
+        isLoaded: false,
+      }));
 
-    const files: FileNode[] = (data.files ?? []).map((f) => ({
-      id: f.id,
-      name: f.name,
-      extension: f.extension,
-    }));
+      const files: FileNode[] = (data.files ?? []).map((f) => ({
+        id: f.id,
+        name: f.name,
+        extension: f.extension,
+      }));
 
-    if (isAdmin) {
-      setFoldersByUserId((prev) => {
-        const next = new Map(prev);
-        for (const [userId, nodes] of next) {
-          next.set(userId, updateNodeInTree(nodes, folderId, children, files));
-        }
-        return next;
-      });
-    } else {
-      setRoots((prev) => updateNodeInTree(prev, folderId, children, files));
-    }
-  }, [isAdmin]);
+      if (isAdmin) {
+        setFoldersByUserId((prev) => {
+          const next = new Map(prev);
+          for (const [userId, nodes] of next) {
+            next.set(
+              userId,
+              updateNodeInTree(nodes, folderId, children, files),
+            );
+          }
+          return next;
+        });
+      } else {
+        setRoots((prev) => updateNodeInTree(prev, folderId, children, files));
+      }
+    },
+    [isAdmin],
+  );
 
   // ── Auto-load filhos para IDs expandidos via Context ─
 
@@ -206,29 +241,50 @@ export function useSidebar(): UseSidebarReturn {
     for (const folderId of unloadedIds) {
       void loadChildren(folderId);
     }
-  }, [expandedFolderIds, loading, isAdmin, foldersByUserId, roots, loadChildren]);
+  }, [
+    expandedFolderIds,
+    loading,
+    isAdmin,
+    foldersByUserId,
+    roots,
+    loadChildren,
+  ]);
 
   // ── Toggle expand/collapse de pasta ─────────────────
 
-  const handleToggle = useCallback(async (folderId: string) => {
-    if (expandedFolderIds.has(folderId)) {
-      collapseFolder(folderId);
-    } else {
-      expandToFolder([folderId]);
+  const handleToggle = useCallback(
+    async (folderId: string) => {
+      if (expandedFolderIds.has(folderId)) {
+        collapseFolder(folderId);
+      } else {
+        expandToFolder([folderId]);
 
-      const node = isAdmin
-        ? findNodeInMap(foldersByUserId, folderId)
-        : findNode(roots, folderId);
+        const node = isAdmin
+          ? findNodeInMap(foldersByUserId, folderId)
+          : findNode(roots, folderId);
 
-      if (node && !node.isLoaded) await loadChildren(folderId);
-    }
-  }, [expandedFolderIds, expandToFolder, collapseFolder, roots, foldersByUserId, isAdmin, loadChildren]);
+        if (node && !node.isLoaded) await loadChildren(folderId);
+      }
+    },
+    [
+      expandedFolderIds,
+      expandToFolder,
+      collapseFolder,
+      roots,
+      foldersByUserId,
+      isAdmin,
+      loadChildren,
+    ],
+  );
 
   // ── Toggle expand/collapse de usuário (ADMIN) ────────
 
-  const handleToggleUser = useCallback((userId: string) => {
-    selectUser(expandedUsers.has(userId) ? null : userId);
-  }, [expandedUsers, selectUser]);
+  const handleToggleUser = useCallback(
+    (userId: string) => {
+      selectUser(expandedUsers.has(userId) ? null : userId);
+    },
+    [expandedUsers, selectUser],
+  );
 
   return {
     roots,

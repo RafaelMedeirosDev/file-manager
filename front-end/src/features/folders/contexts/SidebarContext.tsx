@@ -1,4 +1,10 @@
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from 'react';
 import type { PropsWithChildren } from 'react';
 
 // ── Types ────────────────────────────────────────────────
@@ -25,7 +31,9 @@ const SidebarContext = createContext<SidebarContextValue | null>(null);
 
 export function SidebarProvider({ children }: PropsWithChildren) {
   const [sidebarVersion, setSidebarVersion] = useState(0);
-  const [expandedFolderIds, setExpandedFolderIds] = useState<Set<string>>(new Set());
+  const [expandedFolderIds, setExpandedFolderIds] = useState<Set<string>>(
+    new Set(),
+  );
   const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
@@ -92,13 +100,23 @@ export function SidebarProvider({ children }: PropsWithChildren) {
       setSelectedUserId,
       selectUser,
     }),
-    [sidebarVersion, refreshSidebar, expandedFolderIds, expandToFolder, collapseFolder, expandedUsers, expandUser, toggleUser, selectedUserId, setSelectedUserId, selectUser],
+    [
+      sidebarVersion,
+      refreshSidebar,
+      expandedFolderIds,
+      expandToFolder,
+      collapseFolder,
+      expandedUsers,
+      expandUser,
+      toggleUser,
+      selectedUserId,
+      setSelectedUserId,
+      selectUser,
+    ],
   );
 
   return (
-    <SidebarContext.Provider value={value}>
-      {children}
-    </SidebarContext.Provider>
+    <SidebarContext.Provider value={value}>{children}</SidebarContext.Provider>
   );
 }
 

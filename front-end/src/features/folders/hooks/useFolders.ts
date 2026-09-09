@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../../auth/hooks/useAuth';
-import { getApiErrorMessage, normalizePaginatedResponse } from '../../../shared/utils/apiUtils';
+import {
+  getApiErrorMessage,
+  normalizePaginatedResponse,
+} from '../../../shared/utils/apiUtils';
 import type { FolderItem, UserOption } from '../../../shared/types';
 import { foldersService } from '../services/foldersService';
 import { usersService } from '../../users/services/usersService';
@@ -14,7 +17,11 @@ async function fetchAllRootFolders(): Promise<FolderItem[]> {
   let hasMore = true;
 
   while (hasMore) {
-    const raw = await foldersService.list({ rootsOnly: true, page, limit: 100 });
+    const raw = await foldersService.list({
+      rootsOnly: true,
+      page,
+      limit: 100,
+    });
     const parsed = normalizePaginatedResponse<FolderItem>(raw, page, 100);
     all.push(...parsed.items);
     hasMore = parsed.isLegacyArray ? false : parsed.meta.hasNextPage;
@@ -53,8 +60,13 @@ type UseFoldersReturn = {
   setNewFolderName: (name: string) => void;
 
   // Ações
-  handleCreateFolder: (event: React.FormEvent<HTMLFormElement>) => Promise<void>;
-  handleSoftDeleteFolder: (folderId: string, folderName: string) => Promise<void>;
+  handleCreateFolder: (
+    event: React.FormEvent<HTMLFormElement>,
+  ) => Promise<void>;
+  handleSoftDeleteFolder: (
+    folderId: string,
+    folderName: string,
+  ) => Promise<void>;
 
   // Ref para scroll infinito
   sentinelRef: React.RefObject<HTMLDivElement>;
@@ -64,7 +76,8 @@ type UseFoldersReturn = {
 
 export function useFolders(): UseFoldersReturn {
   const { user } = useAuth();
-  const { refreshSidebar, selectedUserId, setSelectedUserId, selectUser } = useSidebarContext();
+  const { refreshSidebar, selectedUserId, setSelectedUserId, selectUser } =
+    useSidebarContext();
 
   const [folders, setFolders] = useState<FolderItem[]>([]);
   const [usersOptions, setUsersOptions] = useState<UserOption[]>([]);
@@ -81,9 +94,12 @@ export function useFolders(): UseFoldersReturn {
   const [selectedCreateUserId, setSelectedCreateUserId] = useState('');
   // filterUserId é alias para selectedUserId do contexto (para compat com FoldersPage até Etapa 4)
   const filterUserId = selectedUserId ?? '';
-  const setFilterUserId = useCallback((id: string) => {
-    setSelectedUserId(id || null);
-  }, [setSelectedUserId]);
+  const setFilterUserId = useCallback(
+    (id: string) => {
+      setSelectedUserId(id || null);
+    },
+    [setSelectedUserId],
+  );
 
   const [reloadKey, setReloadKey] = useState(0);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -158,7 +174,11 @@ export function useFolders(): UseFoldersReturn {
 
       while (hasMore) {
         const raw = await usersService.list({ page, limit: pageLimit });
-        const parsed = normalizePaginatedResponse<UserOption>(raw, page, pageLimit);
+        const parsed = normalizePaginatedResponse<UserOption>(
+          raw,
+          page,
+          pageLimit,
+        );
         allUsers.push(...parsed.items);
         hasMore = parsed.isLegacyArray ? false : parsed.meta.hasNextPage;
         page += 1;
@@ -212,7 +232,9 @@ export function useFolders(): UseFoldersReturn {
   }
 
   async function handleSoftDeleteFolder(folderId: string, folderName: string) {
-    const confirmed = window.confirm(`Deseja realmente excluir a pasta "${folderName}"?`);
+    const confirmed = window.confirm(
+      `Deseja realmente excluir a pasta "${folderName}"?`,
+    );
     if (!confirmed) return;
 
     setCreateError(null);

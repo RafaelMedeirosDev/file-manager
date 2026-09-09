@@ -496,13 +496,27 @@ export function FolderDetailsPage() {
   const dropInputRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef(0);
   const {
-    folder, entries, loading, error, actionError,
-    creatingFolder, downloadingFileId, deletingFileId,
-    newFolderName, setNewFolderName,
-    searchTerm, setSearchTerm,
-    uploadQueue, addFilesToQueue, removeFromQueue, clearQueue,
-    handleBulkUpload, uploading,
-    handleCreateSubFolder, handleDownload, handleDeleteFile,
+    folder,
+    entries,
+    loading,
+    error,
+    actionError,
+    creatingFolder,
+    downloadingFileId,
+    deletingFileId,
+    newFolderName,
+    setNewFolderName,
+    searchTerm,
+    setSearchTerm,
+    uploadQueue,
+    addFilesToQueue,
+    removeFromQueue,
+    clearQueue,
+    handleBulkUpload,
+    uploading,
+    handleCreateSubFolder,
+    handleDownload,
+    handleDeleteFile,
   } = useFolderDetails();
 
   const canUpload = isAdmin || folder?.isDefault === true;
@@ -528,7 +542,9 @@ export function FolderDetailsPage() {
       }
     }
 
-    function onDragOver(e: DragEvent) { e.preventDefault(); }
+    function onDragOver(e: DragEvent) {
+      e.preventDefault();
+    }
 
     function onDrop(e: DragEvent) {
       e.preventDefault();
@@ -564,7 +580,15 @@ export function FolderDetailsPage() {
   if (loading) {
     return (
       <div className="page-content">
-        <p style={{ fontSize: 13, color: '#94a3b8', fontFamily: 'Manrope, sans-serif' }}>Carregando...</p>
+        <p
+          style={{
+            fontSize: 13,
+            color: '#94a3b8',
+            fontFamily: 'Manrope, sans-serif',
+          }}
+        >
+          Carregando...
+        </p>
       </div>
     );
   }
@@ -572,7 +596,15 @@ export function FolderDetailsPage() {
   if (error) {
     return (
       <div className="page-content">
-        <p style={{ fontSize: 13, color: '#e11d48', fontFamily: 'Manrope, sans-serif' }}>{error}</p>
+        <p
+          style={{
+            fontSize: 13,
+            color: '#e11d48',
+            fontFamily: 'Manrope, sans-serif',
+          }}
+        >
+          {error}
+        </p>
       </div>
     );
   }
@@ -582,7 +614,9 @@ export function FolderDetailsPage() {
   // Build breadcrumb subtitle
   const breadcrumb = [
     { label: 'Pastas', href: '/folders' },
-    ...(folder.parent ? [{ label: folder.parent.name, href: `/folders/${folder.parent.id}` }] : []),
+    ...(folder.parent
+      ? [{ label: folder.parent.name, href: `/folders/${folder.parent.id}` }]
+      : []),
     { label: folder.name, href: null },
   ];
 
@@ -594,16 +628,36 @@ export function FolderDetailsPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">{folder.name}</h1>
-          <p className="page-subtitle" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <p
+            className="page-subtitle"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              flexWrap: 'wrap',
+            }}
+          >
             {breadcrumb.map((crumb, i) => (
-              <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span
+                key={i}
+                style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+              >
                 {i > 0 && <span style={{ color: '#cbd5e1' }}>/</span>}
                 {crumb.href ? (
-                  <Link to={crumb.href} style={{ color: '#0078D4', textDecoration: 'none', fontWeight: 500 }}>
+                  <Link
+                    to={crumb.href}
+                    style={{
+                      color: '#0078D4',
+                      textDecoration: 'none',
+                      fontWeight: 500,
+                    }}
+                  >
                     {crumb.label}
                   </Link>
                 ) : (
-                  <span style={{ color: '#0d1e35', fontWeight: 600 }}>{crumb.label}</span>
+                  <span style={{ color: '#0d1e35', fontWeight: 600 }}>
+                    {crumb.label}
+                  </span>
                 )}
               </span>
             ))}
@@ -617,16 +671,34 @@ export function FolderDetailsPage() {
           >
             {showActions ? (
               <>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                  strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
                   <path d="M18 6L6 18M6 6l12 12" />
                 </svg>
                 Fechar
               </>
             ) : (
               <>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                  strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
                   <path d="M12 5v14M5 12h14" />
                 </svg>
                 Ações
@@ -639,10 +711,20 @@ export function FolderDetailsPage() {
       {/* Toolbar */}
       <div className="fd-toolbar">
         <div className="fd-search-wrap">
-          <svg className="fd-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-            aria-hidden="true">
-            <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+          <svg
+            className="fd-search-icon"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.35-4.35" />
           </svg>
           <input
             className="fd-search-input"
@@ -658,7 +740,10 @@ export function FolderDetailsPage() {
 
       {/* Actions panel — subpasta só para ADMIN, upload para qualquer um com permissão */}
       {canUpload && showActions && (
-        <div className="fd-action-panel" style={!isAdmin ? { gridTemplateColumns: '1fr' } : undefined}>
+        <div
+          className="fd-action-panel"
+          style={!isAdmin ? { gridTemplateColumns: '1fr' } : undefined}
+        >
           {actionError && <p className="fd-error-bar">{actionError}</p>}
 
           {/* Nova Subpasta — ADMIN only */}
@@ -666,8 +751,17 @@ export function FolderDetailsPage() {
             <div className="fd-card">
               <div className="fd-card-header">
                 <span className="fd-card-icon">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
                     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
                     <path d="M12 11v6M9 14h6" />
                   </svg>
@@ -682,11 +776,26 @@ export function FolderDetailsPage() {
                   onChange={(e) => setNewFolderName(e.target.value)}
                   required
                 />
-                <button type="submit" className="fd-btn" disabled={creatingFolder}>
-                  {creatingFolder ? 'Criando…' : (
+                <button
+                  type="submit"
+                  className="fd-btn"
+                  disabled={creatingFolder}
+                >
+                  {creatingFolder ? (
+                    'Criando…'
+                  ) : (
                     <>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
                         <path d="M12 5v14M5 12h14" />
                       </svg>
                       Criar
@@ -701,8 +810,17 @@ export function FolderDetailsPage() {
           <div className="fd-card">
             <div className="fd-card-header">
               <span className="fd-card-icon">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                  strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                   <polyline points="17 8 12 3 7 8" />
                   <line x1="12" y1="3" x2="12" y2="15" />
@@ -710,7 +828,10 @@ export function FolderDetailsPage() {
               </span>
               <p className="fd-card-title">Upload de Arquivos</p>
             </div>
-            <div className="fd-card-body" style={{ justifyContent: 'space-between' }}>
+            <div
+              className="fd-card-body"
+              style={{ justifyContent: 'space-between' }}
+            >
               <span
                 style={{
                   fontFamily: "'DM Sans', 'Manrope', sans-serif",
@@ -735,42 +856,108 @@ export function FolderDetailsPage() {
 
       {/* Content */}
       <div className="page-content">
-        <div style={{ background: '#fff', border: '1px solid var(--shell-border)', borderRadius: 8, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        <div
+          style={{
+            background: '#fff',
+            border: '1px solid var(--shell-border)',
+            borderRadius: 8,
+            overflow: 'hidden',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+          }}
+        >
           {/* Table header */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', padding: '10px 16px', background: '#f8fafc', borderBottom: '1px solid var(--shell-border)' }}>
-            <span style={{ fontFamily: 'Manrope, sans-serif', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#94a3b8' }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr auto',
+              padding: '10px 16px',
+              background: '#f8fafc',
+              borderBottom: '1px solid var(--shell-border)',
+            }}
+          >
+            <span
+              style={{
+                fontFamily: 'Manrope, sans-serif',
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                color: '#94a3b8',
+              }}
+            >
               Nome
             </span>
           </div>
 
           <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
             {entries.map((entry) => (
-              <li key={entry.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid #f1f5f9', fontSize: 13 }}>
+              <li
+                key={entry.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '12px 16px',
+                  borderBottom: '1px solid #f1f5f9',
+                  fontSize: 13,
+                }}
+              >
                 {entry.type === 'folder' ? (
                   <button
                     type="button"
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', color: '#0078D4', fontWeight: 600, fontSize: 13, fontFamily: 'Manrope, sans-serif', padding: 0 }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#0078D4',
+                      fontWeight: 600,
+                      fontSize: 13,
+                      fontFamily: 'Manrope, sans-serif',
+                      padding: 0,
+                    }}
                     onClick={() => navigate(`/folders/${entry.id}`)}
                   >
-                    <FolderIcon className="h-4 w-4" style={{ color: '#0078D4' }} />
+                    <FolderIcon
+                      className="h-4 w-4"
+                      style={{ color: '#0078D4' }}
+                    />
                     <span>{entry.name}</span>
                   </button>
                 ) : (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#334155', fontFamily: 'Manrope, sans-serif' }}>
+                  <span
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      color: '#334155',
+                      fontFamily: 'Manrope, sans-serif',
+                    }}
+                  >
                     <FileIcon className="h-4 w-4 text-slate-400" />
-                    <span>{entry.name}.{entry.extension}</span>
+                    <span>
+                      {entry.name}.{entry.extension}
+                    </span>
                   </span>
                 )}
 
                 {entry.type === 'file' ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div
+                    style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                  >
                     <button
                       type="button"
                       className="download-btn"
                       disabled={downloadingFileId === entry.id}
-                      onClick={() => handleDownload(entry.id, entry.name, entry.extension)}
+                      onClick={() =>
+                        handleDownload(entry.id, entry.name, entry.extension)
+                      }
                     >
-                      {downloadingFileId === entry.id ? 'Baixando...' : 'Download'}
+                      {downloadingFileId === entry.id
+                        ? 'Baixando...'
+                        : 'Download'}
                     </button>
                     {canUpload && (
                       <button
@@ -778,9 +965,16 @@ export function FolderDetailsPage() {
                         className="btn-danger"
                         style={{ fontSize: 11, padding: '4px 10px' }}
                         disabled={deletingFileId === entry.id}
-                        onClick={() => handleDeleteFile(entry.id, `${entry.name}.${entry.extension}`)}
+                        onClick={() =>
+                          handleDeleteFile(
+                            entry.id,
+                            `${entry.name}.${entry.extension}`,
+                          )
+                        }
                       >
-                        {deletingFileId === entry.id ? 'Excluindo...' : 'Excluir'}
+                        {deletingFileId === entry.id
+                          ? 'Excluindo...'
+                          : 'Excluir'}
                       </button>
                     )}
                   </div>
@@ -789,7 +983,15 @@ export function FolderDetailsPage() {
             ))}
 
             {entries.length === 0 ? (
-              <li style={{ padding: '24px 16px', fontSize: 13, color: '#94a3b8', textAlign: 'center', fontFamily: 'Manrope, sans-serif' }}>
+              <li
+                style={{
+                  padding: '24px 16px',
+                  fontSize: 13,
+                  color: '#94a3b8',
+                  textAlign: 'center',
+                  fontFamily: 'Manrope, sans-serif',
+                }}
+              >
                 Nenhum item encontrado nesta pasta.
               </li>
             ) : null}
@@ -813,15 +1015,26 @@ export function FolderDetailsPage() {
               <div className="fd-drop-zone">
                 <div className="fd-drop-zone-inner">
                   <div className="fd-drop-icon">
-                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <svg
+                      width="26"
+                      height="26"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
                       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                       <polyline points="17 8 12 3 7 8" />
                       <line x1="12" y1="3" x2="12" y2="15" />
                     </svg>
                   </div>
                   <p className="fd-drop-title">Solte os arquivos aqui</p>
-                  <p className="fd-drop-subtitle">Múltiplos arquivos permitidos · Máximo 20 por vez</p>
+                  <p className="fd-drop-subtitle">
+                    Múltiplos arquivos permitidos · Máximo 20 por vez
+                  </p>
                 </div>
               </div>
             </div>
@@ -830,25 +1043,58 @@ export function FolderDetailsPage() {
           {hasQueue && (
             <div className="fd-queue">
               <div className="fd-queue-header">
-                <span className="fd-queue-label">{uploadQueue.length} arquivo{uploadQueue.length !== 1 ? 's' : ''} na fila</span>
+                <span className="fd-queue-label">
+                  {uploadQueue.length} arquivo
+                  {uploadQueue.length !== 1 ? 's' : ''} na fila
+                </span>
               </div>
 
               {uploadQueue.map((item) => (
-                <div key={item.localId} className={`fd-queue-item ${item.status}`}>
+                <div
+                  key={item.localId}
+                  className={`fd-queue-item ${item.status}`}
+                >
                   <div className={`fd-queue-file-icon ${item.status}`}>
                     {item.status === 'success' ? (
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <svg
+                        width="13"
+                        height="13"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
                     ) : item.status === 'error' ? (
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <svg
+                        width="13"
+                        height="13"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
                         <path d="M18 6L6 18M6 6l12 12" />
                       </svg>
                     ) : (
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <svg
+                        width="13"
+                        height="13"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
                         <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
                         <polyline points="13 2 13 9 20 9" />
                       </svg>
@@ -856,7 +1102,9 @@ export function FolderDetailsPage() {
                   </div>
 
                   <span className="fd-queue-name">{item.file.name}</span>
-                  <span className="fd-queue-size">{formatFileSize(item.file.size)}</span>
+                  <span className="fd-queue-size">
+                    {formatFileSize(item.file.size)}
+                  </span>
 
                   {item.status === 'uploading' && (
                     <span className="fd-queue-status uploading">Enviando…</span>
@@ -865,7 +1113,9 @@ export function FolderDetailsPage() {
                     <span className="fd-queue-status success">Enviado</span>
                   )}
                   {item.status === 'error' && (
-                    <span className="fd-queue-status error" title={item.error}>Erro</span>
+                    <span className="fd-queue-status error" title={item.error}>
+                      Erro
+                    </span>
                   )}
 
                   {(item.status === 'pending' || item.status === 'error') && (
@@ -875,8 +1125,17 @@ export function FolderDetailsPage() {
                       onClick={() => removeFromQueue(item.localId)}
                       aria-label={`Remover ${item.file.name}`}
                     >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
                         <path d="M18 6L6 18M6 6l12 12" />
                       </svg>
                     </button>
@@ -886,7 +1145,12 @@ export function FolderDetailsPage() {
 
               <div className="fd-queue-footer">
                 <div style={{ display: 'flex', gap: 6 }}>
-                  <button type="button" className="fd-clear-btn" onClick={clearQueue} disabled={uploading}>
+                  <button
+                    type="button"
+                    className="fd-clear-btn"
+                    onClick={clearQueue}
+                    disabled={uploading}
+                  >
                     Limpar fila
                   </button>
                   <button
@@ -905,15 +1169,27 @@ export function FolderDetailsPage() {
                     onClick={handleBulkUpload}
                     disabled={uploading}
                   >
-                    {uploading ? 'Enviando…' : (
+                    {uploading ? (
+                      'Enviando…'
+                    ) : (
                       <>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                          strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden="true"
+                        >
                           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                           <polyline points="17 8 12 3 7 8" />
                           <line x1="12" y1="3" x2="12" y2="15" />
                         </svg>
-                        Enviar {pendingCount} arquivo{pendingCount !== 1 ? 's' : ''}
+                        Enviar {pendingCount} arquivo
+                        {pendingCount !== 1 ? 's' : ''}
                       </>
                     )}
                   </button>

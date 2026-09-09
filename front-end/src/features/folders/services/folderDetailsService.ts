@@ -30,15 +30,11 @@ export type BulkUploadResponse = {
 
 export const folderDetailsService = {
   getById(id: string): Promise<FolderDetails> {
-    return api
-      .get<FolderDetails>(`/folders/${id}`)
-      .then((r) => r.data);
+    return api.get<FolderDetails>(`/folders/${id}`).then((r) => r.data);
   },
 
   createSubFolder(payload: CreateSubFolderPayload): Promise<void> {
-    return api
-      .post('/folders', payload)
-      .then(() => undefined);
+    return api.post('/folders', payload).then(() => undefined);
   },
 
   downloadFile(fileId: string): Promise<Blob> {
@@ -52,12 +48,13 @@ export const folderDetailsService = {
     form.append('file', payload.file);
     form.append('name', payload.name);
     form.append('folderId', payload.folderId);
-    return api
-      .post<FileItem>('/files/upload', form)
-      .then((r) => r.data);
+    return api.post<FileItem>('/files/upload', form).then((r) => r.data);
   },
 
-  bulkUploadFiles(files: File[], folderId: string): Promise<BulkUploadResponse> {
+  bulkUploadFiles(
+    files: File[],
+    folderId: string,
+  ): Promise<BulkUploadResponse> {
     const form = new FormData();
     files.forEach((f) => form.append('files', f));
     form.append('folderId', folderId);
@@ -67,8 +64,6 @@ export const folderDetailsService = {
   },
 
   deleteFile(fileId: string): Promise<void> {
-    return api
-      .delete(`/files/${fileId}`)
-      .then(() => undefined);
+    return api.delete(`/files/${fileId}`).then(() => undefined);
   },
 };

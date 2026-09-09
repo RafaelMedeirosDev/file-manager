@@ -38,7 +38,11 @@ export function useChangePassword(): UseChangePasswordReturn {
     setSuccess(null);
     setIsSubmitting(true);
     try {
-      await usersService.changeOwnPassword({ currentPassword, newPassword, confirmNewPassword });
+      await usersService.changeOwnPassword({
+        currentPassword,
+        newPassword,
+        confirmNewPassword,
+      });
       reset();
       setSuccess('Senha atualizada com sucesso.');
     } catch (err) {

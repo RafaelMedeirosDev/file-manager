@@ -41,5 +41,13 @@ export function useLogin(): UseLoginReturn {
     }
   }
 
-  return { email, setEmail, password, setPassword, error, loading, handleSubmit };
+  return {
+    email,
+    setEmail,
+    password,
+    setPassword,
+    error,
+    loading,
+    handleSubmit,
+  };
 }

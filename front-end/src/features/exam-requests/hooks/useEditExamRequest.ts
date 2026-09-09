@@ -32,7 +32,9 @@ export function useEditExamRequest(
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [awaitingDownload, setAwaitingDownload] = useState(false);
-  const [updatedRequest, setUpdatedRequest] = useState<ExamRequestItem | null>(null);
+  const [updatedRequest, setUpdatedRequest] = useState<ExamRequestItem | null>(
+    null,
+  );
 
   const open = useCallback((request: ExamRequestItem) => {
     setCurrent(request);
@@ -88,7 +90,11 @@ export function useEditExamRequest(
 
   const downloadAndClose = useCallback(() => {
     if (!updatedRequest) return;
-    generateExamRequestPDF(updatedRequest.user, updatedRequest.exams, updatedRequest.indication);
+    generateExamRequestPDF(
+      updatedRequest.user,
+      updatedRequest.exams,
+      updatedRequest.indication,
+    );
     onSuccess(updatedRequest);
     reset();
   }, [updatedRequest, onSuccess, reset]);

@@ -9,12 +9,21 @@ export function DashboardPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Dashboard</h1>
-          <p className="page-subtitle">Bem-vindo, {user?.name}. Visão geral do workspace.</p>
+          <p className="page-subtitle">
+            Bem-vindo, {user?.name}. Visão geral do workspace.
+          </p>
         </div>
       </div>
 
       <div className="page-content">
-        <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', marginBottom: 24 }}>
+        <div
+          style={{
+            display: 'grid',
+            gap: 12,
+            gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+            marginBottom: 24,
+          }}
+        >
           <div className="metric-card">
             <p className="metric-label">Perfil</p>
             <p className="metric-value sm">{user?.role}</p>
@@ -33,7 +42,13 @@ export function DashboardPage() {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))' }}>
+        <div
+          style={{
+            display: 'grid',
+            gap: 12,
+            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+          }}
+        >
           <Link to="/folders" className="nav-card">
             <p className="nav-card-section">Navegação</p>
             <p className="nav-card-title">Pastas</p>
