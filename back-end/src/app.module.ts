@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UserController } from './controllers/UserController';
@@ -42,7 +44,14 @@ import { ListExamRequestsUseCase } from './usecases/exam-request/ListExamRequest
 import { UpdateExamRequestUseCase } from './usecases/exam-request/UpdateExamRequestUseCase';
 
 @Module({
-  imports: [PrismaModule, AuthModule],
+  imports: [
+    // Teto global folgado: existe para conter abuso automatizado, nao para
+    // atrapalhar uso normal. O login tem um limite proprio, bem mais estrito,
+    // declarado no AuthController.
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
+    PrismaModule,
+    AuthModule,
+  ],
   controllers: [
     AppController,
     UserController,
@@ -52,6 +61,9 @@ import { UpdateExamRequestUseCase } from './usecases/exam-request/UpdateExamRequ
     ExamRequestController,
   ],
   providers: [
+    // Guard global: as suites e2e montam modulo proprio e nao importam o
+    // AppModule, entao nao enxergam este guard e seguem passando.
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
     AppService,
     CreateUserUseCase,
     CreateUserWithFoldersUseCase,
