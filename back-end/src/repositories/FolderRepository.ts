@@ -82,6 +82,34 @@ export class FolderRepository {
     });
   }
 
+  /**
+   * Marca como excluidas as pastas informadas e os arquivos dentro delas, numa
+   * unica transacao.
+   *
+   * Antes o soft delete atingia so a pasta pedida: subpastas e arquivos
+   * continuavam ativos e listaveis por `?folderId=<pasta excluida>`, porque as
+   * listagens filtram deletedAt da propria linha e nunca do ancestral.
+   *
+   * A forma em array e suficiente: os ids chegam prontos do use case, que faz a
+   * travessia da subarvore, e os dois updateMany sao independentes entre si --
+   * nao ha valor a reaproveitar de um no outro.
+   */
+  softDeleteSubtree(
+    folderIds: string[],
+    deletedAt: Date,
+  ): Promise<[{ count: number }, { count: number }]> {
+    return this.prisma.$transaction([
+      this.prisma.folder.updateMany({
+        where: { id: { in: folderIds }, deletedAt: null },
+        data: { deletedAt },
+      }),
+      this.prisma.file.updateMany({
+        where: { folderId: { in: folderIds }, deletedAt: null },
+        data: { deletedAt },
+      }),
+    ]);
+  }
+
   listFoldersActive(
     requestUserId: string,
     requestRole: ROLE,

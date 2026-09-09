@@ -2,7 +2,6 @@ import { ConflictException, Injectable, Logger } from '@nestjs/common';
 import { ROLE } from '@prisma/client';
 import { hash } from 'bcrypt';
 import { UserRepository } from '../../repositories/UserRepository';
-import { FolderRepository } from '../../repositories/FolderRepository';
 import { ErrorMessagesEnum } from '@file-manager/shared';
 import { BCRYPT_SALT_ROUNDS } from '../../shared/constants/bcrypt.constants';
 
@@ -32,10 +31,7 @@ export type CreateUserWithFoldersOutput = {
 export class CreateUserWithFoldersUseCase {
   private readonly logger = new Logger(CreateUserWithFoldersUseCase.name);
 
-  constructor(
-    private readonly userRepository: UserRepository,
-    private readonly folderRepository: FolderRepository,
-  ) {}
+  constructor(private readonly userRepository: UserRepository) {}
 
   async execute(
     input: CreateUserWithFoldersInput,
@@ -49,44 +45,43 @@ export class CreateUserWithFoldersUseCase {
 
     const hashedPassword = await hash(input.password, BCRYPT_SALT_ROUNDS);
 
-    const user = await this.userRepository.create({
-      name: input.name,
-      email: input.email,
-      password: hashedPassword,
-      role: ROLE.USER,
-    });
-
-    const defaultFolder = await this.folderRepository.create({
-      name: user.name,
-      userId: user.id,
-      isDefault: true,
-    });
-
-    const createdFolders: CreatedFolderOutput[] = [
-      { id: defaultFolder.id, name: defaultFolder.name },
-    ];
+    // Deduplicacao em memoria, nao no banco: o usuario esta sendo criado agora,
+    // entao nao existe pasta dele com que colidir. A versao anterior fazia um
+    // findActiveByUserIdAndName por nome -- ate 20 idas ao Postgres para
+    // deduplicar um array que ja estava na mao.
+    const defaultFolderName = input.name;
+    const extraFolderNames: string[] = [];
+    const seenNames = new Set<string>([defaultFolderName]);
 
     for (const folderName of input.folders ?? []) {
-      const duplicate = await this.folderRepository.findActiveByUserIdAndName({
-        userId: user.id,
-        name: folderName,
-      });
-
-      if (duplicate) {
+      if (seenNames.has(folderName)) {
         this.logger.warn(
           '[CreateUserWithFoldersUseCase] Skipping duplicate folder name',
-          { userId: user.id, folderName },
+          { folderName },
         );
         continue;
       }
 
-      const folder = await this.folderRepository.create({
-        name: folderName,
-        userId: user.id,
-      });
-
-      createdFolders.push({ id: folder.id, name: folder.name });
+      seenNames.add(folderName);
+      extraFolderNames.push(folderName);
     }
+
+    // Uma transacao: ou o usuario nasce com todas as pastas, ou nao nasce.
+    const { user, folders } = await this.userRepository.createWithFolders({
+      user: {
+        name: input.name,
+        email: input.email,
+        password: hashedPassword,
+        role: ROLE.USER,
+      },
+      defaultFolderName,
+      extraFolderNames,
+    });
+
+    const createdFolders: CreatedFolderOutput[] = folders.map((folder) => ({
+      id: folder.id,
+      name: folder.name,
+    }));
 
     this.logger.log('[CreateUserWithFoldersUseCase] Execute finished', {
       userId: user.id,

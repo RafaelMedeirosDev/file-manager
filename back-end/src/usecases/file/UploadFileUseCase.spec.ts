@@ -10,6 +10,7 @@ import { FileRepository } from '../../repositories/FileRepository';
 import { FolderRepository } from '../../repositories/FolderRepository';
 import { UserRepository } from '../../repositories/UserRepository';
 import { env } from '../../config/env';
+import { DeleteObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { r2Client } from '../../shared/lib/r2Client';
 
 jest.mock('../../shared/lib/r2Client', () => ({
@@ -148,6 +149,41 @@ describe('UploadFileUseCase', () => {
       );
 
       expect(sendMock).not.toHaveBeenCalled();
+    });
+  });
+
+  // ── Compensacao no R2 ──────────────────────────────────
+  describe('should not leave an orphan object in the bucket if', () => {
+    it('the database insert fails after the upload succeeded', async () => {
+      mockFileRepository.create.mockRejectedValue(new Error('insert failed'));
+
+      await expect(useCase.execute(inputMock())).rejects.toThrow(
+        'insert failed',
+      );
+
+      // Duas chamadas ao R2: o upload e a limpeza.
+      expect(sendMock).toHaveBeenCalledTimes(2);
+
+      const put = sendMock.mock.calls[0][0] as PutObjectCommand;
+      const remove = sendMock.mock.calls[1][0] as DeleteObjectCommand;
+
+      expect(put).toBeInstanceOf(PutObjectCommand);
+      expect(remove).toBeInstanceOf(DeleteObjectCommand);
+      // A limpeza tem de apagar exatamente o objeto que acabou de subir.
+      expect(remove.input.Key).toBe(put.input.Key);
+    });
+
+    it('reports the original error even when the cleanup itself fails', async () => {
+      mockFileRepository.create.mockRejectedValue(new Error('insert failed'));
+      sendMock
+        .mockResolvedValueOnce({})
+        .mockRejectedValueOnce(new Error('R2 unreachable'));
+
+      // O erro que importa e o do banco: mascara-lo com um problema de storage
+      // esconderia a causa.
+      await expect(useCase.execute(inputMock())).rejects.toThrow(
+        'insert failed',
+      );
     });
   });
 });
