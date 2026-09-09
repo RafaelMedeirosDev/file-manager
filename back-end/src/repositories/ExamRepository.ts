@@ -14,9 +14,23 @@ export class ExamRepository {
     return this.prisma.exam.create({ data });
   }
 
+  /**
+   * Busca por codigo em TODAS as linhas, incluindo as soft-deletadas.
+   *
+   * A coluna `code` e unique no banco sem recorte de deletedAt, entao filtrar
+   * aqui criava divergencia: a guarda de CreateExamUseCase nao via o registro
+   * excluido, o INSERT estourava a unique e o cliente recebia 500 em vez de
+   * 409. Consultar tudo mantem aplicacao e banco de acordo -- e o mesmo
+   * criterio que UserRepository.findByEmail usa para o e-mail.
+   *
+   * Efeito colateral aceito: um codigo soft-deletado nao pode ser reaproveitado.
+   * Se um dia precisar ser, o caminho e um unique parcial
+   * (`WHERE deleted_at IS NULL`) em SQL bruto, ciente de que o Prisma nao
+   * expressa esse recorte e tentaria remove-lo a cada `migrate dev`.
+   */
   findByCode(code: string): Promise<Exam | null> {
     return this.prisma.exam.findFirst({
-      where: { code, deletedAt: null },
+      where: { code },
     });
   }
 
@@ -56,6 +70,10 @@ export class ExamRepository {
             }
           : {}),
       },
+      // Paginar sem ordenacao nao garante ordem estavel entre paginas: o
+      // Postgres pode devolver a mesma linha duas vezes ou nenhuma conforme o
+      // plano escolhido. Mesmo criterio das outras listagens do projeto.
+      orderBy: { name: 'asc' },
       skip,
       take,
     });

@@ -23,6 +23,29 @@ enum ExamCategory {
   HEMATOLOGY
 }
 
+// ── Sobre indices ────────────────────────────────────────────────────────────
+// Os @@index abaixo cobrem as 5 chaves estrangeiras. O que ficou de fora, e por
+// que, para nao se perder a analise:
+//
+// * Compostos com deleted_at (`@@index([deletedAt, userId, name])` e afins).
+//   `deleted_at IS NULL` esta em toda listagem, mas cada metodo tem 4 a 6
+//   formas de `where` conforme papel e filtro; cobrir todas exigiria ~12
+//   indices. Com o volume atual o planner escolhe seq scan e nenhum seria
+//   usado. Quando entrarem, devem ser compostos (expressaveis aqui) e nao
+//   parciais, que o Prisma nao representa e que gerariam drift a cada
+//   `migrate dev`.
+//
+// * Busca textual. `contains` + `mode: insensitive` gera `ILIKE '%termo%'`.
+//   B-tree nao atende: sem prefixo constante nao ha ponto de entrada na
+//   arvore. A resposta correta seria GIN de trigramas (`pg_trgm`), que exige
+//   CREATE EXTENSION e um preview flag do Prisma -- desproporcional para o
+//   volume deste projeto.
+//
+// * folders.is_default e users.role. Nunca sao predicado de WHERE em producao:
+//   is_default e lido de uma linha ja buscada por PK, e role filtra uma
+//   relacao to-one com dois valores distintos, seletividade que nao justifica
+//   indice.
+
 model User {
   id        String   @id @default(uuid()) @db.Uuid
   name      String   @db.VarChar(50)
@@ -55,6 +78,12 @@ model Folder {
   children Folder[] @relation("FolderToFolder")
   files    File[]
 
+  // O PostgreSQL nao cria indice para chave estrangeira automaticamente.
+  // folder_id e o mais usado do schema: `include: { children: true }` aparece
+  // em findById, findAll e listFoldersActive, e cada um vira um
+  // `WHERE folder_id = $1`. user_id serve o escopo por dono das listagens.
+  @@index([userId])
+  @@index([folderId])
   @@map("folders")
 }
 
@@ -79,6 +108,8 @@ model File {
   user   User    @relation(fields: [userId], references: [id])
   folder Folder? @relation(fields: [folderId], references: [id])
 
+  @@index([userId])
+  @@index([folderId])
   @@map("files")
 }
 
@@ -107,5 +138,6 @@ model ExamRequest {
   user  User   @relation(fields: [userId], references: [id])
   exams Exam[]
 
+  @@index([userId])
   @@map("exam_requests")
 }

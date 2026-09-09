@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { env } from './config/env';
 import { HttpLoggingInterceptor } from './shared/interceptors/HttpLoggingInterceptor';
+import { PrismaExceptionFilter } from './shared/filters/PrismaExceptionFilter';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -35,6 +36,9 @@ async function bootstrap() {
   });
 
   app.useGlobalInterceptors(new HttpLoggingInterceptor());
+
+  // Erro de constraint do banco deixa de vazar como 500 generico.
+  app.useGlobalFilters(new PrismaExceptionFilter());
 
   await app.listen(env.PORT);
 

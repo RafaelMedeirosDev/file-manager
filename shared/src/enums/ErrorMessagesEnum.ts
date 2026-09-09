@@ -24,4 +24,9 @@ export enum ErrorMessagesEnum {
   FILE_TOO_LARGE = 'Arquivo excede o tamanho maximo permitido',
   FILE_TYPE_NOT_ALLOWED = 'Tipo de arquivo nao permitido',
   UPLOAD_FAILED = 'Nao foi possivel enviar o arquivo',
+  // Usadas pelo PrismaExceptionFilter, quando uma constraint do banco e
+  // violada apesar das guardas do use case. Genericas de proposito: o filtro
+  // atua sobre qualquer tabela e nao sabe qual recurso falhou.
+  RESOURCE_ALREADY_EXISTS = 'Ja existe um registro com estes dados',
+  RESOURCE_NOT_FOUND = 'Registro nao encontrado',
 }
