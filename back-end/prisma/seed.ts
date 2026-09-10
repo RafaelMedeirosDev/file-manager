@@ -4,6 +4,7 @@ import { ExamCategory, PrismaClient, ROLE } from '@prisma/client';
 import { hash } from 'bcrypt';
 import { Pool } from 'pg';
 import { BCRYPT_SALT_ROUNDS } from '../src/shared/constants/bcrypt.constants';
+import { PRINCIPAL_ORGANIZATION_ID } from './organizations';
 
 // Credenciais de desenvolvimento, documentadas no README. Nao ha nada
 // sensivel aqui: este seed so faz sentido contra um banco local.
@@ -82,6 +83,32 @@ async function main(): Promise<void> {
       },
     });
 
+    // As associacoes com a organizacao principal. Sao elas que carregam o
+    // papel: `users.role` ainda e gravado acima, mas sera dropada no contract,
+    // e a partir do PR de autenticacao e daqui que o papel e lido.
+    //
+    // Sem esta parte o seed continua passando e o login para de funcionar --
+    // um usuario sem nenhuma associacao ativa e recusado no passo 1.
+    for (const [account, role] of [
+      [admin, ROLE.ADMIN],
+      [user, ROLE.USER],
+    ] as const) {
+      await prisma.membership.upsert({
+        where: {
+          userId_organizationId: {
+            userId: account.id,
+            organizationId: PRINCIPAL_ORGANIZATION_ID,
+          },
+        },
+        update: {},
+        create: {
+          userId: account.id,
+          organizationId: PRINCIPAL_ORGANIZATION_ID,
+          role,
+        },
+      });
+    }
+
     // Espelha CreateUserWithFoldersUseCase: a pasta padrao leva o nome do
     // usuario e e a unica onde um USER pode enviar arquivos.
     const existingDefaultFolder = await prisma.folder.findFirst({
@@ -106,6 +133,7 @@ async function main(): Promise<void> {
     console.log(`  ADMIN: ${admin.email} / ${ADMIN_PASSWORD}`);
     console.log(`  USER:  ${user.email} / ${USER_PASSWORD}`);
     console.log(`  ${EXAMS.length} exames no catalogo`);
+    console.log('  ambos associados a organizacao principal');
   } finally {
     await prisma.$disconnect();
     await pool.end();
