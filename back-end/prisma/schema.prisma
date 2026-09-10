@@ -45,6 +45,64 @@ enum ExamCategory {
 //   is_default e lido de uma linha ja buscada por PK, e role filtra uma
 //   relacao to-one com dois valores distintos, seletividade que nao justifica
 //   indice.
+//
+// * Compostos com organization_id. Desde a introducao de multi-tenancy,
+//   organization_id esta em todo WHERE de negocio -- o que muda o argumento do
+//   primeiro item, porque agora existe uma coluna comum a todas as formas de
+//   where. Ainda assim nao paga no volume atual. Quando pagar, os candidatos
+//   sao @@index([organizationId, userId]) em folders e files, nessa ordem: a
+//   org e sempre igualdade e vem primeiro, o dono e igualdade so quando o
+//   papel e USER.
+
+// As organizacoes sao a raiz do isolamento de dados. Um usuario e uma
+// identidade global -- `users.email` segue unique sem recorte de organizacao,
+// e e justamente isso que permite a mesma pessoa pertencer a duas delas.
+// Quem liga os dois lados e Membership, que tambem carrega o papel: alguem
+// pode ser ADMIN numa organizacao e USER em outra.
+//
+// Sobre `deletedAt` nestes dois models: existe por consistencia com os outros
+// cinco, mas e conferido em exatamente DOIS lugares -- JwtStrategy.validate e
+// o endpoint de selecao de organizacao. Nenhuma consulta de negocio precisa
+// checar: elas recortam por organizationId, e um token so existe se a
+// associacao estava ativa no momento em que foi emitido e continua ativa a
+// cada requisicao. Adicionar a checagem nas consultas de negocio seria
+// redundancia sem ganho.
+model Organization {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String    @db.VarChar(50)
+  slug      String    @unique @db.VarChar(50)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  memberships Membership[]
+
+  @@map("organizations")
+}
+
+model Membership {
+  id             String    @id @default(uuid()) @db.Uuid
+  userId         String    @db.Uuid @map("user_id")
+  organizationId String    @db.Uuid @map("organization_id")
+  role           ROLE
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  user         User         @relation(fields: [userId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  // A unique nao tem recorte de deleted_at, mesmo critério de users.email e
+  // exams.code: uma associacao soft-deletada continua ocupando o par. Quem
+  // reconstroi a organizacao demo apaga fisicamente, e o caminho de negocio
+  // para religar alguem e limpar o deleted_at, nao inserir de novo.
+  @@unique([userId, organizationId])
+  // user_id vem de graca no indice unico acima (e a primeira coluna dele).
+  // organization_id precisa do proprio: e por ele que se lista quem pertence
+  // a uma organizacao.
+  @@index([organizationId])
+  @@map("memberships")
+}
 
 model User {
   id        String   @id @default(uuid()) @db.Uuid
@@ -59,6 +117,7 @@ model User {
   folders      Folder[]
   files        File[]
   examRequests ExamRequest[]
+  memberships  Membership[]
 
   @@map("users")
 }

@@ -37,6 +37,8 @@ import { ListExamsUseCase } from './usecases/exam/ListExamsUseCase';
 import { SoftDeleteExamUseCase } from './usecases/exam/SoftDeleteExamUseCase';
 import { ExamRequestController } from './controllers/ExamRequestController';
 import { ExamRequestRepository } from './repositories/ExamRequestRepository';
+import { OrganizationRepository } from './repositories/OrganizationRepository';
+import { MembershipRepository } from './repositories/MembershipRepository';
 import { CreateExamRequestUseCase } from './usecases/exam-request/CreateExamRequestUseCase';
 import { GetExamRequestByIdUseCase } from './usecases/exam-request/GetExamRequestByIdUseCase';
 import { ListExamRequestsUseCase } from './usecases/exam-request/ListExamRequestsUseCase';
@@ -82,6 +84,8 @@ import { UpdateExamRequestUseCase } from './usecases/exam-request/UpdateExamRequ
     SoftDeleteFileUseCase,
     RolesGuard,
     UserRepository,
+    OrganizationRepository,
+    MembershipRepository,
     FolderRepository,
     FileRepository,
     ExamRepository,
