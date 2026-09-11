@@ -8,14 +8,11 @@ import {
   Post,
   Query,
   Req,
-  UseGuards,
   ValidationPipe,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { ROLE } from '@prisma/client';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
-import { RolesGuard } from '../auth/roles.guard';
 import type { JwtPayload } from '../auth/jwt.strategy';
 import { CreateUserDTO } from '../shared/dto/user/CreateUserDTO';
 import { ListUsersQueryDTO } from '../shared/dto/user/ListUsersQueryDTO';
@@ -58,7 +55,6 @@ import {
   description: 'Papel do usuario nao autorizado para a rota',
 })
 @Controller('users')
-@UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(ROLE.ADMIN)
 export class UserController {
   constructor(

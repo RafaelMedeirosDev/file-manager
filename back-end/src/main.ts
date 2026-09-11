@@ -50,10 +50,13 @@ async function bootstrap() {
   // 1. O Swagger UI so carrega porque a CSP do helmet esta desligada acima --
   //    ele usa script e estilo inline. Ligar contentSecurityPolicy quebra /docs.
   //
-  // 2. O ThrottlerGuard global NAO cobre /docs nem /docs-json: ele atua no
-  //    pipeline de rotas do Nest, e isto e middleware Express. E a unica
-  //    superficie da API sem teto de requisicoes. O documento e montado uma vez
-  //    no boot, entao o custo por request e apenas serializacao.
+  // 2. NENHUM guard global cobre /docs nem /docs-json -- nem o ThrottlerGuard,
+  //    nem o JwtAuthGuard. Os guards atuam no pipeline de rotas do Nest, e
+  //    isto e middleware Express. E a unica superficie da API sem teto de
+  //    requisicoes e sem exigencia de token, e isso nao muda declarando guard
+  //    global no AppModule: e preciso ter isto em mente antes de concluir que
+  //    "toda rota exige autenticacao". O documento e montado uma vez no boot,
+  //    entao o custo por request e apenas serializacao.
   const swaggerConfig = new DocumentBuilder()
     .setTitle('File Manager API')
     .setDescription(

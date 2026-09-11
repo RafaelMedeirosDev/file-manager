@@ -2,16 +2,16 @@ import {
   CanActivate,
   ExecutionContext,
   INestApplication,
+  Injectable,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Reflector } from '@nestjs/core';
+import { APP_GUARD, Reflector } from '@nestjs/core';
 import request from 'supertest';
 import { Readable } from 'node:stream';
 import { ROLE } from '@prisma/client';
 import { UserController } from '../src/controllers/UserController';
 import { FolderController } from '../src/controllers/FolderController';
 import { FileController } from '../src/controllers/FileController';
-import { JwtAuthGuard } from '../src/auth/jwt-auth.guard';
 import { RolesGuard } from '../src/auth/roles.guard';
 import { CreateUserWithFoldersUseCase } from '../src/usecases/user/CreateUserWithFoldersUseCase';
 import { ChangeOwnPasswordUseCase } from '../src/usecases/user/ChangeOwnPasswordUseCase';
@@ -32,6 +32,7 @@ import { SoftDeleteFileUseCase } from '../src/usecases/file/SoftDeleteFileUseCas
 import { UploadFileUseCase } from '../src/usecases/file/UploadFileUseCase';
 import { BulkUploadFilesUseCase } from '../src/usecases/file/BulkUploadFilesUseCase';
 
+@Injectable()
 class TestJwtAuthGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const req = context.switchToHttp().getRequest();
@@ -205,7 +206,12 @@ describe('RBAC (e2e)', () => {
       controllers: [UserController, FolderController, FileController],
       providers: [
         Reflector,
-        RolesGuard,
+        // Espelha a ordem do AppModule. Os guards sao globais na producao, e o
+        // `overrideGuard(JwtAuthGuard)` que existia aqui antes so funcionava
+        // porque os controllers declaravam `@UseGuards` -- sem isso, nao havia
+        // o que sobrescrever e `req.user` ficava undefined.
+        { provide: APP_GUARD, useClass: TestJwtAuthGuard },
+        { provide: APP_GUARD, useClass: RolesGuard },
         { provide: CreateUserWithFoldersUseCase, useValue: createUserUseCase },
         {
           provide: ChangeOwnPasswordUseCase,
@@ -229,8 +235,6 @@ describe('RBAC (e2e)', () => {
         { provide: BulkUploadFilesUseCase, useValue: bulkUploadFilesUseCase },
       ],
     });
-
-    moduleBuilder.overrideGuard(JwtAuthGuard).useClass(TestJwtAuthGuard);
 
     const moduleFixture: TestingModule = await moduleBuilder.compile();
 

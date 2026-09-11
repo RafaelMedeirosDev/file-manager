@@ -76,6 +76,13 @@ jobs:
       - name: Lint
         run: pnpm lint:ci
 
+      # O `build` roda `nest build`, que usa tsconfig.build.json e exclui
+      # **/*spec.ts -- ou seja, erro de tipo em teste nao reprovava o PR. Foi
+      # assim que um `import` sem @types chegou na main. Este passo usa o
+      # tsconfig.json completo, que cobre src/ e test/.
+      - name: Typecheck
+        run: pnpm typecheck
+
       # Aplica o historico inteiro num banco vazio. Pega SQL invalido, ordem
       # de migration quebrada e schema fora de sincronia -- nenhum deles
       # visivel para as suites mockadas.

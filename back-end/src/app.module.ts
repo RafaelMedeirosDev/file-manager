@@ -30,6 +30,7 @@ import { DownloadFileUseCase } from './usecases/file/DownloadFileUseCase';
 import { UploadFileUseCase } from './usecases/file/UploadFileUseCase';
 import { BulkUploadFilesUseCase } from './usecases/file/BulkUploadFilesUseCase';
 import { RolesGuard } from './auth/roles.guard';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { ExamController } from './controllers/ExamController';
 import { ExamRepository } from './repositories/ExamRepository';
 import { CreateExamUseCase } from './usecases/exam/CreateExamUseCase';
@@ -62,9 +63,31 @@ import { UpdateExamRequestUseCase } from './usecases/exam-request/UpdateExamRequ
     ExamRequestController,
   ],
   providers: [
-    // Guard global: as suites e2e montam modulo proprio e nao importam o
-    // AppModule, entao nao enxergam este guard e seguem passando.
+    // Guards globais, aplicados a TODA rota do Nest. A ordem aqui e a ordem de
+    // execucao (o Nest empilha os APP_GUARD na ordem do array), e ela importa:
+    //
+    //   1. ThrottlerGuard  primeiro, para uma enxurrada nao autenticada ser
+    //                      barrada antes de tocar o passport e o banco.
+    //   2. JwtAuthGuard    fecha por default. Antes a autenticacao vinha de um
+    //                      `@UseGuards` por controller, e esquece-lo deixava a
+    //                      rota aberta em silencio. Rotas que nao passam por
+    //                      ele declaram @SkipJwtAuth() explicitamente.
+    //   3. RolesGuard      aplica o @Roles. Passa direto quando a rota nao
+    //                      declara papel nenhum.
+    //
+    // Guards globais rodam antes dos de classe e dos de metodo. E por isso que
+    // `POST /auth/organizations/:id/token`, que usa @UseGuards(PreAuthGuard) no
+    // metodo, precisa de @SkipJwtAuth(): sem ele o guard global recusaria o
+    // pre-auth pela audiencia antes de o guard da rota rodar.
+    //
+    // Nenhum dos tres cobre /docs e /docs-json -- middleware Express, fora do
+    // pipeline de rotas. Ver o comentario em main.ts.
+    //
+    // As suites e2e que montam modulo proprio registram os proprios APP_GUARD,
+    // espelhando esta ordem.
     { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
     AppService,
     CreateUserWithFoldersUseCase,
     ListUsersUseCase,
@@ -82,7 +105,6 @@ import { UpdateExamRequestUseCase } from './usecases/exam-request/UpdateExamRequ
     DownloadFileUseCase,
     UpdateFileUseCase,
     SoftDeleteFileUseCase,
-    RolesGuard,
     UserRepository,
     OrganizationRepository,
     MembershipRepository,

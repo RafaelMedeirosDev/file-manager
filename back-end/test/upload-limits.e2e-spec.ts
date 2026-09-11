@@ -6,12 +6,11 @@ import {
   UnsupportedMediaTypeException,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Reflector } from '@nestjs/core';
+import { APP_GUARD, Reflector } from '@nestjs/core';
 import { ROLE } from '@prisma/client';
 import request from 'supertest';
 import { ErrorMessagesEnum } from '@file-manager/shared';
 import { FileController } from '../src/controllers/FileController';
-import { JwtAuthGuard } from '../src/auth/jwt-auth.guard';
 import { RolesGuard } from '../src/auth/roles.guard';
 import { env } from '../src/config/env';
 import { CreateFileUseCase } from '../src/usecases/file/CreateFileUseCase';
@@ -49,7 +48,9 @@ describe('Upload limits (e2e)', () => {
       controllers: [FileController],
       providers: [
         Reflector,
-        RolesGuard,
+        // Guards globais, na mesma ordem do AppModule.
+        { provide: APP_GUARD, useClass: TestJwtAuthGuard },
+        { provide: APP_GUARD, useClass: RolesGuard },
         { provide: CreateFileUseCase, useValue: noop },
         { provide: ListFilesUseCase, useValue: noop },
         { provide: GetFileByIdUseCase, useValue: noop },
@@ -60,8 +61,6 @@ describe('Upload limits (e2e)', () => {
         { provide: BulkUploadFilesUseCase, useValue: noop },
       ],
     });
-
-    moduleBuilder.overrideGuard(JwtAuthGuard).useClass(TestJwtAuthGuard);
 
     const moduleFixture: TestingModule = await moduleBuilder.compile();
     app = moduleFixture.createNestApplication();

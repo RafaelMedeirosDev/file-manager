@@ -13,6 +13,7 @@ import { AuthService } from './auth.service';
 import { LoginDTO } from '../shared/dto/auth/LoginDTO';
 import { AuthOrganizationParamsDTO } from '../shared/dto/auth/AuthOrganizationParamsDTO';
 import { PreAuthGuard } from './pre-auth.guard';
+import { SkipJwtAuth } from './skip-jwt-auth.decorator';
 import type { PreAuthUser } from './pre-auth.strategy';
 import {
   ApiBearerAuth,
@@ -31,6 +32,7 @@ export class AuthController {
   // que aceita credenciais, e sem isto um brute force nao encontra barreira.
   // Cinco tentativas por minuto por IP acomodam quem erra a senha e nao
   // acomodam quem varre uma lista.
+  @SkipJwtAuth()
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post('login')
   @ApiOkResponse({
@@ -61,7 +63,13 @@ export class AuthController {
    * Usa a PreAuthGuard, e nao a JwtAuthGuard: um token de sessao nao serve
    * aqui, e um pre-auth nao serve em nenhuma rota de negocio. A separacao e
    * pela audiencia gravada no proprio token.
+   *
+   * A combinacao @SkipJwtAuth() + @UseGuards(PreAuthGuard) e deliberada, e a
+   * rota NAO e publica. Guards globais rodam antes dos de metodo, entao sem o
+   * @SkipJwtAuth() o JwtAuthGuard recusaria o pre-auth pela audiencia e o
+   * PreAuthGuard nunca chegaria a rodar.
    */
+  @SkipJwtAuth()
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('organizations/:organizationId/token')
   @UseGuards(PreAuthGuard)
