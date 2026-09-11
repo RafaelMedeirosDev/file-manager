@@ -7,13 +7,10 @@ import {
   ParseUUIDPipe,
   Post,
   Query,
-  UseGuards,
   ValidationPipe,
 } from '@nestjs/common';
 import { ROLE } from '@prisma/client';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
-import { RolesGuard } from '../auth/roles.guard';
 import { CreateExamDTO } from '../shared/dto/exam/CreateExamDTO';
 import { ListExamsQueryDTO } from '../shared/dto/exam/ListExamsQueryDTO';
 import {
@@ -44,7 +41,6 @@ import {
   description: 'Papel do usuario nao autorizado para a rota',
 })
 @Controller('exams')
-@UseGuards(JwtAuthGuard, RolesGuard)
 export class ExamController {
   constructor(
     private readonly createExamUseCase: CreateExamUseCase,

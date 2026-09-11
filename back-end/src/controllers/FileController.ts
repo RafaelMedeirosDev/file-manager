@@ -14,7 +14,6 @@ import {
   UploadedFile,
   UploadedFiles,
   UseFilters,
-  UseGuards,
   UseInterceptors,
   ValidationPipe,
 } from '@nestjs/common';
@@ -32,9 +31,7 @@ import {
   UpdateFileDTO,
   UpdateFileParamsDTO,
 } from '../shared/dto/file/UpdateFileDTO';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
-import { RolesGuard } from '../auth/roles.guard';
 import {
   CreateFileOutput,
   CreateFileUseCase,
@@ -85,7 +82,6 @@ import {
   description: 'Papel do usuario nao autorizado para a rota',
 })
 @Controller('files')
-@UseGuards(JwtAuthGuard, RolesGuard)
 export class FileController {
   constructor(
     private readonly createFileUseCase: CreateFileUseCase,
