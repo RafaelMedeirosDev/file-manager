@@ -1,8 +1,26 @@
-import { Body, Controller, Post, ValidationPipe } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Param,
+  Post,
+  Req,
+  UseGuards,
+  ValidationPipe,
+} from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
+import { Request } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDTO } from '../shared/dto/auth/LoginDTO';
-import { ApiTags } from '@nestjs/swagger';
+import { AuthOrganizationParamsDTO } from '../shared/dto/auth/AuthOrganizationParamsDTO';
+import { PreAuthGuard } from './pre-auth.guard';
+import type { PreAuthUser } from './pre-auth.strategy';
+import {
+  ApiBearerAuth,
+  ApiForbiddenResponse,
+  ApiOkResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -15,6 +33,15 @@ export class AuthController {
   // acomodam quem varre uma lista.
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post('login')
+  @ApiOkResponse({
+    description:
+      'Com uma organizacao, devolve `status: "authenticated"` com o accessToken. ' +
+      'Com duas ou mais, devolve `status: "organization_required"` com o preAuthToken e a lista.',
+  })
+  @ApiUnauthorizedResponse({
+    description:
+      'Credencial invalida, usuario excluido ou sem nenhuma organizacao ativa',
+  })
   login(
     @Body(
       new ValidationPipe({
@@ -26,5 +53,41 @@ export class AuthController {
     body: LoginDTO,
   ) {
     return this.authService.login(body);
+  }
+
+  /**
+   * Passo 2 do login: troca o pre-auth pelo token da organizacao escolhida.
+   *
+   * Usa a PreAuthGuard, e nao a JwtAuthGuard: um token de sessao nao serve
+   * aqui, e um pre-auth nao serve em nenhuma rota de negocio. A separacao e
+   * pela audiencia gravada no proprio token.
+   */
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post('organizations/:organizationId/token')
+  @UseGuards(PreAuthGuard)
+  @ApiBearerAuth('bearer')
+  @ApiOkResponse({ description: 'Token de sessao da organizacao escolhida' })
+  @ApiUnauthorizedResponse({
+    description:
+      'preAuthToken ausente, invalido, expirado ou de outra audiencia',
+  })
+  @ApiForbiddenResponse({
+    description: 'Usuario nao pertence a organizacao informada',
+  })
+  createOrganizationToken(
+    @Param(
+      new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        forbidNonWhitelisted: true,
+      }),
+    )
+    params: AuthOrganizationParamsDTO,
+    @Req() req: Request & { user: PreAuthUser },
+  ) {
+    return this.authService.createTokenForOrganization(
+      req.user.sub,
+      params.organizationId,
+    );
   }
 }
