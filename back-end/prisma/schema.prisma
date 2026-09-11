@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -76,14 +75,16 @@ model Organization {
   deletedAt DateTime? @map("deleted_at")
 
   memberships Membership[]
+  folders     Folder[]
+  files       File[]
 
   @@map("organizations")
 }
 
 model Membership {
   id             String    @id @default(uuid()) @db.Uuid
-  userId         String    @db.Uuid @map("user_id")
-  organizationId String    @db.Uuid @map("organization_id")
+  userId         String    @map("user_id") @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
   role           ROLE
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at")
@@ -105,13 +106,13 @@ model Membership {
 }
 
 model User {
-  id        String   @id @default(uuid()) @db.Uuid
-  name      String   @db.VarChar(50)
-  email     String   @unique @db.VarChar(50)
-  password  String   @db.VarChar(255)
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String    @db.VarChar(50)
+  email     String    @unique @db.VarChar(50)
+  password  String    @db.VarChar(255)
   role      ROLE
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
 
   folders      Folder[]
@@ -123,50 +124,61 @@ model User {
 }
 
 model Folder {
-  id        String    @id @default(uuid()) @db.Uuid
-  name      String    @db.VarChar(50)
-  userId    String    @db.Uuid @map("user_id")
-  folderId  String?   @db.Uuid @map("folder_id")
-  isDefault Boolean   @default(false) @map("is_default")
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at")
-  deletedAt DateTime? @map("deleted_at")
+  id             String    @id @default(uuid()) @db.Uuid
+  name           String    @db.VarChar(50)
+  // A organizacao dona da pasta. Nao e derivavel de `userId`: a mesma pessoa
+  // pode pertencer a duas organizacoes, entao nao existe dependencia
+  // funcional user_id -> organization_id.
+  organizationId String    @map("organization_id") @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  folderId       String?   @map("folder_id") @db.Uuid
+  isDefault      Boolean   @default(false) @map("is_default")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
 
-  user     User     @relation(fields: [userId], references: [id])
-  parent   Folder?  @relation("FolderToFolder", fields: [folderId], references: [id])
-  children Folder[] @relation("FolderToFolder")
-  files    File[]
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+  parent       Folder?      @relation("FolderToFolder", fields: [folderId], references: [id])
+  children     Folder[]     @relation("FolderToFolder")
+  files        File[]
 
   // O PostgreSQL nao cria indice para chave estrangeira automaticamente.
   // folder_id e o mais usado do schema: `include: { children: true }` aparece
   // em findById, findAll e listFoldersActive, e cada um vira um
   // `WHERE folder_id = $1`. user_id serve o escopo por dono das listagens.
+  @@index([organizationId])
   @@index([userId])
   @@index([folderId])
   @@map("folders")
 }
 
 model File {
-  id        String    @id @default(uuid()) @db.Uuid
-  name      String    @db.VarChar(255)
-  userId    String    @db.Uuid @map("user_id")
-  folderId  String?   @db.Uuid @map("folder_id")
-  extension String    @db.VarChar(20)
+  id             String    @id @default(uuid()) @db.Uuid
+  name           String    @db.VarChar(255)
+  // Coluna propria, e nao derivada da pasta: `folderId` e opcional, entao um
+  // arquivo solto nao teria de onde herdar a organizacao.
+  organizationId String    @map("organization_id") @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  folderId       String?   @map("folder_id") @db.Uuid
+  extension      String    @db.VarChar(20)
   // Chave do objeto no R2 (`<uuid>.<ext>`). E a fonte da verdade para ler o
   // binario: o download usa GetObjectCommand com esta chave, nunca uma URL.
-  key       String    @db.VarChar(255)
+  key            String    @db.VarChar(255)
   // Legado do periodo em que o bucket era publico. Nao e mais gravada, exposta
   // pela API nem usada para buscar o arquivo: quem resolve o binario e `key`.
   // Opcional aqui para que os registros antigos preservem o valor enquanto a
   // coluna aguarda o DROP, previsto para a proxima migration.
-  url       String?   @db.Text
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at")
-  deletedAt DateTime? @map("deleted_at")
+  url            String?   @db.Text
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
 
-  user   User    @relation(fields: [userId], references: [id])
-  folder Folder? @relation(fields: [folderId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+  folder       Folder?      @relation(fields: [folderId], references: [id])
 
+  @@index([organizationId])
   @@index([userId])
   @@index([folderId])
   @@map("files")
@@ -188,7 +200,7 @@ model Exam {
 
 model ExamRequest {
   id         String    @id @default(uuid()) @db.Uuid
-  userId     String    @db.Uuid @map("user_id")
+  userId     String    @map("user_id") @db.Uuid
   indication String    @db.Text
   createdAt  DateTime  @default(now()) @map("created_at")
   updatedAt  DateTime  @default(now()) @updatedAt @map("updated_at")

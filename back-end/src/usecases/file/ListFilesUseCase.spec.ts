@@ -2,6 +2,8 @@ import { ROLE } from '@prisma/client';
 import { FileRepository } from '../../repositories/FileRepository';
 import { ListFilesUseCase } from './ListFilesUseCase';
 
+const ORGANIZATION_ID = 'org-uuid-principal';
+
 // ── Factories ─────────────────────────────────────────────────────────────────
 
 function fileMock(overrides = {}) {
@@ -25,8 +27,16 @@ const countFilesActive = jest.fn();
 
 let useCase: ListFilesUseCase;
 
-const adminInput = { requesterUserId: 'admin-id', requesterRole: ROLE.ADMIN };
-const userInput = { requesterUserId: 'user-id', requesterRole: ROLE.USER };
+const adminInput = {
+  organizationId: ORGANIZATION_ID,
+  requesterUserId: 'admin-id',
+  requesterRole: ROLE.ADMIN,
+};
+const userInput = {
+  organizationId: ORGANIZATION_ID,
+  requesterUserId: 'user-id',
+  requesterRole: ROLE.USER,
+};
 
 // ── Suite ─────────────────────────────────────────────────────────────────────
 
@@ -98,18 +108,20 @@ describe('ListFilesUseCase', () => {
 
       await useCase.execute({ ...userInput, folderId: 'folder-abc' });
 
-      expect(listFilesActive).toHaveBeenCalledWith(
-        'user-id',
-        ROLE.USER,
-        'folder-abc',
-        0,
-        10,
-      );
-      expect(countFilesActive).toHaveBeenCalledWith(
-        'user-id',
-        ROLE.USER,
-        'folder-abc',
-      );
+      expect(listFilesActive).toHaveBeenCalledWith({
+        organizationId: ORGANIZATION_ID,
+        requesterUserId: 'user-id',
+        requesterRole: ROLE.USER,
+        folderId: 'folder-abc',
+        skip: 0,
+        take: 10,
+      });
+      expect(countFilesActive).toHaveBeenCalledWith({
+        organizationId: ORGANIZATION_ID,
+        requesterUserId: 'user-id',
+        requesterRole: ROLE.USER,
+        folderId: 'folder-abc',
+      });
     });
 
     it('passes undefined folderId when not provided', async () => {
@@ -118,18 +130,20 @@ describe('ListFilesUseCase', () => {
 
       await useCase.execute(adminInput);
 
-      expect(listFilesActive).toHaveBeenCalledWith(
-        'admin-id',
-        ROLE.ADMIN,
-        undefined,
-        0,
-        10,
-      );
-      expect(countFilesActive).toHaveBeenCalledWith(
-        'admin-id',
-        ROLE.ADMIN,
-        undefined,
-      );
+      expect(listFilesActive).toHaveBeenCalledWith({
+        organizationId: ORGANIZATION_ID,
+        requesterUserId: 'admin-id',
+        requesterRole: ROLE.ADMIN,
+        folderId: undefined,
+        skip: 0,
+        take: 10,
+      });
+      expect(countFilesActive).toHaveBeenCalledWith({
+        organizationId: ORGANIZATION_ID,
+        requesterUserId: 'admin-id',
+        requesterRole: ROLE.ADMIN,
+        folderId: undefined,
+      });
     });
 
     it('returns empty data when repository returns no results', async () => {

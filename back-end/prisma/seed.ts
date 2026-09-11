@@ -131,12 +131,22 @@ async function main(): Promise<void> {
     // Espelha CreateUserWithFoldersUseCase: a pasta padrao leva o nome do
     // usuario e e a unica onde um USER pode enviar arquivos.
     const existingDefaultFolder = await prisma.folder.findFirst({
-      where: { userId: user.id, isDefault: true, deletedAt: null },
+      where: {
+        organizationId: organization.id,
+        userId: user.id,
+        isDefault: true,
+        deletedAt: null,
+      },
     });
 
     if (!existingDefaultFolder) {
       await prisma.folder.create({
-        data: { name: user.name, userId: user.id, isDefault: true },
+        data: {
+          name: user.name,
+          organizationId: organization.id,
+          userId: user.id,
+          isDefault: true,
+        },
       });
     }
 

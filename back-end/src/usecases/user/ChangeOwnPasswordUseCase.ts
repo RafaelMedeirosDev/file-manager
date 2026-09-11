@@ -11,6 +11,7 @@ import { ErrorMessagesEnum } from '@file-manager/shared';
 import { BCRYPT_SALT_ROUNDS } from '../../shared/constants/bcrypt.constants';
 
 export type ChangeOwnPasswordInput = {
+  organizationId: string;
   userId: string;
   currentPassword: string;
   newPassword: string;
@@ -33,7 +34,10 @@ export class ChangeOwnPasswordUseCase {
     input: ChangeOwnPasswordInput,
   ): Promise<ChangeOwnPasswordOutput> {
     this.logger.log('[ChangeOwnPasswordUseCase] Execute started');
-    const user = await this.userRepository.findById(input.userId);
+    const user = await this.userRepository.findById(
+      input.organizationId,
+      input.userId,
+    );
 
     if (!user || user.deletedAt) {
       throw new NotFoundException(ErrorMessagesEnum.USER_NOT_FOUND);

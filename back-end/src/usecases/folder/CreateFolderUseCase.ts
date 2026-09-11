@@ -10,6 +10,7 @@ import { UserRepository } from '../../repositories/UserRepository';
 import { ErrorMessagesEnum } from '@file-manager/shared';
 
 export type CreateFolderInput = {
+  organizationId: string;
   name: string;
   userId: string;
   folderId?: string;
@@ -34,14 +35,20 @@ export class CreateFolderUseCase {
 
   async execute(input: CreateFolderInput): Promise<CreateFolderOutput> {
     this.logger.log('[CreateFolderUseCase] Execute started');
-    const user = await this.userRepository.findById(input.userId);
+    const user = await this.userRepository.findById(
+      input.organizationId,
+      input.userId,
+    );
 
     if (!user || user.deletedAt) {
       throw new NotFoundException(ErrorMessagesEnum.USER_NOT_FOUND);
     }
 
     if (input.folderId) {
-      const parentFolder = await this.folderRepository.findById(input.folderId);
+      const parentFolder = await this.folderRepository.findById(
+        input.organizationId,
+        input.folderId,
+      );
 
       if (!parentFolder || parentFolder.deletedAt) {
         throw new NotFoundException(ErrorMessagesEnum.FOLDER_NOT_FOUND);
@@ -59,6 +66,7 @@ export class CreateFolderUseCase {
 
     const activeFolderWithSameName =
       await this.folderRepository.findActiveByUserIdAndName({
+        organizationId: input.organizationId,
         userId: input.userId,
         name: input.name,
       });
@@ -70,6 +78,7 @@ export class CreateFolderUseCase {
     }
 
     const folder = await this.folderRepository.create({
+      organizationId: input.organizationId,
       name: input.name,
       userId: input.userId,
       folderId: input.folderId,

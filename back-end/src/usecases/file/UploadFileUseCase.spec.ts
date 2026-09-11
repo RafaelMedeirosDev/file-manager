@@ -13,6 +13,8 @@ import { env } from '../../config/env';
 import { DeleteObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { r2Client } from '../../shared/lib/r2Client';
 
+const ORGANIZATION_ID = 'org-uuid-principal';
+
 jest.mock('../../shared/lib/r2Client', () => ({
   r2Client: { send: jest.fn() },
 }));
@@ -48,6 +50,7 @@ function userMock(overrides: Record<string, unknown> = {}) {
 
 function inputMock(overrides: Record<string, unknown> = {}) {
   return {
+    organizationId: ORGANIZATION_ID,
     buffer: Buffer.from('conteudo'),
     name: 'laudo',
     requesterId: 'user-uuid-001',

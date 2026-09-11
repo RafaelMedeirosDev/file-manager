@@ -7,6 +7,8 @@ import { ExamRepository } from '../../repositories/ExamRepository';
 import { ExamRequestRepository } from '../../repositories/ExamRequestRepository';
 import { ErrorMessagesEnum } from '@file-manager/shared';
 
+const ORGANIZATION_ID = 'org-uuid-principal';
+
 // ── Factories ─────────────────────────────────────────────────────────────────
 
 function userMock(overrides = {}) {
@@ -94,6 +96,7 @@ describe('CreateExamRequestUseCase', () => {
       );
 
       const result = await useCase.execute({
+        organizationId: ORGANIZATION_ID,
         userId: 'user-uuid-001',
         indication: 'Paciente em jejum',
         examIds: ['exam-uuid-001'],
@@ -114,6 +117,7 @@ describe('CreateExamRequestUseCase', () => {
       mockExamRequestRepository.create.mockResolvedValueOnce(examRequestMock());
 
       await useCase.execute({
+        organizationId: ORGANIZATION_ID,
         userId: 'user-uuid-001',
         indication: undefined,
         examIds: ['exam-uuid-001'],
@@ -133,6 +137,7 @@ describe('CreateExamRequestUseCase', () => {
 
       await expect(
         useCase.execute({
+          organizationId: ORGANIZATION_ID,
           userId: 'nonexistent',
           indication: undefined,
           examIds: ['exam-uuid-001'],
@@ -149,6 +154,7 @@ describe('CreateExamRequestUseCase', () => {
 
       await expect(
         useCase.execute({
+          organizationId: ORGANIZATION_ID,
           userId: 'user-uuid-001',
           indication: undefined,
           examIds: ['exam-uuid-001'],
@@ -165,6 +171,7 @@ describe('CreateExamRequestUseCase', () => {
 
       await expect(
         useCase.execute({
+          organizationId: ORGANIZATION_ID,
           userId: 'user-uuid-001',
           indication: undefined,
           examIds: ['exam-uuid-001'],

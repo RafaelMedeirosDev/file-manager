@@ -13,6 +13,8 @@ import { BCRYPT_SALT_ROUNDS } from '../../shared/constants/bcrypt.constants';
 jest.mock('bcrypt', () => ({ hash: jest.fn() }));
 import { hash } from 'bcrypt';
 
+const ORGANIZATION_ID = 'org-uuid-principal';
+
 const hashMock = jest.mocked(hash);
 
 // ── Factories ────────────────────────────────────────────
@@ -60,7 +62,11 @@ describe('UpdateUserUseCase', () => {
     it('updates the email without touching bcrypt', async () => {
       mockUserRepository.findByEmail.mockResolvedValue(null);
 
-      await useCase.execute({ id: 'user-uuid-001', email: 'nova@example.com' });
+      await useCase.execute({
+        organizationId: ORGANIZATION_ID,
+        id: 'user-uuid-001',
+        email: 'nova@example.com',
+      });
 
       expect(hashMock).not.toHaveBeenCalled();
       expect(mockUserRepository.updateById).toHaveBeenCalledWith(
@@ -70,7 +76,11 @@ describe('UpdateUserUseCase', () => {
     });
 
     it('hashes the password when one is given', async () => {
-      await useCase.execute({ id: 'user-uuid-001', password: 'nova-senha' });
+      await useCase.execute({
+        organizationId: ORGANIZATION_ID,
+        id: 'user-uuid-001',
+        password: 'nova-senha',
+      });
 
       expect(hashMock).toHaveBeenCalledWith('nova-senha', BCRYPT_SALT_ROUNDS);
       expect(mockUserRepository.updateById).toHaveBeenCalledWith(
@@ -87,7 +97,11 @@ describe('UpdateUserUseCase', () => {
       );
 
       await expect(
-        useCase.execute({ id: 'user-uuid-001', email: 'alice@example.com' }),
+        useCase.execute({
+          organizationId: ORGANIZATION_ID,
+          id: 'user-uuid-001',
+          email: 'alice@example.com',
+        }),
       ).resolves.toBeDefined();
     });
   });
@@ -95,7 +109,12 @@ describe('UpdateUserUseCase', () => {
   // ── Error cases ────────────────────────────────────────
   describe('should not be able to update a user if', () => {
     it('no field was provided', async () => {
-      await expect(useCase.execute({ id: 'user-uuid-001' })).rejects.toThrow(
+      await expect(
+        useCase.execute({
+          organizationId: ORGANIZATION_ID,
+          id: 'user-uuid-001',
+        }),
+      ).rejects.toThrow(
         new BadRequestException(ErrorMessagesEnum.AT_LEAST_ONE_FIELD_REQUIRED),
       );
 
@@ -107,7 +126,11 @@ describe('UpdateUserUseCase', () => {
       mockUserRepository.findById.mockResolvedValue(null);
 
       await expect(
-        useCase.execute({ id: 'missing', email: 'nova@example.com' }),
+        useCase.execute({
+          organizationId: ORGANIZATION_ID,
+          id: 'missing',
+          email: 'nova@example.com',
+        }),
       ).rejects.toThrow(
         new NotFoundException(ErrorMessagesEnum.USER_NOT_FOUND),
       );
@@ -119,7 +142,11 @@ describe('UpdateUserUseCase', () => {
       );
 
       await expect(
-        useCase.execute({ id: 'user-uuid-001', email: 'nova@example.com' }),
+        useCase.execute({
+          organizationId: ORGANIZATION_ID,
+          id: 'user-uuid-001',
+          email: 'nova@example.com',
+        }),
       ).rejects.toThrow(
         new NotFoundException(ErrorMessagesEnum.USER_NOT_FOUND),
       );
@@ -131,7 +158,11 @@ describe('UpdateUserUseCase', () => {
       );
 
       await expect(
-        useCase.execute({ id: 'user-uuid-001', email: 'nova@example.com' }),
+        useCase.execute({
+          organizationId: ORGANIZATION_ID,
+          id: 'user-uuid-001',
+          email: 'nova@example.com',
+        }),
       ).rejects.toThrow(
         new ConflictException(ErrorMessagesEnum.EMAIL_ALREADY_REGISTERED),
       );

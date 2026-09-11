@@ -2,6 +2,8 @@ import { ROLE } from '@prisma/client';
 import { UserRepository } from '../../repositories/UserRepository';
 import { ListUsersUseCase } from './ListUsersUseCase';
 
+const ORGANIZATION_ID = 'org-uuid-principal';
+
 // ── Factories ─────────────────────────────────────────────────────────────────
 
 function userMock(overrides = {}) {
@@ -42,7 +44,7 @@ describe('ListUsersUseCase', () => {
       listUsersActive.mockResolvedValueOnce(users);
       countActiveUsers.mockResolvedValueOnce(2);
 
-      const result = await useCase.execute({});
+      const result = await useCase.execute({ organizationId: ORGANIZATION_ID });
 
       expect(result.data).toHaveLength(2);
       expect(result.meta.page).toBe(1);
@@ -61,7 +63,7 @@ describe('ListUsersUseCase', () => {
       listUsersActive.mockResolvedValueOnce([user]);
       countActiveUsers.mockResolvedValueOnce(1);
 
-      const result = await useCase.execute({});
+      const result = await useCase.execute({ organizationId: ORGANIZATION_ID });
 
       expect(result.data[0]).toEqual({
         id: 'u-x',
@@ -80,7 +82,11 @@ describe('ListUsersUseCase', () => {
       ]);
       countActiveUsers.mockResolvedValueOnce(5);
 
-      const result = await useCase.execute({ page: 2, limit: 2 });
+      const result = await useCase.execute({
+        organizationId: ORGANIZATION_ID,
+        page: 2,
+        limit: 2,
+      });
 
       expect(result.meta.page).toBe(2);
       expect(result.meta.limit).toBe(2);
@@ -92,27 +98,46 @@ describe('ListUsersUseCase', () => {
       listUsersActive.mockResolvedValueOnce([]);
       countActiveUsers.mockResolvedValueOnce(0);
 
-      await useCase.execute({ search: '  ANA  ' });
+      await useCase.execute({
+        organizationId: ORGANIZATION_ID,
+        search: '  ANA  ',
+      });
 
-      expect(listUsersActive).toHaveBeenCalledWith('ana', 0, 10);
-      expect(countActiveUsers).toHaveBeenCalledWith('ana');
+      expect(listUsersActive).toHaveBeenCalledWith({
+        organizationId: ORGANIZATION_ID,
+        search: 'ana',
+        skip: 0,
+        take: 10,
+      });
+      expect(countActiveUsers).toHaveBeenCalledWith({
+        organizationId: ORGANIZATION_ID,
+        search: 'ana',
+      });
     });
 
     it('passes undefined search when no search is provided', async () => {
       listUsersActive.mockResolvedValueOnce([]);
       countActiveUsers.mockResolvedValueOnce(0);
 
-      await useCase.execute({});
+      await useCase.execute({ organizationId: ORGANIZATION_ID });
 
-      expect(listUsersActive).toHaveBeenCalledWith(undefined, 0, 10);
-      expect(countActiveUsers).toHaveBeenCalledWith(undefined);
+      expect(listUsersActive).toHaveBeenCalledWith({
+        organizationId: ORGANIZATION_ID,
+        search: undefined,
+        skip: 0,
+        take: 10,
+      });
+      expect(countActiveUsers).toHaveBeenCalledWith({
+        organizationId: ORGANIZATION_ID,
+        search: undefined,
+      });
     });
 
     it('returns empty data when repository returns no results', async () => {
       listUsersActive.mockResolvedValueOnce([]);
       countActiveUsers.mockResolvedValueOnce(0);
 
-      const result = await useCase.execute({});
+      const result = await useCase.execute({ organizationId: ORGANIZATION_ID });
 
       expect(result.data).toHaveLength(0);
       expect(result.meta.total).toBe(0);

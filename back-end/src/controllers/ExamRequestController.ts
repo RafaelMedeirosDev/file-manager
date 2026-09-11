@@ -128,6 +128,7 @@ export class ExamRequestController {
         : req.user.sub;
 
     return this.createExamRequestUseCase.execute({
+      organizationId: req.user.organizationId,
       userId: effectiveUserId,
       indication: body.indication,
       examIds: body.examIds,

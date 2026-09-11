@@ -6,6 +6,8 @@ import { UserRepository } from '../../repositories/UserRepository';
 import { FolderRepository } from '../../repositories/FolderRepository';
 import { FileRepository } from '../../repositories/FileRepository';
 
+const ORGANIZATION_ID = 'org-uuid-principal';
+
 const OWNER = 'user-uuid-001';
 
 // ── Factories ────────────────────────────────────────────
@@ -38,6 +40,7 @@ function fileMock(overrides: Record<string, unknown> = {}) {
 }
 
 const input = {
+  organizationId: ORGANIZATION_ID,
   name: 'laudo',
   userId: OWNER,
   folderId: 'folder-uuid-001',
@@ -77,6 +80,7 @@ describe('CreateFileUseCase', () => {
       const output = await useCase.execute(input);
 
       expect(mockFileRepository.create).toHaveBeenCalledWith({
+        organizationId: ORGANIZATION_ID,
         name: 'laudo',
         userId: OWNER,
         folderId: 'folder-uuid-001',

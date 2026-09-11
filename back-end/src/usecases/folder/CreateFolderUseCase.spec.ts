@@ -9,6 +9,8 @@ import { CreateFolderUseCase } from './CreateFolderUseCase';
 import { UserRepository } from '../../repositories/UserRepository';
 import { FolderRepository } from '../../repositories/FolderRepository';
 
+const ORGANIZATION_ID = 'org-uuid-principal';
+
 // ── Factories ────────────────────────────────────────────
 function userMock(overrides: Record<string, unknown> = {}) {
   return { id: 'user-uuid-001', name: 'Alice', deletedAt: null, ...overrides };
@@ -27,7 +29,11 @@ function folderMock(overrides: Record<string, unknown> = {}) {
   };
 }
 
-const input = { name: 'Exames', userId: 'user-uuid-001' };
+const input = {
+  organizationId: ORGANIZATION_ID,
+  name: 'Exames',
+  userId: 'user-uuid-001',
+};
 
 // ── Mock repositories ────────────────────────────────────
 const mockUserRepository = { findById: jest.fn() };
@@ -64,6 +70,7 @@ describe('CreateFolderUseCase', () => {
 
       expect(mockFolderRepository.findById).not.toHaveBeenCalled();
       expect(mockFolderRepository.create).toHaveBeenCalledWith({
+        organizationId: ORGANIZATION_ID,
         name: 'Exames',
         userId: 'user-uuid-001',
         folderId: undefined,
@@ -86,6 +93,7 @@ describe('CreateFolderUseCase', () => {
       await useCase.execute({ ...input, folderId: 'folder-parent' });
 
       expect(mockFolderRepository.findById).toHaveBeenCalledWith(
+        ORGANIZATION_ID,
         'folder-parent',
       );
     });

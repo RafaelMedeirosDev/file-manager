@@ -6,6 +6,8 @@ import { GetFolderByIdUseCase } from './GetFolderByIdUseCase';
 import { FolderRepository } from '../../repositories/FolderRepository';
 import { FileRepository } from '../../repositories/FileRepository';
 
+const ORGANIZATION_ID = 'org-uuid-principal';
+
 const OWNER = 'user-uuid-001';
 const OTHER = 'user-uuid-999';
 
@@ -38,11 +40,13 @@ function relatedMock(overrides: Record<string, unknown> = {}) {
 }
 
 const asOwner = {
+  organizationId: ORGANIZATION_ID,
   id: 'folder-uuid-001',
   requesterUserId: OWNER,
   requesterRole: ROLE.USER,
 };
 const asAdmin = {
+  organizationId: ORGANIZATION_ID,
   id: 'folder-uuid-001',
   requesterUserId: 'admin',
   requesterRole: ROLE.ADMIN,
@@ -141,16 +145,17 @@ describe('GetFolderByIdUseCase', () => {
     });
 
     it('stops instead of looping forever on an A -> B -> A cycle', async () => {
-      mockFolderRepository.findById.mockImplementation((id: string) =>
-        Promise.resolve(
-          id === 'folder-pai'
-            ? relatedMock({
-                id: 'folder-pai',
-                name: 'Pai',
-                folderId: 'folder-uuid-001',
-              })
-            : folderMock({ folderId: 'folder-pai' }),
-        ),
+      mockFolderRepository.findById.mockImplementation(
+        (_organizationId: string, id: string) =>
+          Promise.resolve(
+            id === 'folder-pai'
+              ? relatedMock({
+                  id: 'folder-pai',
+                  name: 'Pai',
+                  folderId: 'folder-uuid-001',
+                })
+              : folderMock({ folderId: 'folder-pai' }),
+          ),
       );
 
       const output = await useCase.execute(asOwner);
@@ -175,11 +180,12 @@ describe('GetFolderByIdUseCase', () => {
 
       const output = await useCase.execute(asOwner);
 
-      expect(mockFileRepository.listFilesActive).toHaveBeenCalledWith(
-        OWNER,
-        ROLE.USER,
-        'folder-uuid-001',
-      );
+      expect(mockFileRepository.listFilesActive).toHaveBeenCalledWith({
+        organizationId: ORGANIZATION_ID,
+        requesterUserId: OWNER,
+        requesterRole: ROLE.USER,
+        folderId: 'folder-uuid-001',
+      });
       expect(output.files).toHaveLength(1);
       expect(output.files[0].extension).toBe('pdf');
     });

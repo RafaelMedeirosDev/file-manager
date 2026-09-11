@@ -27,6 +27,7 @@ export class ListFilesUseCase {
   constructor(private readonly fileRepository: FileRepository) {}
 
   async execute(input: {
+    organizationId: string;
     requesterUserId: string;
     requesterRole: ROLE;
     folderId?: string;
@@ -39,18 +40,20 @@ export class ListFilesUseCase {
     const limit = input.limit ?? 10;
     const skip = (page - 1) * limit;
 
-    const files = await this.fileRepository.listFilesActive(
-      input.requesterUserId,
-      input.requesterRole,
-      input.folderId,
+    const files = await this.fileRepository.listFilesActive({
+      organizationId: input.organizationId,
+      requesterUserId: input.requesterUserId,
+      requesterRole: input.requesterRole,
+      folderId: input.folderId,
       skip,
-      limit,
-    );
-    const totalFiles = await this.fileRepository.countFilesActive(
-      input.requesterUserId,
-      input.requesterRole,
-      input.folderId,
-    );
+      take: limit,
+    });
+    const totalFiles = await this.fileRepository.countFilesActive({
+      organizationId: input.organizationId,
+      requesterUserId: input.requesterUserId,
+      requesterRole: input.requesterRole,
+      folderId: input.folderId,
+    });
 
     this.logger.log('[ListFilesUseCase] Execute finished');
 

@@ -8,6 +8,7 @@ import { FolderRepository } from '../../repositories/FolderRepository';
 import { ErrorMessagesEnum } from '@file-manager/shared';
 
 export type SoftDeleteFolderInput = {
+  organizationId: string;
   id: string;
 };
 
@@ -27,7 +28,10 @@ export class SoftDeleteFolderUseCase {
 
   async execute(input: SoftDeleteFolderInput): Promise<SoftDeleteFolderOutput> {
     this.logger.log('[SoftDeleteFolderUseCase] Execute started');
-    const existingFolder = await this.folderRepository.findById(input.id);
+    const existingFolder = await this.folderRepository.findById(
+      input.organizationId,
+      input.id,
+    );
 
     if (!existingFolder || existingFolder.deletedAt) {
       throw new NotFoundException(ErrorMessagesEnum.FOLDER_NOT_FOUND);
@@ -45,10 +49,17 @@ export class SoftDeleteFolderUseCase {
       );
     }
 
-    const folderIds = await this.collectSubtreeIds(existingFolder.id);
+    const folderIds = await this.collectSubtreeIds(
+      input.organizationId,
+      existingFolder.id,
+    );
     const deletedAt = new Date();
 
-    await this.folderRepository.softDeleteSubtree(folderIds, deletedAt);
+    await this.folderRepository.softDeleteSubtree(
+      input.organizationId,
+      folderIds,
+      deletedAt,
+    );
     this.logger.log('[SoftDeleteFolderUseCase] Execute finished');
 
     return {
@@ -70,13 +81,19 @@ export class SoftDeleteFolderUseCase {
    * consultando o banco indefinidamente. Mesmo cuidado que
    * GetFolderByIdUseCase aplica ao subir pelos ancestrais.
    */
-  private async collectSubtreeIds(rootId: string): Promise<string[]> {
+  private async collectSubtreeIds(
+    organizationId: string,
+    rootId: string,
+  ): Promise<string[]> {
     const visitedFolderIds = new Set<string>([rootId]);
     const queue: string[] = [rootId];
 
     while (queue.length > 0) {
       const currentId = queue.shift() as string;
-      const current = await this.folderRepository.findById(currentId);
+      const current = await this.folderRepository.findById(
+        organizationId,
+        currentId,
+      );
 
       if (!current) {
         continue;

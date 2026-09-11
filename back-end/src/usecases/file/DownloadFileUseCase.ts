@@ -23,6 +23,7 @@ import {
 } from '../../shared/constants/upload.constants';
 
 export type DownloadFileInput = {
+  organizationId: string;
   id: string;
   requesterUserId: string;
   requesterRole: ROLE;
@@ -44,7 +45,10 @@ export class DownloadFileUseCase {
 
   async execute(input: DownloadFileInput): Promise<DownloadFileOutput> {
     this.logger.log('[DownloadFileUseCase] Execute started');
-    const file = await this.fileRepository.findById(input.id);
+    const file = await this.fileRepository.findById(
+      input.organizationId,
+      input.id,
+    );
 
     if (!file || file.deletedAt) {
       throw new NotFoundException(ErrorMessagesEnum.FILE_NOT_FOUND);

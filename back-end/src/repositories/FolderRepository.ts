@@ -14,6 +14,7 @@ export class FolderRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   create(data: {
+    organizationId: string;
     name: string;
     userId: string;
     folderId?: string;
@@ -24,9 +25,17 @@ export class FolderRepository {
     });
   }
 
-  findById(id: string): Promise<FolderWithRelations | null> {
-    return this.prisma.folder.findUnique({
-      where: { id },
+  /**
+   * `findFirst`, e nao `findUnique`: e o que permite somar o predicado de
+   * organizacao ao id. Devolve `null` para pasta de outra organizacao, o que
+   * faz o NotFoundException que os use cases ja lancam cobrir o caso cross-org.
+   */
+  findById(
+    organizationId: string,
+    id: string,
+  ): Promise<FolderWithRelations | null> {
+    return this.prisma.folder.findFirst({
+      where: { id, organizationId },
       include: {
         parent: true,
         children: true,
@@ -34,13 +43,21 @@ export class FolderRepository {
     });
   }
 
+  /**
+   * Sem o recorte de organizacao aqui o vazamento seria por MENSAGEM DE ERRO:
+   * criar uma pasta com um nome que existe em outra organizacao devolveria
+   * 409 FOLDER_NAME_ALREADY_REGISTERED, revelando nomes alheios a quem so
+   * tentou criar uma pasta.
+   */
   findActiveByUserIdAndName(input: {
+    organizationId: string;
     userId: string;
     name: string;
     excludeId?: string;
   }): Promise<Folder | null> {
     return this.prisma.folder.findFirst({
       where: {
+        organizationId: input.organizationId,
         userId: input.userId,
         name: input.name,
         deletedAt: null,
@@ -54,6 +71,12 @@ export class FolderRepository {
       },
     });
   }
+
+  /**
+   * Escrita por chave primaria: `update` exige `where` unique. A leitura que
+   * precede esta escrita e a recortada (`findById`) -- ver a nota equivalente
+   * em UserRepository.updateById.
+   */
   updateById(
     id: string,
     data: {
@@ -63,13 +86,6 @@ export class FolderRepository {
     return this.prisma.folder.update({
       where: { id },
       data,
-    });
-  }
-
-  softDeleteById(id: string, deletedAt: Date): Promise<Folder> {
-    return this.prisma.folder.update({
-      where: { id },
-      data: { deletedAt },
     });
   }
 
@@ -84,60 +100,81 @@ export class FolderRepository {
    * A forma em array e suficiente: os ids chegam prontos do use case, que faz a
    * travessia da subarvore, e os dois updateMany sao independentes entre si --
    * nao ha valor a reaproveitar de um no outro.
+   *
+   * `organizationId` entra nos DOIS `where`, inclusive no de `file`, cujo
+   * predicado e por `folderId`. Os ids ja chegam seguros da travessia, que usa
+   * o `findById` recortado -- mas numa mutacao em massa a defesa em
+   * profundidade custa uma palavra.
    */
   softDeleteSubtree(
+    organizationId: string,
     folderIds: string[],
     deletedAt: Date,
   ): Promise<[{ count: number }, { count: number }]> {
     return this.prisma.$transaction([
       this.prisma.folder.updateMany({
-        where: { id: { in: folderIds }, deletedAt: null },
+        where: { organizationId, id: { in: folderIds }, deletedAt: null },
         data: { deletedAt },
       }),
       this.prisma.file.updateMany({
-        where: { folderId: { in: folderIds }, deletedAt: null },
+        where: {
+          organizationId,
+          folderId: { in: folderIds },
+          deletedAt: null,
+        },
         data: { deletedAt },
       }),
     ]);
   }
 
-  listFoldersActive(
-    requestUserId: string,
-    requestRole: ROLE,
-    folderId?: string,
-    rootsOnly?: boolean,
-    skip?: number,
-    take?: number,
-  ): Promise<FolderWithRelations[]> {
+  listFoldersActive(input: {
+    organizationId: string;
+    requesterUserId: string;
+    requesterRole: ROLE;
+    folderId?: string;
+    rootsOnly?: boolean;
+    skip?: number;
+    take?: number;
+  }): Promise<FolderWithRelations[]> {
     return this.prisma.folder.findMany({
       where: {
+        // Incondicional, fora de qualquer spread: o recorte de organizacao nao
+        // depende de papel. O ternario abaixo passa a significar "ADMIN ve
+        // tudo DENTRO da organizacao", e nao mais "ADMIN ve tudo".
+        organizationId: input.organizationId,
         deletedAt: null,
-        ...(requestRole === ROLE.USER ? { userId: requestUserId } : {}),
-        ...(folderId ? { folderId } : {}),
-        ...(rootsOnly ? { folderId: null } : {}),
+        ...(input.requesterRole === ROLE.USER
+          ? { userId: input.requesterUserId }
+          : {}),
+        ...(input.folderId ? { folderId: input.folderId } : {}),
+        ...(input.rootsOnly ? { folderId: null } : {}),
       },
       include: {
         parent: true,
         children: true,
       },
       orderBy: { name: 'asc' },
-      skip,
-      take,
+      skip: input.skip,
+      take: input.take,
     });
   }
 
-  countFoldersActive(
-    requestUserId: string,
-    requestRole: ROLE,
-    folderId?: string,
-    rootsOnly?: boolean,
-  ): Promise<number> {
+  countFoldersActive(input: {
+    organizationId: string;
+    requesterUserId: string;
+    requesterRole: ROLE;
+    folderId?: string;
+    rootsOnly?: boolean;
+  }): Promise<number> {
     return this.prisma.folder.count({
       where: {
+        organizationId: input.organizationId,
         deletedAt: null,
-        ...(requestRole === ROLE.USER ? { userId: requestUserId } : {}),
-        ...(folderId ? { folderId } : {}),
-        ...(rootsOnly ? { folderId: null } : {}),
+        ...(input.requesterRole === ROLE.USER
+          ? { userId: input.requesterUserId }
+          : {}),
+        ...(input.folderId ? { folderId: input.folderId } : {}),
+        ...(input.rootsOnly ? { folderId: null } : {}),
       },
     });
   }

@@ -25,25 +25,29 @@ export class ListUsersUseCase {
 
   constructor(private readonly userRepository: UserRepository) {}
 
-  async execute(input?: {
+  async execute(input: {
+    organizationId: string;
     page?: number;
     limit?: number;
     search?: string;
   }): Promise<ListUsersOutput> {
     this.logger.log('[ListUsersUseCase] Execute started');
 
-    const page = input?.page ?? 1;
-    const limit = input?.limit ?? 10;
+    const page = input.page ?? 1;
+    const limit = input.limit ?? 10;
     const skip = (page - 1) * limit;
-    const normalizedSearch = input?.search?.trim().toLowerCase();
+    const normalizedSearch = input.search?.trim().toLowerCase();
 
-    const users = await this.userRepository.listUsersActive(
-      normalizedSearch,
+    const users = await this.userRepository.listUsersActive({
+      organizationId: input.organizationId,
+      search: normalizedSearch,
       skip,
-      limit,
-    );
-    const totalUsers =
-      await this.userRepository.countActiveUsers(normalizedSearch);
+      take: limit,
+    });
+    const totalUsers = await this.userRepository.countActiveUsers({
+      organizationId: input.organizationId,
+      search: normalizedSearch,
+    });
 
     const paginatedUsers = users.map((user) => ({
       id: user.id,

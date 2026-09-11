@@ -18,6 +18,7 @@ export class FileRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   create(data: {
+    organizationId: string;
     name: string;
     userId: string;
     folderId: string;
@@ -29,42 +30,58 @@ export class FileRepository {
     });
   }
 
-  listFilesActive(
-    requestUserId: string,
-    requestRole: ROLE,
-    folderId?: string,
-    skip?: number,
-    take?: number,
-  ): Promise<File[]> {
+  listFilesActive(input: {
+    organizationId: string;
+    requesterUserId: string;
+    requesterRole: ROLE;
+    folderId?: string;
+    skip?: number;
+    take?: number;
+  }): Promise<File[]> {
     return this.prisma.file.findMany({
       where: {
+        // Incondicional: o recorte de organizacao nao depende de papel.
+        organizationId: input.organizationId,
         deletedAt: null,
-        ...(requestRole === ROLE.USER ? { userId: requestUserId } : {}),
-        ...(folderId ? { folderId } : {}),
+        ...(input.requesterRole === ROLE.USER
+          ? { userId: input.requesterUserId }
+          : {}),
+        ...(input.folderId ? { folderId: input.folderId } : {}),
       },
       orderBy: { name: 'asc' },
-      skip,
-      take,
+      skip: input.skip,
+      take: input.take,
     });
   }
 
-  countFilesActive(
-    requestUserId: string,
-    requestRole: ROLE,
-    folderId?: string,
-  ): Promise<number> {
+  countFilesActive(input: {
+    organizationId: string;
+    requesterUserId: string;
+    requesterRole: ROLE;
+    folderId?: string;
+  }): Promise<number> {
     return this.prisma.file.count({
       where: {
+        organizationId: input.organizationId,
         deletedAt: null,
-        ...(requestRole === ROLE.USER ? { userId: requestUserId } : {}),
-        ...(folderId ? { folderId } : {}),
+        ...(input.requesterRole === ROLE.USER
+          ? { userId: input.requesterUserId }
+          : {}),
+        ...(input.folderId ? { folderId: input.folderId } : {}),
       },
     });
   }
 
-  findById(id: string): Promise<FileWithFolderRelations | null> {
-    return this.prisma.file.findUnique({
-      where: { id },
+  /**
+   * `findFirst`, e nao `findUnique`: e o que permite somar o predicado de
+   * organizacao ao id.
+   */
+  findById(
+    organizationId: string,
+    id: string,
+  ): Promise<FileWithFolderRelations | null> {
+    return this.prisma.file.findFirst({
+      where: { id, organizationId },
       include: {
         folder: {
           include: {
@@ -76,6 +93,11 @@ export class FileRepository {
     });
   }
 
+  /**
+   * Escrita por chave primaria: `update` exige `where` unique. A leitura que
+   * precede esta escrita e a recortada (`findById`) -- ver a nota equivalente
+   * em UserRepository.updateById.
+   */
   updateById(
     id: string,
     data: {
@@ -88,6 +110,7 @@ export class FileRepository {
     });
   }
 
+  /** Escrita por chave primaria -- mesma nota de updateById. */
   softDeleteById(id: string, deletedAt: Date): Promise<File> {
     return this.prisma.file.update({
       where: { id },

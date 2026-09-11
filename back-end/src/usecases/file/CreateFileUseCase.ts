@@ -10,6 +10,7 @@ import { UserRepository } from '../../repositories/UserRepository';
 import { ErrorMessagesEnum } from '@file-manager/shared';
 
 export type CreateFileInput = {
+  organizationId: string;
   name: string;
   userId: string;
   folderId: string;
@@ -38,13 +39,19 @@ export class CreateFileUseCase {
 
   async execute(input: CreateFileInput): Promise<CreateFileOutput> {
     this.logger.log('[CreateFileUseCase] Execute started');
-    const user = await this.userRepository.findById(input.userId);
+    const user = await this.userRepository.findById(
+      input.organizationId,
+      input.userId,
+    );
 
     if (!user || user.deletedAt) {
       throw new NotFoundException(ErrorMessagesEnum.USER_NOT_FOUND);
     }
 
-    const folder = await this.folderRepository.findById(input.folderId);
+    const folder = await this.folderRepository.findById(
+      input.organizationId,
+      input.folderId,
+    );
 
     if (!folder || folder.deletedAt) {
       throw new NotFoundException(ErrorMessagesEnum.FOLDER_NOT_FOUND);
@@ -57,6 +64,7 @@ export class CreateFileUseCase {
     }
 
     const file = await this.fileRepository.create({
+      organizationId: input.organizationId,
       name: input.name,
       userId: input.userId,
       folderId: input.folderId,

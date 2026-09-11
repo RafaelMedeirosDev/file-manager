@@ -12,6 +12,7 @@ import { ErrorMessagesEnum } from '@file-manager/shared';
 import { BCRYPT_SALT_ROUNDS } from '../../shared/constants/bcrypt.constants';
 
 export type UpdateUserInput = {
+  organizationId: string;
   id: string;
   email?: string;
   password?: string;
@@ -40,7 +41,10 @@ export class UpdateUserUseCase {
       );
     }
 
-    const existingUser = await this.userRepository.findById(input.id);
+    const existingUser = await this.userRepository.findById(
+      input.organizationId,
+      input.id,
+    );
 
     if (!existingUser || existingUser.deletedAt) {
       throw new NotFoundException(ErrorMessagesEnum.USER_NOT_FOUND);

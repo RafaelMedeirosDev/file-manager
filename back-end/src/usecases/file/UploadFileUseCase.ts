@@ -21,6 +21,7 @@ import {
 } from '../../shared/constants/upload.constants';
 
 export type UploadFileInput = {
+  organizationId: string;
   buffer: Buffer;
   name: string;
   requesterId: string;
@@ -77,7 +78,10 @@ export class UploadFileUseCase {
     this.logger.log('[UploadFileUseCase] Execute started');
 
     // ── Validação: pasta existe e não foi deletada ───────
-    const folder = await this.folderRepository.findById(input.folderId);
+    const folder = await this.folderRepository.findById(
+      input.organizationId,
+      input.folderId,
+    );
 
     if (!folder || folder.deletedAt) {
       throw new NotFoundException(ErrorMessagesEnum.FOLDER_NOT_FOUND);
@@ -103,7 +107,10 @@ export class UploadFileUseCase {
     const fileOwnerId = isAdmin ? folder.userId : input.requesterId;
 
     // ── Validação: dono existe e não foi deletado ────────
-    const owner = await this.userRepository.findById(fileOwnerId);
+    const owner = await this.userRepository.findById(
+      input.organizationId,
+      fileOwnerId,
+    );
 
     if (!owner || owner.deletedAt) {
       throw new NotFoundException(ErrorMessagesEnum.USER_NOT_FOUND);
@@ -152,6 +159,7 @@ export class UploadFileUseCase {
 
     try {
       file = await this.fileRepository.create({
+        organizationId: input.organizationId,
         name: input.name,
         userId: fileOwnerId,
         folderId: input.folderId,

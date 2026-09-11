@@ -8,6 +8,8 @@ import { UserRepository } from '../../repositories/UserRepository';
 import { env } from '../../config/env';
 import { r2Client } from '../../shared/lib/r2Client';
 
+const ORGANIZATION_ID = 'org-uuid-principal';
+
 jest.mock('../../shared/lib/r2Client', () => ({
   r2Client: { send: jest.fn() },
 }));
@@ -88,6 +90,7 @@ describe('BulkUploadFilesUseCase', () => {
   describe('should tolerate partial failure without aborting the batch', () => {
     it('reports the rejected type and still persists the valid file', async () => {
       const output = await useCase.execute({
+        organizationId: ORGANIZATION_ID,
         files: [
           entryMock({ name: 'valido' }),
           entryMock({
@@ -117,6 +120,7 @@ describe('BulkUploadFilesUseCase', () => {
 
     it('reports an oversized file without dropping the rest of the batch', async () => {
       const output = await useCase.execute({
+        organizationId: ORGANIZATION_ID,
         files: [
           entryMock({
             name: 'grande',
@@ -146,6 +150,7 @@ describe('BulkUploadFilesUseCase', () => {
       );
 
       const output = await useCase.execute({
+        organizationId: ORGANIZATION_ID,
         files: [entryMock({ name: 'falha' })],
         folderId: 'folder-uuid-001',
         requesterId: 'user-uuid-001',

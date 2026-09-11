@@ -40,6 +40,7 @@ export class ListFoldersUseCase {
   constructor(private readonly folderRepository: FolderRepository) {}
 
   async execute(input: {
+    organizationId: string;
     requesterUserId: string;
     requesterRole: ROLE;
     folderId?: string;
@@ -59,20 +60,22 @@ export class ListFoldersUseCase {
     const limit = input.limit ?? 10;
     const skip = (page - 1) * limit;
 
-    const folders = await this.folderRepository.listFoldersActive(
-      input.requesterUserId,
-      input.requesterRole,
-      input.folderId,
-      input.rootsOnly,
+    const folders = await this.folderRepository.listFoldersActive({
+      organizationId: input.organizationId,
+      requesterUserId: input.requesterUserId,
+      requesterRole: input.requesterRole,
+      folderId: input.folderId,
+      rootsOnly: input.rootsOnly,
       skip,
-      limit,
-    );
-    const totalFolders = await this.folderRepository.countFoldersActive(
-      input.requesterUserId,
-      input.requesterRole,
-      input.folderId,
-      input.rootsOnly,
-    );
+      take: limit,
+    });
+    const totalFolders = await this.folderRepository.countFoldersActive({
+      organizationId: input.organizationId,
+      requesterUserId: input.requesterUserId,
+      requesterRole: input.requesterRole,
+      folderId: input.folderId,
+      rootsOnly: input.rootsOnly,
+    });
 
     this.logger.log('[ListFoldersUseCase] Execute finished');
 

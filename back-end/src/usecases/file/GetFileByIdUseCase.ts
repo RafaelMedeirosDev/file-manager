@@ -9,6 +9,7 @@ import { FileRepository } from '../../repositories/FileRepository';
 import { ErrorMessagesEnum } from '@file-manager/shared';
 
 export type GetFileByIdInput = {
+  organizationId: string;
   id: string;
   requesterUserId: string;
   requesterRole: ROLE;
@@ -49,7 +50,10 @@ export class GetFileByIdUseCase {
 
   async execute(input: GetFileByIdInput): Promise<GetFileByIdOutput> {
     this.logger.log('[GetFileByIdUseCase] Execute started');
-    const file = await this.fileRepository.findById(input.id);
+    const file = await this.fileRepository.findById(
+      input.organizationId,
+      input.id,
+    );
 
     if (!file || file.deletedAt) {
       throw new NotFoundException(ErrorMessagesEnum.FILE_NOT_FOUND);

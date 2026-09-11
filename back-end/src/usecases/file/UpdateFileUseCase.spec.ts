@@ -5,6 +5,8 @@ import { UpdateFileUseCase } from './UpdateFileUseCase';
 import { FileRepository } from '../../repositories/FileRepository';
 import { FolderRepository } from '../../repositories/FolderRepository';
 
+const ORGANIZATION_ID = 'org-uuid-principal';
+
 const OWNER = 'user-uuid-001';
 
 // ── Factories ────────────────────────────────────────────
@@ -62,6 +64,7 @@ describe('UpdateFileUseCase', () => {
   describe('should be able to update a file with success', () => {
     it('persists only the destination folder', async () => {
       await useCase.execute({
+        organizationId: ORGANIZATION_ID,
         id: 'file-uuid-001',
         folderId: 'folder-destino',
       });
@@ -76,17 +79,20 @@ describe('UpdateFileUseCase', () => {
 
     it('validates the destination folder when moving the file', async () => {
       await useCase.execute({
+        organizationId: ORGANIZATION_ID,
         id: 'file-uuid-001',
         folderId: 'folder-destino',
       });
 
       expect(mockFolderRepository.findById).toHaveBeenCalledWith(
+        ORGANIZATION_ID,
         'folder-destino',
       );
     });
 
     it('returns the file as returned by the update, not the one read before', async () => {
       const output = await useCase.execute({
+        organizationId: ORGANIZATION_ID,
         id: 'file-uuid-001',
         folderId: 'folder-destino',
       });
@@ -98,7 +104,12 @@ describe('UpdateFileUseCase', () => {
   // ── Error cases ────────────────────────────────────────
   describe('should not be able to update a file if', () => {
     it('no field was provided', async () => {
-      await expect(useCase.execute({ id: 'file-uuid-001' })).rejects.toThrow(
+      await expect(
+        useCase.execute({
+          organizationId: ORGANIZATION_ID,
+          id: 'file-uuid-001',
+        }),
+      ).rejects.toThrow(
         new BadRequestException(ErrorMessagesEnum.AT_LEAST_ONE_FIELD_REQUIRED),
       );
 
@@ -111,6 +122,7 @@ describe('UpdateFileUseCase', () => {
 
       await expect(
         useCase.execute({
+          organizationId: ORGANIZATION_ID,
           id: 'missing',
           folderId: 'folder-destino',
         }),
@@ -126,6 +138,7 @@ describe('UpdateFileUseCase', () => {
 
       await expect(
         useCase.execute({
+          organizationId: ORGANIZATION_ID,
           id: 'file-uuid-001',
           folderId: 'folder-destino',
         }),
@@ -138,7 +151,11 @@ describe('UpdateFileUseCase', () => {
       mockFolderRepository.findById.mockResolvedValue(null);
 
       await expect(
-        useCase.execute({ id: 'file-uuid-001', folderId: 'missing' }),
+        useCase.execute({
+          organizationId: ORGANIZATION_ID,
+          id: 'file-uuid-001',
+          folderId: 'missing',
+        }),
       ).rejects.toThrow(
         new NotFoundException(ErrorMessagesEnum.FOLDER_NOT_FOUND),
       );
@@ -150,7 +167,11 @@ describe('UpdateFileUseCase', () => {
       );
 
       await expect(
-        useCase.execute({ id: 'file-uuid-001', folderId: 'folder-destino' }),
+        useCase.execute({
+          organizationId: ORGANIZATION_ID,
+          id: 'file-uuid-001',
+          folderId: 'folder-destino',
+        }),
       ).rejects.toThrow(
         new BadRequestException(
           ErrorMessagesEnum.FOLDER_DOES_NOT_BELONG_TO_USER,

@@ -24,7 +24,7 @@ function userMock(overrides: Record<string, unknown> = {}) {
   };
 }
 
-const mockUserRepository = { findById: jest.fn() };
+const mockUserRepository = { findByIdAcrossOrganizations: jest.fn() };
 
 describe('PreAuthJwtStrategy', () => {
   let strategy: PreAuthJwtStrategy;
@@ -58,7 +58,9 @@ describe('PreAuthJwtStrategy', () => {
   });
 
   it('accepts an existing user and exposes no organization', async () => {
-    mockUserRepository.findById.mockResolvedValue(userMock());
+    mockUserRepository.findByIdAcrossOrganizations.mockResolvedValue(
+      userMock(),
+    );
 
     const output = await strategy.validate(claims);
 
@@ -66,11 +68,13 @@ describe('PreAuthJwtStrategy', () => {
     // Escolher a organizacao e justamente o que falta neste passo.
     expect(output).not.toHaveProperty('organizationId');
     expect(output).not.toHaveProperty('role');
-    expect(mockUserRepository.findById).toHaveBeenCalledWith(USER_ID);
+    expect(mockUserRepository.findByIdAcrossOrganizations).toHaveBeenCalledWith(
+      USER_ID,
+    );
   });
 
   it('rejects a user that no longer exists', async () => {
-    mockUserRepository.findById.mockResolvedValue(null);
+    mockUserRepository.findByIdAcrossOrganizations.mockResolvedValue(null);
 
     await expect(strategy.validate(claims)).rejects.toThrow(
       UnauthorizedException,
@@ -78,7 +82,7 @@ describe('PreAuthJwtStrategy', () => {
   });
 
   it('rejects a soft-deleted user', async () => {
-    mockUserRepository.findById.mockResolvedValue(
+    mockUserRepository.findByIdAcrossOrganizations.mockResolvedValue(
       userMock({ deletedAt: new Date('2026-03-01T00:00:00.000Z') }),
     );
 
