@@ -9,6 +9,11 @@ export type { Role as RoleType } from './enums/Role';
 export type { PaginatedMeta, ListResponse } from './types/api';
 
 // Domain types
+export type {
+  LoginAuthenticated,
+  LoginOrganizationRequired,
+  LoginResponse,
+} from './types/auth';
 export type { UserItem, UserOption } from './types/user';
 export type { FolderItem, FolderChild, FolderOption, FolderDetails } from './types/folder';
 export type { FileItem } from './types/file';

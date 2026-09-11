@@ -1,6 +1,11 @@
 export enum ErrorMessagesEnum {
   EMAIL_ALREADY_REGISTERED = 'Email ja esta cadastrado',
   INVALID_EMAIL_OR_PASSWORD = 'Invalid email or password',
+  // Uma mensagem para os quatro casos do passo 2 do login: nao e membro,
+  // associacao desativada, usuario desativado, organizacao desativada.
+  // Distinguir "a organizacao nao existe" de "voce nao e membro" revelaria
+  // quais organizacoes existem a quem apenas tem uma credencial valida.
+  ORGANIZATION_ACCESS_FORBIDDEN = 'Voce nao tem permissao para acessar esta organizacao',
   USER_NOT_FOUND = 'Usuario nao encontrado',
   FOLDER_NOT_FOUND = 'Pasta nao encontrada',
   FOLDER_NAME_ALREADY_REGISTERED = 'Ja existe uma pasta ativa com este nome para este usuario',
