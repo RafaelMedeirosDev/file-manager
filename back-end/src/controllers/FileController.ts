@@ -132,6 +132,7 @@ export class FileController {
     const extension = file.originalname.split('.').pop()?.toLowerCase() ?? '';
 
     return this.uploadFileUseCase.execute({
+      organizationId: req.user.organizationId,
       buffer: file.buffer,
       name: body.name,
       requesterId: req.user.sub,
@@ -178,6 +179,7 @@ export class FileController {
     @Req() req: Request & { user: JwtPayload },
   ): Promise<BulkUploadFilesOutput> {
     return this.bulkUploadFilesUseCase.execute({
+      organizationId: req.user.organizationId,
       files: files.map((f) => ({
         buffer: f.buffer,
         name: f.originalname.replace(/\.[^.]+$/, ''),
@@ -204,6 +206,7 @@ export class FileController {
     query: ListFilesQueryDTO,
   ): Promise<ListFilesOutput> {
     return this.listFilesUseCase.execute({
+      organizationId: req.user.organizationId,
       requesterUserId: req.user.sub,
       requesterRole: req.user.role,
       folderId: query.folderId,
@@ -219,6 +222,7 @@ export class FileController {
     @Req() req: Request & { user: JwtPayload },
   ): Promise<GetFileByIdOutput> {
     return this.getFileByIdUseCase.execute({
+      organizationId: req.user.organizationId,
       id,
       requesterUserId: req.user.sub,
       requesterRole: req.user.role,
@@ -239,6 +243,7 @@ export class FileController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
     const file = await this.downloadFileUseCase.execute({
+      organizationId: req.user.organizationId,
       id,
       requesterUserId: req.user.sub,
       requesterRole: req.user.role,
@@ -269,8 +274,12 @@ export class FileController {
       }),
     )
     body: CreateFileDTO,
+    @Req() req: Request & { user: JwtPayload },
   ): Promise<CreateFileOutput> {
-    return this.createFileUseCase.execute(body);
+    return this.createFileUseCase.execute({
+      organizationId: req.user.organizationId,
+      ...body,
+    });
   }
 
   @Patch(':id')
@@ -292,8 +301,10 @@ export class FileController {
       }),
     )
     body: UpdateFileDTO,
+    @Req() req: Request & { user: JwtPayload },
   ): Promise<UpdateFileOutput> {
     return this.updateFileUseCase.execute({
+      organizationId: req.user.organizationId,
       id: params.id,
       folderId: body.folderId,
     });
@@ -313,6 +324,7 @@ export class FileController {
     @Req() req: Request & { user: JwtPayload },
   ): Promise<SoftDeleteFileOutput> {
     return this.softDeleteFileUseCase.execute({
+      organizationId: req.user.organizationId,
       id: params.id,
       requesterUserId: req.user.sub,
       requesterRole: req.user.role,

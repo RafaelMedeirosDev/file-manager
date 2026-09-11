@@ -75,8 +75,10 @@ export class UserController {
       }),
     )
     query: ListUsersQueryDTO,
+    @Req() req: Request & { user: JwtPayload },
   ): Promise<ListUsersOutput> {
     return this.listUsersUseCase.execute({
+      organizationId: req.user.organizationId,
       page: query.page,
       limit: query.limit,
       search: query.search,
@@ -93,8 +95,10 @@ export class UserController {
       }),
     )
     body: CreateUserDTO,
+    @Req() req: Request & { user: JwtPayload },
   ): Promise<CreateUserWithFoldersOutput> {
     return this.createUserWithFoldersUseCase.execute({
+      organizationId: req.user.organizationId,
       name: body.name,
       email: body.email,
       password: body.password,
@@ -116,6 +120,7 @@ export class UserController {
     body: ChangeOwnPasswordDTO,
   ): Promise<ChangeOwnPasswordOutput> {
     return this.changeOwnPasswordUseCase.execute({
+      organizationId: req.user.organizationId,
       userId: req.user.sub,
       currentPassword: body.currentPassword,
       newPassword: body.newPassword,
@@ -141,8 +146,10 @@ export class UserController {
       }),
     )
     body: UpdateUserBodyDTO,
+    @Req() req: Request & { user: JwtPayload },
   ): Promise<UpdateUserOutput> {
     return this.updateUserUseCase.execute({
+      organizationId: req.user.organizationId,
       id: params.id,
       email: body.email,
       password: body.password,
@@ -162,6 +169,7 @@ export class UserController {
     @Req() req: Request & { user: JwtPayload },
   ): Promise<SoftDeleteUserOutput> {
     return this.softDeleteUserUseCase.execute({
+      organizationId: req.user.organizationId,
       id: params.id,
       requesterId: req.user.sub,
     });

@@ -12,6 +12,8 @@ import { BCRYPT_SALT_ROUNDS } from '../../shared/constants/bcrypt.constants';
 jest.mock('bcrypt', () => ({ compare: jest.fn(), hash: jest.fn() }));
 import { compare, hash } from 'bcrypt';
 
+const ORGANIZATION_ID = 'org-uuid-principal';
+
 const compareMock = jest.mocked(compare);
 const hashMock = jest.mocked(hash);
 
@@ -28,6 +30,7 @@ function userMock(overrides: Record<string, unknown> = {}) {
 }
 
 const input = {
+  organizationId: ORGANIZATION_ID,
   userId: 'user-uuid-001',
   currentPassword: 'senha-atual',
   newPassword: 'senha-nova',

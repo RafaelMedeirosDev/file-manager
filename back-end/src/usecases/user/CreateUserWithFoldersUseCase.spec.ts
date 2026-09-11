@@ -8,6 +8,8 @@ import { UserRepository } from '../../repositories/UserRepository';
 jest.mock('bcrypt', () => ({ hash: jest.fn() }));
 import { hash } from 'bcrypt';
 
+const ORGANIZATION_ID = 'org-uuid-principal';
+
 const hashMock = jest.mocked(hash);
 
 // ── Factories ────────────────────────────────────────────
@@ -29,6 +31,7 @@ function folderMock(overrides: Record<string, unknown> = {}) {
 }
 
 const input = {
+  organizationId: ORGANIZATION_ID,
   name: 'Alice',
   email: 'alice@example.com',
   password: 'plain-password',
@@ -72,6 +75,7 @@ describe('CreateUserWithFoldersUseCase', () => {
       // Uma unica chamada, transacional: o nome da pasta padrao e o do usuario.
       expect(mockUserRepository.createWithFolders).toHaveBeenCalledTimes(1);
       expect(mockUserRepository.createWithFolders).toHaveBeenCalledWith({
+        organizationId: ORGANIZATION_ID,
         user: {
           name: 'Alice',
           email: 'alice@example.com',

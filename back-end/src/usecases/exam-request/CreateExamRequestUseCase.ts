@@ -6,6 +6,7 @@ import { UserRepository } from '../../repositories/UserRepository';
 import { ErrorMessagesEnum } from '@file-manager/shared';
 
 export type CreateExamRequestInput = {
+  organizationId: string;
   userId: string;
   indication?: string;
   examIds: string[];
@@ -35,7 +36,10 @@ export class CreateExamRequestUseCase {
   ): Promise<CreateExamRequestOutput> {
     this.logger.log('[CreateExamRequestUseCase] Execute started');
 
-    const user = await this.userRepository.findById(input.userId);
+    const user = await this.userRepository.findById(
+      input.organizationId,
+      input.userId,
+    );
 
     if (!user || user.deletedAt) {
       this.logger.warn('[CreateExamRequestUseCase] User not found', {

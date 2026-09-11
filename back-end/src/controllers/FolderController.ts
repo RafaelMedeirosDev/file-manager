@@ -78,6 +78,7 @@ export class FolderController {
     query: ListFoldersQueryDTO,
   ): Promise<ListFoldersOutput> {
     return this.listFoldersUseCase.execute({
+      organizationId: req.user.organizationId,
       requesterUserId: req.user.sub,
       requesterRole: req.user.role,
       folderId: query.folderId,
@@ -94,6 +95,7 @@ export class FolderController {
     @Req() req: Request & { user: JwtPayload },
   ): Promise<GetFolderByIdOutput> {
     return this.getFolderByIdUseCase.execute({
+      organizationId: req.user.organizationId,
       id,
       requesterUserId: req.user.sub,
       requesterRole: req.user.role,
@@ -111,8 +113,12 @@ export class FolderController {
       }),
     )
     body: CreateFolderDTO,
+    @Req() req: Request & { user: JwtPayload },
   ): Promise<CreateFolderOutput> {
-    return this.createFolderUseCase.execute(body);
+    return this.createFolderUseCase.execute({
+      organizationId: req.user.organizationId,
+      ...body,
+    });
   }
 
   @Patch(':id')
@@ -134,8 +140,10 @@ export class FolderController {
       }),
     )
     body: UpdateFolderBodyDTO,
+    @Req() req: Request & { user: JwtPayload },
   ): Promise<UpdateFolderOutput> {
     return this.updateFolderUseCase.execute({
+      organizationId: req.user.organizationId,
       id: params.id,
       name: body.name,
     });
@@ -152,8 +160,10 @@ export class FolderController {
       }),
     )
     params: UpdateFolderParamsDTO,
+    @Req() req: Request & { user: JwtPayload },
   ): Promise<SoftDeleteFolderOutput> {
     return this.softDeleteFolderUseCase.execute({
+      organizationId: req.user.organizationId,
       id: params.id,
     });
   }

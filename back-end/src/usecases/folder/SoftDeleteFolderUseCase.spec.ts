@@ -4,6 +4,8 @@ import { ErrorMessagesEnum } from '@file-manager/shared';
 import { SoftDeleteFolderUseCase } from './SoftDeleteFolderUseCase';
 import { FolderRepository } from '../../repositories/FolderRepository';
 
+const ORGANIZATION_ID = 'org-uuid-principal';
+
 // ── Factories ────────────────────────────────────────────
 // `children` faz parte do payload que o repositorio devolve (findById usa
 // include) e a travessia da subarvore o le. Sem o campo, todo teste estouraria
@@ -51,15 +53,19 @@ describe('SoftDeleteFolderUseCase', () => {
   // ── Happy path ─────────────────────────────────────────
   describe('should be able to soft delete a folder with success', () => {
     it('marks the folder and echoes the deletion timestamp', async () => {
-      const output = await useCase.execute({ id: 'folder-uuid-001' });
+      const output = await useCase.execute({
+        organizationId: ORGANIZATION_ID,
+        id: 'folder-uuid-001',
+      });
 
       expect(mockFolderRepository.softDeleteSubtree).toHaveBeenCalledWith(
+        ORGANIZATION_ID,
         ['folder-uuid-001'],
         expect.any(Date),
       );
       // O ISO devolvido tem de ser o mesmo instante gravado no banco.
-      const [, deletedAt] = mockFolderRepository.softDeleteSubtree.mock
-        .calls[0] as [string[], Date];
+      const [, , deletedAt] = mockFolderRepository.softDeleteSubtree.mock
+        .calls[0] as [string, string[], Date];
       expect(output).toEqual({
         id: 'folder-uuid-001',
         name: 'Exames',
@@ -72,26 +78,32 @@ describe('SoftDeleteFolderUseCase', () => {
 
     it('cascades to the whole subtree, not just the folder asked for', async () => {
       // pai -> filho -> neto
-      mockFolderRepository.findById.mockImplementation((id: string) => {
-        if (id === 'folder-uuid-001') {
-          return Promise.resolve(
-            folderMock({ children: [{ id: 'child', deletedAt: null }] }),
-          );
-        }
-        if (id === 'child') {
-          return Promise.resolve(
-            folderMock({
-              id: 'child',
-              children: [{ id: 'grandchild', deletedAt: null }],
-            }),
-          );
-        }
-        return Promise.resolve(folderMock({ id, children: [] }));
+      mockFolderRepository.findById.mockImplementation(
+        (_organizationId: string, id: string) => {
+          if (id === 'folder-uuid-001') {
+            return Promise.resolve(
+              folderMock({ children: [{ id: 'child', deletedAt: null }] }),
+            );
+          }
+          if (id === 'child') {
+            return Promise.resolve(
+              folderMock({
+                id: 'child',
+                children: [{ id: 'grandchild', deletedAt: null }],
+              }),
+            );
+          }
+          return Promise.resolve(folderMock({ id, children: [] }));
+        },
+      );
+
+      const output = await useCase.execute({
+        organizationId: ORGANIZATION_ID,
+        id: 'folder-uuid-001',
       });
 
-      const output = await useCase.execute({ id: 'folder-uuid-001' });
-
       expect(mockFolderRepository.softDeleteSubtree).toHaveBeenCalledWith(
+        ORGANIZATION_ID,
         ['folder-uuid-001', 'child', 'grandchild'],
         expect.any(Date),
       );
@@ -108,28 +120,37 @@ describe('SoftDeleteFolderUseCase', () => {
         }),
       );
 
-      await useCase.execute({ id: 'folder-uuid-001' });
+      await useCase.execute({
+        organizationId: ORGANIZATION_ID,
+        id: 'folder-uuid-001',
+      });
 
-      const [ids] = mockFolderRepository.softDeleteSubtree.mock
-        .calls[0] as string[][];
+      const [, ids] = mockFolderRepository.softDeleteSubtree.mock.calls[0] as [
+        string,
+        string[],
+      ];
       expect(ids).toContain('active-child');
       expect(ids).not.toContain('gone-child');
     });
 
     it('terminates on a cyclic hierarchy instead of looping forever', async () => {
       // A -> B -> A. Sem o Set de visitados a travessia nao teria fim.
-      mockFolderRepository.findById.mockImplementation((id: string) =>
-        Promise.resolve(
-          id === 'folder-uuid-001'
-            ? folderMock({ children: [{ id: 'b', deletedAt: null }] })
-            : folderMock({
-                id: 'b',
-                children: [{ id: 'folder-uuid-001', deletedAt: null }],
-              }),
-        ),
+      mockFolderRepository.findById.mockImplementation(
+        (_organizationId: string, id: string) =>
+          Promise.resolve(
+            id === 'folder-uuid-001'
+              ? folderMock({ children: [{ id: 'b', deletedAt: null }] })
+              : folderMock({
+                  id: 'b',
+                  children: [{ id: 'folder-uuid-001', deletedAt: null }],
+                }),
+          ),
       );
 
-      const output = await useCase.execute({ id: 'folder-uuid-001' });
+      const output = await useCase.execute({
+        organizationId: ORGANIZATION_ID,
+        id: 'folder-uuid-001',
+      });
 
       expect(output.deletedFoldersCount).toBe(2);
     });
@@ -144,7 +165,12 @@ describe('SoftDeleteFolderUseCase', () => {
         folderMock({ isDefault: true }),
       );
 
-      await expect(useCase.execute({ id: 'folder-uuid-001' })).rejects.toThrow(
+      await expect(
+        useCase.execute({
+          organizationId: ORGANIZATION_ID,
+          id: 'folder-uuid-001',
+        }),
+      ).rejects.toThrow(
         new BadRequestException(ErrorMessagesEnum.CANNOT_DELETE_DEFAULT_FOLDER),
       );
 
@@ -154,7 +180,9 @@ describe('SoftDeleteFolderUseCase', () => {
     it('the folder does not exist', async () => {
       mockFolderRepository.findById.mockResolvedValue(null);
 
-      await expect(useCase.execute({ id: 'missing' })).rejects.toThrow(
+      await expect(
+        useCase.execute({ organizationId: ORGANIZATION_ID, id: 'missing' }),
+      ).rejects.toThrow(
         new NotFoundException(ErrorMessagesEnum.FOLDER_NOT_FOUND),
       );
 
@@ -166,7 +194,12 @@ describe('SoftDeleteFolderUseCase', () => {
         folderMock({ deletedAt: new Date('2026-02-01T00:00:00.000Z') }),
       );
 
-      await expect(useCase.execute({ id: 'folder-uuid-001' })).rejects.toThrow(
+      await expect(
+        useCase.execute({
+          organizationId: ORGANIZATION_ID,
+          id: 'folder-uuid-001',
+        }),
+      ).rejects.toThrow(
         new NotFoundException(ErrorMessagesEnum.FOLDER_NOT_FOUND),
       );
     });

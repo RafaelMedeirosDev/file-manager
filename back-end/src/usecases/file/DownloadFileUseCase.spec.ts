@@ -13,6 +13,8 @@ import { DownloadFileUseCase } from './DownloadFileUseCase';
 import { FileRepository } from '../../repositories/FileRepository';
 import { r2Client } from '../../shared/lib/r2Client';
 
+const ORGANIZATION_ID = 'org-uuid-principal';
+
 const OWNER = 'user-uuid-001';
 const OTHER = 'user-uuid-999';
 const KEY = '11111111-1111-4111-8111-111111111111.pdf';
@@ -51,11 +53,13 @@ function objectMock(overrides: Record<string, unknown> = {}) {
 }
 
 const asOwner = {
+  organizationId: ORGANIZATION_ID,
   id: 'file-uuid-001',
   requesterUserId: OWNER,
   requesterRole: ROLE.USER,
 };
 const asAdmin = {
+  organizationId: ORGANIZATION_ID,
   id: 'file-uuid-001',
   requesterUserId: 'admin',
   requesterRole: ROLE.ADMIN,

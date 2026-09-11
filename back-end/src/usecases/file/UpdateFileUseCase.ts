@@ -9,6 +9,7 @@ import { FolderRepository } from '../../repositories/FolderRepository';
 import { ErrorMessagesEnum } from '@file-manager/shared';
 
 export type UpdateFileInput = {
+  organizationId: string;
   id: string;
   folderId?: string;
 };
@@ -39,13 +40,19 @@ export class UpdateFileUseCase {
       );
     }
 
-    const file = await this.fileRepository.findById(input.id);
+    const file = await this.fileRepository.findById(
+      input.organizationId,
+      input.id,
+    );
 
     if (!file || file.deletedAt) {
       throw new NotFoundException(ErrorMessagesEnum.FILE_NOT_FOUND);
     }
 
-    const folder = await this.folderRepository.findById(input.folderId);
+    const folder = await this.folderRepository.findById(
+      input.organizationId,
+      input.folderId,
+    );
 
     if (!folder || folder.deletedAt) {
       throw new NotFoundException(ErrorMessagesEnum.FOLDER_NOT_FOUND);

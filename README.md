@@ -593,6 +593,13 @@ pnpm --dir back-end test:e2e    # testes end-to-end do backend
 pnpm --dir back-end test:cov    # relatório de cobertura
 ```
 
+> **Os testes e2e exigem o banco de pé e com as migrations aplicadas.** A suíte
+> `organization-isolation.e2e-spec.ts` sobe o `AppModule` inteiro, com
+> repositórios e `PrismaService` reais — mockar repositório não provaria
+> isolamento, porque ele vive exatamente nos `where` deles. Ela cria duas
+> organizações de teste com e-mails sufixados por `@isolation-e2e.test` e as
+> remove no fim, mas escreve no banco apontado por `DATABASE_URL`.
+
 > Após alterar qualquer arquivo em `shared/src/`, execute `pnpm --dir shared build` antes de subir os servidores ou rodar os testes.
 
 ---

@@ -4,6 +4,8 @@ import { ErrorMessagesEnum } from '@file-manager/shared';
 import { UpdateFolderUseCase } from './UpdateFolderUseCase';
 import { FolderRepository } from '../../repositories/FolderRepository';
 
+const ORGANIZATION_ID = 'org-uuid-principal';
+
 // ── Factories ────────────────────────────────────────────
 function folderMock(overrides: Record<string, unknown> = {}) {
   return {
@@ -18,7 +20,11 @@ function folderMock(overrides: Record<string, unknown> = {}) {
   };
 }
 
-const input = { id: 'folder-uuid-001', name: 'Laudos' };
+const input = {
+  organizationId: ORGANIZATION_ID,
+  id: 'folder-uuid-001',
+  name: 'Laudos',
+};
 
 // ── Mock repository ──────────────────────────────────────
 const mockFolderRepository = {
@@ -57,6 +63,7 @@ describe('UpdateFolderUseCase', () => {
       expect(
         mockFolderRepository.findActiveByUserIdAndName,
       ).toHaveBeenCalledWith({
+        organizationId: ORGANIZATION_ID,
         userId: 'user-uuid-001',
         name: 'Laudos',
         excludeId: 'folder-uuid-001',

@@ -10,6 +10,7 @@ import { FolderRepository } from '../../repositories/FolderRepository';
 import { ErrorMessagesEnum } from '@file-manager/shared';
 
 export type GetFolderByIdInput = {
+  organizationId: string;
   id: string;
   requesterUserId: string;
   requesterRole: ROLE;
@@ -57,7 +58,10 @@ export class GetFolderByIdUseCase {
 
   async execute(input: GetFolderByIdInput): Promise<GetFolderByIdOutput> {
     this.logger.log('[GetFolderByIdUseCase] Execute started');
-    const folder = await this.folderRepository.findById(input.id);
+    const folder = await this.folderRepository.findById(
+      input.organizationId,
+      input.id,
+    );
 
     if (!folder || folder.deletedAt) {
       throw new NotFoundException(ErrorMessagesEnum.FOLDER_NOT_FOUND);
@@ -67,11 +71,12 @@ export class GetFolderByIdUseCase {
       throw new ForbiddenException(ErrorMessagesEnum.FOLDER_ACCESS_FORBIDDEN);
     }
 
-    const files = await this.fileRepository.listFilesActive(
-      input.requesterUserId,
-      input.requesterRole,
-      folder.id,
-    );
+    const files = await this.fileRepository.listFilesActive({
+      organizationId: input.organizationId,
+      requesterUserId: input.requesterUserId,
+      requesterRole: input.requesterRole,
+      folderId: folder.id,
+    });
 
     // ── Ancestors: sobe a hierarquia até a raiz ──────────
     // O Set guarda os ids ja visitados: sem ele, uma hierarquia ciclica
@@ -83,7 +88,10 @@ export class GetFolderByIdUseCase {
     while (currentParentId && !visitedFolderIds.has(currentParentId)) {
       visitedFolderIds.add(currentParentId);
 
-      const ancestor = await this.folderRepository.findById(currentParentId);
+      const ancestor = await this.folderRepository.findById(
+        input.organizationId,
+        currentParentId,
+      );
       if (!ancestor || ancestor.deletedAt) break;
       ancestors.unshift({ id: ancestor.id, name: ancestor.name });
       currentParentId = ancestor.folderId;

@@ -46,7 +46,12 @@ export class PreAuthJwtStrategy extends PassportStrategy(
    * quando a escolha nao procede.
    */
   async validate(payload: PreAuthClaims): Promise<PreAuthUser> {
-    const user = await this.userRepository.findById(payload.sub);
+    // Busca global de proposito: o pre-auth e emitido antes de a organizacao
+    // ser escolhida, entao nao ha escopo a aplicar. Unico chamador legitimo
+    // deste metodo em todo o sistema.
+    const user = await this.userRepository.findByIdAcrossOrganizations(
+      payload.sub,
+    );
 
     // findById nao filtra deletedAt, entao a checagem e explicita aqui.
     if (!user || user.deletedAt) {

@@ -6,6 +6,7 @@ import { ErrorMessagesEnum } from '@file-manager/shared';
 import { BCRYPT_SALT_ROUNDS } from '../../shared/constants/bcrypt.constants';
 
 export type CreateUserWithFoldersInput = {
+  organizationId: string;
   name: string;
   email: string;
   password: string;
@@ -68,6 +69,7 @@ export class CreateUserWithFoldersUseCase {
 
     // Uma transacao: ou o usuario nasce com todas as pastas, ou nao nasce.
     const { user, folders } = await this.userRepository.createWithFolders({
+      organizationId: input.organizationId,
       user: {
         name: input.name,
         email: input.email,

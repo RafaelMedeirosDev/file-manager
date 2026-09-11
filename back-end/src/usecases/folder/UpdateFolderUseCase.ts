@@ -8,6 +8,7 @@ import { FolderRepository } from '../../repositories/FolderRepository';
 import { ErrorMessagesEnum } from '@file-manager/shared';
 
 export type UpdateFolderInput = {
+  organizationId: string;
   id: string;
   name: string;
 };
@@ -28,7 +29,10 @@ export class UpdateFolderUseCase {
 
   async execute(input: UpdateFolderInput): Promise<UpdateFolderOutput> {
     this.logger.log('[UpdateFolderUseCase] Execute started');
-    const existingFolder = await this.folderRepository.findById(input.id);
+    const existingFolder = await this.folderRepository.findById(
+      input.organizationId,
+      input.id,
+    );
 
     if (!existingFolder || existingFolder.deletedAt) {
       throw new NotFoundException(ErrorMessagesEnum.FOLDER_NOT_FOUND);
@@ -36,6 +40,7 @@ export class UpdateFolderUseCase {
 
     const activeFolderWithSameName =
       await this.folderRepository.findActiveByUserIdAndName({
+        organizationId: input.organizationId,
         userId: existingFolder.userId,
         name: input.name,
         excludeId: existingFolder.id,

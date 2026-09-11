@@ -27,6 +27,7 @@ export type BulkUploadFileEntry = {
 };
 
 export type BulkUploadFilesInput = {
+  organizationId: string;
   files: BulkUploadFileEntry[];
   folderId: string;
   requesterId: string;
@@ -80,7 +81,10 @@ export class BulkUploadFilesUseCase {
     this.logger.log('[BulkUploadFilesUseCase] Execute started');
 
     // ── Validate folder once for all files ──────────────
-    const folder = await this.folderRepository.findById(input.folderId);
+    const folder = await this.folderRepository.findById(
+      input.organizationId,
+      input.folderId,
+    );
 
     if (!folder || folder.deletedAt) {
       throw new NotFoundException(ErrorMessagesEnum.FOLDER_NOT_FOUND);
@@ -102,7 +106,10 @@ export class BulkUploadFilesUseCase {
 
     const fileOwnerId = isAdmin ? folder.userId : input.requesterId;
 
-    const owner = await this.userRepository.findById(fileOwnerId);
+    const owner = await this.userRepository.findById(
+      input.organizationId,
+      fileOwnerId,
+    );
 
     if (!owner || owner.deletedAt) {
       throw new NotFoundException(ErrorMessagesEnum.USER_NOT_FOUND);
@@ -165,6 +172,7 @@ export class BulkUploadFilesUseCase {
 
         try {
           file = await this.fileRepository.create({
+            organizationId: input.organizationId,
             name: entry.name,
             userId: fileOwnerId,
             folderId: input.folderId,

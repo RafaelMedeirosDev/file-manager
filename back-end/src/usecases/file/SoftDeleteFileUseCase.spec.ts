@@ -6,6 +6,8 @@ import { SoftDeleteFileUseCase } from './SoftDeleteFileUseCase';
 import { FileRepository } from '../../repositories/FileRepository';
 import { FolderRepository } from '../../repositories/FolderRepository';
 
+const ORGANIZATION_ID = 'org-uuid-principal';
+
 const NOW = new Date('2026-08-22T12:00:00.000Z');
 const OWNER = 'user-uuid-001';
 const OTHER = 'user-uuid-999';
@@ -33,11 +35,13 @@ function folderMock(overrides: Record<string, unknown> = {}) {
 }
 
 const asOwner = {
+  organizationId: ORGANIZATION_ID,
   id: 'file-uuid-001',
   requesterUserId: OWNER,
   requesterRole: ROLE.USER,
 };
 const asAdmin = {
+  organizationId: ORGANIZATION_ID,
   id: 'file-uuid-001',
   requesterUserId: 'admin',
   requesterRole: ROLE.ADMIN,

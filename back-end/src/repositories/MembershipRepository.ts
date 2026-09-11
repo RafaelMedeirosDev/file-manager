@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Membership, Prisma, ROLE } from '@prisma/client';
+import { Membership, Prisma } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
 
 export type MembershipWithUserAndOrganization = Prisma.MembershipGetPayload<{
@@ -9,14 +9,6 @@ export type MembershipWithUserAndOrganization = Prisma.MembershipGetPayload<{
 @Injectable()
 export class MembershipRepository {
   constructor(private readonly prisma: PrismaService) {}
-
-  create(data: {
-    userId: string;
-    organizationId: string;
-    role: ROLE;
-  }): Promise<Membership> {
-    return this.prisma.membership.create({ data });
-  }
 
   /**
    * Traz a associacao com usuario e organizacao para que quem chama decida
@@ -36,6 +28,26 @@ export class MembershipRepository {
     return this.prisma.membership.findUnique({
       where: { userId_organizationId: { userId, organizationId } },
       include: { user: true, organization: true },
+    });
+  }
+
+  /**
+   * Desliga o usuario de UMA organizacao, sem tocar na linha de `users`.
+   *
+   * E o que `DELETE /users/:id` faz: apagar a linha global mataria a pessoa em
+   * todas as organizacoes -- um ADMIN da demo, cuja credencial e publica,
+   * poderia excluir a conta real do operador. Sem associacao ativa o usuario
+   * fica invisivel nesta organizacao (todas as listagens recortam por
+   * associacao) e segue normal nas outras.
+   */
+  softDeleteByUserAndOrganization(
+    userId: string,
+    organizationId: string,
+    deletedAt: Date,
+  ): Promise<Membership> {
+    return this.prisma.membership.update({
+      where: { userId_organizationId: { userId, organizationId } },
+      data: { deletedAt },
     });
   }
 

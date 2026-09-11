@@ -5,6 +5,8 @@ import { ErrorMessagesEnum } from '@file-manager/shared';
 import { GetFileByIdUseCase } from './GetFileByIdUseCase';
 import { FileRepository } from '../../repositories/FileRepository';
 
+const ORGANIZATION_ID = 'org-uuid-principal';
+
 const OWNER = 'user-uuid-001';
 const OTHER = 'user-uuid-999';
 
@@ -38,11 +40,13 @@ function fileMock(overrides: Record<string, unknown> = {}) {
 }
 
 const asOwner = {
+  organizationId: ORGANIZATION_ID,
   id: 'file-uuid-001',
   requesterUserId: OWNER,
   requesterRole: ROLE.USER,
 };
 const asAdmin = {
+  organizationId: ORGANIZATION_ID,
   id: 'file-uuid-001',
   requesterUserId: 'admin',
   requesterRole: ROLE.ADMIN,

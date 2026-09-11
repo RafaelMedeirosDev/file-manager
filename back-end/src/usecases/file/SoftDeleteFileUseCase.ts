@@ -10,6 +10,7 @@ import { FolderRepository } from '../../repositories/FolderRepository';
 import { ErrorMessagesEnum } from '@file-manager/shared';
 
 export type SoftDeleteFileInput = {
+  organizationId: string;
   id: string;
   requesterUserId: string;
   requesterRole: ROLE;
@@ -35,7 +36,10 @@ export class SoftDeleteFileUseCase {
   async execute(input: SoftDeleteFileInput): Promise<SoftDeleteFileOutput> {
     this.logger.log('[SoftDeleteFileUseCase] Execute started');
 
-    const file = await this.fileRepository.findById(input.id);
+    const file = await this.fileRepository.findById(
+      input.organizationId,
+      input.id,
+    );
 
     if (!file || file.deletedAt) {
       throw new NotFoundException(ErrorMessagesEnum.FILE_NOT_FOUND);
@@ -49,7 +53,10 @@ export class SoftDeleteFileUseCase {
       }
 
       const folder = file.folderId
-        ? await this.folderRepository.findById(file.folderId)
+        ? await this.folderRepository.findById(
+            input.organizationId,
+            file.folderId,
+          )
         : null;
 
       // deletedAt tratado como inexistencia, como no resto do codigo: uma

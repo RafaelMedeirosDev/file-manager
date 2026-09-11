@@ -4,6 +4,8 @@ import { ErrorMessagesEnum } from '@file-manager/shared';
 import { FolderRepository } from '../../repositories/FolderRepository';
 import { ListFoldersUseCase } from './ListFoldersUseCase';
 
+const ORGANIZATION_ID = 'org-uuid-principal';
+
 // ── Factories ─────────────────────────────────────────────────────────────────
 
 function folderMock(overrides = {}) {
@@ -28,8 +30,16 @@ const countFoldersActive = jest.fn();
 
 let useCase: ListFoldersUseCase;
 
-const adminInput = { requesterUserId: 'admin-id', requesterRole: ROLE.ADMIN };
-const userInput = { requesterUserId: 'user-id', requesterRole: ROLE.USER };
+const adminInput = {
+  organizationId: ORGANIZATION_ID,
+  requesterUserId: 'admin-id',
+  requesterRole: ROLE.ADMIN,
+};
+const userInput = {
+  organizationId: ORGANIZATION_ID,
+  requesterUserId: 'user-id',
+  requesterRole: ROLE.USER,
+};
 
 // ── Suite ─────────────────────────────────────────────────────────────────────
 
@@ -141,20 +151,22 @@ describe('ListFoldersUseCase', () => {
         limit: 10,
       });
 
-      expect(listFoldersActive).toHaveBeenCalledWith(
-        'user-id',
-        ROLE.USER,
-        'folder-abc',
-        undefined,
-        0,
-        10,
-      );
-      expect(countFoldersActive).toHaveBeenCalledWith(
-        'user-id',
-        ROLE.USER,
-        'folder-abc',
-        undefined,
-      );
+      expect(listFoldersActive).toHaveBeenCalledWith({
+        organizationId: ORGANIZATION_ID,
+        requesterUserId: 'user-id',
+        requesterRole: ROLE.USER,
+        folderId: 'folder-abc',
+        rootsOnly: undefined,
+        skip: 0,
+        take: 10,
+      });
+      expect(countFoldersActive).toHaveBeenCalledWith({
+        organizationId: ORGANIZATION_ID,
+        requesterUserId: 'user-id',
+        requesterRole: ROLE.USER,
+        folderId: 'folder-abc',
+        rootsOnly: undefined,
+      });
     });
   });
 
