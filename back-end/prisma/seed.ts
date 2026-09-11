@@ -4,7 +4,6 @@ import { ExamCategory, PrismaClient, ROLE } from '@prisma/client';
 import { hash } from 'bcrypt';
 import { Pool } from 'pg';
 import { BCRYPT_SALT_ROUNDS } from '../src/shared/constants/bcrypt.constants';
-import { PRINCIPAL_ORGANIZATION_ID } from './organizations';
 
 // Credenciais de desenvolvimento, documentadas no README. Nao ha nada
 // sensivel aqui: este seed so faz sentido contra um banco local.
@@ -12,6 +11,12 @@ const ADMIN_EMAIL = 'admin@filemanager.dev';
 const ADMIN_PASSWORD = 'admin123';
 const USER_EMAIL = 'user@filemanager.dev';
 const USER_PASSWORD = 'user123';
+
+// A organizacao e resolvida pelo slug, que e unique, em vez de por um id
+// literal repetido aqui. O id existe uma vez so, no SQL da migration que criou
+// a linha -- duplica-lo em TypeScript criaria duas fontes da verdade para o
+// mesmo valor, e a segunda ninguem lembraria de atualizar.
+const PRINCIPAL_ORGANIZATION_SLUG = 'principal';
 
 // Amostra do catalogo cobrindo categorias distintas, para haver o que
 // selecionar no fluxo de solicitacao de exames.
@@ -83,6 +88,20 @@ async function main(): Promise<void> {
       },
     });
 
+    const organization = await prisma.organization.findUnique({
+      where: { slug: PRINCIPAL_ORGANIZATION_SLUG },
+    });
+
+    // Mensagem explicita em vez de deixar o erro do Prisma falar: este e o
+    // caminho de onboarding, e "organizacao nao encontrada" nao diz a quem
+    // acabou de clonar o projeto que falta rodar a migration.
+    if (!organization) {
+      throw new Error(
+        `Organizacao "${PRINCIPAL_ORGANIZATION_SLUG}" nao existe. ` +
+          'Rode `pnpm prisma:migrate:deploy` antes do seed.',
+      );
+    }
+
     // As associacoes com a organizacao principal. Sao elas que carregam o
     // papel: `users.role` ainda e gravado acima, mas sera dropada no contract,
     // e a partir do PR de autenticacao e daqui que o papel e lido.
@@ -97,13 +116,13 @@ async function main(): Promise<void> {
         where: {
           userId_organizationId: {
             userId: account.id,
-            organizationId: PRINCIPAL_ORGANIZATION_ID,
+            organizationId: organization.id,
           },
         },
         update: {},
         create: {
           userId: account.id,
-          organizationId: PRINCIPAL_ORGANIZATION_ID,
+          organizationId: organization.id,
           role,
         },
       });
@@ -133,7 +152,7 @@ async function main(): Promise<void> {
     console.log(`  ADMIN: ${admin.email} / ${ADMIN_PASSWORD}`);
     console.log(`  USER:  ${user.email} / ${USER_PASSWORD}`);
     console.log(`  ${EXAMS.length} exames no catalogo`);
-    console.log('  ambos associados a organizacao principal');
+    console.log(`  ambos associados a organizacao ${organization.name}`);
   } finally {
     await prisma.$disconnect();
     await pool.end();
