@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
-import { ROLE } from '@prisma/client';
+import { ExamCategory, ROLE } from '@prisma/client';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/database/prisma.service';
@@ -43,6 +43,8 @@ type Ids = {
   userId: string;
   folderId: string;
   fileId: string;
+  examId: string;
+  examRequestId: string;
 };
 
 describe('Organization isolation (e2e)', () => {
@@ -114,11 +116,45 @@ describe('Organization isolation (e2e)', () => {
       },
     });
 
+    // Mesmo codigo nas duas organizacoes de proposito: e o que prova que a
+    // unique de `code` virou composta.
+    const exam = await prisma.exam.create({
+      data: {
+        organizationId,
+        name: 'Hemograma completo',
+        code: 'ISO-40304361',
+        category: ExamCategory.HEMATOLOGY,
+      },
+    });
+    // Segundo exame, com codigo exclusivo desta organizacao: e o que permite
+    // testar "criar em A um codigo que so existe em B" pela API.
+    await prisma.exam.create({
+      data: {
+        organizationId,
+        name: `Exclusivo de ${slug}`,
+        // Maiusculo porque CreateExamDTO aplica trimUpperCase no codigo: com
+        // slug minusculo o teste de colisao passaria sem colidir com nada.
+        code: `ISO-ONLY-${slug.toUpperCase()}`,
+        category: ExamCategory.BIOCHEMISTRY,
+      },
+    });
+
+    const examRequest = await prisma.examRequest.create({
+      data: {
+        organizationId,
+        userId: user.id,
+        indication: `Solicitacao de ${slug}`,
+        exams: { connect: [{ id: exam.id }] },
+      },
+    });
+
     return {
       adminId: admin.id,
       userId: user.id,
       folderId: folder.id,
       fileId: file.id,
+      examId: exam.id,
+      examRequestId: examRequest.id,
     };
   }
 
@@ -140,6 +176,10 @@ describe('Organization isolation (e2e)', () => {
 
   async function cleanup() {
     const organizationId = { in: [ORG_A, ORG_B] };
+    // A ordem segue as FKs: as linhas de _ExamToExamRequest saem por CASCADE
+    // ao apagar a solicitacao, e `users` e RESTRICT, entao vem por ultimo.
+    await prisma.examRequest.deleteMany({ where: { organizationId } });
+    await prisma.exam.deleteMany({ where: { organizationId } });
     await prisma.file.deleteMany({ where: { organizationId } });
     await prisma.folder.deleteMany({ where: { organizationId } });
     await prisma.membership.deleteMany({ where: { organizationId } });
@@ -334,5 +374,119 @@ describe('Organization isolation (e2e)', () => {
     const idsInB = (inB.body as ListBody).data.map((u) => u.id);
     expect(idsInA).not.toContain(multiOrg.id);
     expect(idsInB).toContain(multiOrg.id);
+  });
+  // ── Exames e solicitacoes ──────────────────────────────
+  describe('exams and exam requests of another organization', () => {
+    it('returns 404 when reading an exam request', () =>
+      request(app.getHttpServer())
+        .get(`/exam-requests/${b.examRequestId}`)
+        .set('Authorization', token(ORG_A, a.adminId))
+        .expect(404));
+
+    it('returns 404 when updating an exam request', () =>
+      request(app.getHttpServer())
+        .patch(`/exam-requests/${b.examRequestId}`)
+        .set('Authorization', token(ORG_A, a.adminId))
+        .send({ indication: 'Invadida' })
+        .expect(404));
+
+    it('returns 404 when deleting an exam', () =>
+      request(app.getHttpServer())
+        .delete(`/exams/${b.examId}`)
+        .set('Authorization', token(ORG_A, a.adminId))
+        .expect(404));
+
+    it('never leaks exams from another organization', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/exams?limit=100')
+        .set('Authorization', token(ORG_A, a.adminId))
+        .expect(200);
+
+      const ids = (res.body as ListBody).data.map((item) => item.id);
+      expect(ids).toContain(a.examId);
+      expect(ids).not.toContain(b.examId);
+    });
+
+    it('never leaks exam requests from another organization', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/exam-requests?limit=100')
+        .set('Authorization', token(ORG_A, a.adminId))
+        .expect(200);
+
+      const ids = (res.body as ListBody).data.map((item) => item.id);
+      expect(ids).toContain(a.examRequestId);
+      expect(ids).not.toContain(b.examRequestId);
+    });
+  });
+
+  it('allows an exam code that already exists in another organization', async () => {
+    // `ISO-ONLY-BETA` existe em B e nao em A. Prova a unique composta: enquanto
+    // `exams.code` era unique global isto respondia 409, e um ADMIN da
+    // organizacao de demonstracao nao conseguiria sequer cadastrar um exame
+    // cujo codigo o catalogo real ja usasse.
+    await request(app.getHttpServer())
+      .post('/exams')
+      .set('Authorization', token(ORG_A, a.adminId))
+      .send({
+        name: 'Exclusivo de beta, agora em alfa',
+        code: 'ISO-ONLY-BETA',
+        category: ExamCategory.BIOCHEMISTRY,
+      })
+      .expect(201);
+  });
+
+  it('still refuses a duplicate code inside the same organization', () =>
+    // O outro lado da composta: o 409 continua valendo dentro da organizacao.
+    request(app.getHttpServer())
+      .post('/exams')
+      .set('Authorization', token(ORG_A, a.adminId))
+      .send({
+        name: 'Duplicado',
+        code: 'ISO-ONLY-ALFA',
+        category: ExamCategory.BIOCHEMISTRY,
+      })
+      .expect(409));
+
+  describe('the N-N join between requests and exams', () => {
+    // A juncao `_ExamToExamRequest` e implicita: nao tem coluna de organizacao
+    // e e escrita por id puro. A garantia e write-time, em findActiveByIds.
+    it('refuses to create a request referencing an exam of another organization', () =>
+      request(app.getHttpServer())
+        .post('/exam-requests')
+        .set('Authorization', token(ORG_A, a.adminId))
+        .send({ targetUserId: a.userId, examIds: [b.examId] })
+        .expect(404));
+
+    it('refuses to move a request onto an exam of another organization', () =>
+      request(app.getHttpServer())
+        .patch(`/exam-requests/${a.examRequestId}`)
+        .set('Authorization', token(ORG_A, a.adminId))
+        .send({ examIds: [b.examId] })
+        .expect(404));
+
+    it('returns 404 when creating a request for a user of another organization', () =>
+      request(app.getHttpServer())
+        .post('/exam-requests')
+        .set('Authorization', token(ORG_A, a.adminId))
+        .send({ targetUserId: b.userId, examIds: [a.examId] })
+        .expect(404));
+  });
+
+  it('lists exam requests created by an ADMIN, not only those of USERs', async () => {
+    // Regressao do M1: o repositorio tinha `user: { role: 'USER' }` cravado no
+    // where, escondendo da tela toda solicitacao criada por um administrador.
+    const created = await request(app.getHttpServer())
+      .post('/exam-requests')
+      .set('Authorization', token(ORG_A, a.adminId))
+      .send({ examIds: [a.examId], indication: 'Criada pelo admin' })
+      .expect(201);
+
+    const res = await request(app.getHttpServer())
+      .get('/exam-requests?limit=100')
+      .set('Authorization', token(ORG_A, a.adminId))
+      .expect(200);
+
+    const ids = (res.body as ListBody).data.map((item) => item.id);
+    expect(ids).toContain((created.body as { id: string }).id);
   });
 });

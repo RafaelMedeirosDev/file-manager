@@ -6,6 +6,8 @@ import { ExamRequestRepository } from '../../repositories/ExamRequestRepository'
 import { ExamRepository } from '../../repositories/ExamRepository';
 import { ErrorMessagesEnum } from '@file-manager/shared';
 
+const ORGANIZATION_ID = 'org-uuid-principal';
+
 function examMock(overrides = {}) {
   return {
     id: 'exam-uuid-001',
@@ -39,7 +41,7 @@ function examRequestMock(overrides = {}) {
 }
 
 const mockExamRequestRepository = { findById: jest.fn(), update: jest.fn() };
-const mockExamRepository = { findManyBy: jest.fn() };
+const mockExamRepository = { findActiveByIds: jest.fn() };
 
 let useCase: UpdateExamRequestUseCase;
 
@@ -66,12 +68,13 @@ describe('UpdateExamRequestUseCase', () => {
       mockExamRequestRepository.update.mockResolvedValueOnce(updated);
 
       const result = await useCase.execute({
+        organizationId: ORGANIZATION_ID,
         id: 'req-uuid-001',
         indication: 'Urgente',
       });
 
       expect(result.indication).toBe('Urgente');
-      expect(mockExamRepository.findManyBy).not.toHaveBeenCalled();
+      expect(mockExamRepository.findActiveByIds).not.toHaveBeenCalled();
       expect(mockExamRequestRepository.update).toHaveBeenCalledWith(
         'req-uuid-001',
         {
@@ -86,33 +89,35 @@ describe('UpdateExamRequestUseCase', () => {
       mockExamRequestRepository.findById.mockResolvedValueOnce(
         examRequestMock(),
       );
-      mockExamRepository.findManyBy.mockResolvedValueOnce([newExam]);
+      mockExamRepository.findActiveByIds.mockResolvedValueOnce([newExam]);
       mockExamRequestRepository.update.mockResolvedValueOnce(
         examRequestMock({ exams: [newExam] }),
       );
 
       const result = await useCase.execute({
+        organizationId: ORGANIZATION_ID,
         id: 'req-uuid-001',
         examIds: ['exam-uuid-002'],
       });
 
       expect(result.exams[0].id).toBe('exam-uuid-002');
-      expect(mockExamRepository.findManyBy).toHaveBeenCalledWith({
-        id: { in: ['exam-uuid-002'] },
-        deletedAt: null,
-      });
+      expect(mockExamRepository.findActiveByIds).toHaveBeenCalledWith(
+        ORGANIZATION_ID,
+        ['exam-uuid-002'],
+      );
     });
 
     it('updates both indication and examIds', async () => {
       mockExamRequestRepository.findById.mockResolvedValueOnce(
         examRequestMock(),
       );
-      mockExamRepository.findManyBy.mockResolvedValueOnce([examMock()]);
+      mockExamRepository.findActiveByIds.mockResolvedValueOnce([examMock()]);
       mockExamRequestRepository.update.mockResolvedValueOnce(
         examRequestMock({ indication: 'Novo' }),
       );
 
       await useCase.execute({
+        organizationId: ORGANIZATION_ID,
         id: 'req-uuid-001',
         indication: 'Novo',
         examIds: ['exam-uuid-001'],
@@ -130,7 +135,12 @@ describe('UpdateExamRequestUseCase', () => {
 
   describe('should not be able to update exam request if', () => {
     it('no fields are provided', async () => {
-      await expect(useCase.execute({ id: 'req-uuid-001' })).rejects.toThrow(
+      await expect(
+        useCase.execute({
+          organizationId: ORGANIZATION_ID,
+          id: 'req-uuid-001',
+        }),
+      ).rejects.toThrow(
         new BadRequestException(ErrorMessagesEnum.AT_LEAST_ONE_FIELD_REQUIRED),
       );
 
@@ -141,7 +151,11 @@ describe('UpdateExamRequestUseCase', () => {
       mockExamRequestRepository.findById.mockResolvedValueOnce(null);
 
       await expect(
-        useCase.execute({ id: 'nonexistent', indication: 'test' }),
+        useCase.execute({
+          organizationId: ORGANIZATION_ID,
+          id: 'nonexistent',
+          indication: 'test',
+        }),
       ).rejects.toThrow(
         new NotFoundException(ErrorMessagesEnum.EXAM_REQUEST_NOT_FOUND),
       );
@@ -153,7 +167,11 @@ describe('UpdateExamRequestUseCase', () => {
       );
 
       await expect(
-        useCase.execute({ id: 'req-uuid-001', indication: 'test' }),
+        useCase.execute({
+          organizationId: ORGANIZATION_ID,
+          id: 'req-uuid-001',
+          indication: 'test',
+        }),
       ).rejects.toThrow(
         new NotFoundException(ErrorMessagesEnum.EXAM_REQUEST_NOT_FOUND),
       );
@@ -163,10 +181,14 @@ describe('UpdateExamRequestUseCase', () => {
       mockExamRequestRepository.findById.mockResolvedValueOnce(
         examRequestMock(),
       );
-      mockExamRepository.findManyBy.mockResolvedValueOnce([]);
+      mockExamRepository.findActiveByIds.mockResolvedValueOnce([]);
 
       await expect(
-        useCase.execute({ id: 'req-uuid-001', examIds: ['bad-id'] }),
+        useCase.execute({
+          organizationId: ORGANIZATION_ID,
+          id: 'req-uuid-001',
+          examIds: ['bad-id'],
+        }),
       ).rejects.toThrow(
         new NotFoundException(ErrorMessagesEnum.EXAM_NOT_FOUND),
       );

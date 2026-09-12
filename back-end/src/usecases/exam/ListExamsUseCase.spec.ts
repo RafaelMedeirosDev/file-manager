@@ -2,6 +2,8 @@ import { ExamCategory } from '@file-manager/shared';
 import { ExamRepository } from '../../repositories/ExamRepository';
 import { ListExamsUseCase } from './ListExamsUseCase';
 
+const ORGANIZATION_ID = 'org-uuid-principal';
+
 // ── Factories ─────────────────────────────────────────────────────────────────
 
 function examMock(overrides = {}) {
@@ -41,7 +43,7 @@ describe('ListExamsUseCase', () => {
       listExamsActive.mockResolvedValueOnce(exams);
       countExamsActive.mockResolvedValueOnce(2);
 
-      const result = await useCase.execute({});
+      const result = await useCase.execute({ organizationId: ORGANIZATION_ID });
 
       expect(result.data).toHaveLength(2);
       expect(result.meta.page).toBe(1);
@@ -60,7 +62,7 @@ describe('ListExamsUseCase', () => {
       listExamsActive.mockResolvedValueOnce([exam]);
       countExamsActive.mockResolvedValueOnce(1);
 
-      const result = await useCase.execute({});
+      const result = await useCase.execute({ organizationId: ORGANIZATION_ID });
 
       expect(result.data[0]).toEqual({
         id: 'e-x',
@@ -79,7 +81,11 @@ describe('ListExamsUseCase', () => {
       ]);
       countExamsActive.mockResolvedValueOnce(5);
 
-      const result = await useCase.execute({ page: 2, limit: 2 });
+      const result = await useCase.execute({
+        organizationId: ORGANIZATION_ID,
+        page: 2,
+        limit: 2,
+      });
 
       expect(result.meta.page).toBe(2);
       expect(result.meta.limit).toBe(2);
@@ -91,43 +97,58 @@ describe('ListExamsUseCase', () => {
       listExamsActive.mockResolvedValueOnce([]);
       countExamsActive.mockResolvedValueOnce(0);
 
-      await useCase.execute({ name: '  HEMO  ', code: '  403  ' });
+      await useCase.execute({
+        organizationId: ORGANIZATION_ID,
+        name: '  HEMO  ',
+        code: '  403  ',
+      });
 
-      expect(listExamsActive).toHaveBeenCalledWith(
-        'hemo',
-        '403',
-        undefined,
-        0,
-        10,
-      );
-      expect(countExamsActive).toHaveBeenCalledWith('hemo', '403', undefined);
+      expect(listExamsActive).toHaveBeenCalledWith({
+        organizationId: ORGANIZATION_ID,
+        name: 'hemo',
+        code: '403',
+        category: undefined,
+        skip: 0,
+        take: 10,
+      });
+      expect(countExamsActive).toHaveBeenCalledWith({
+        organizationId: ORGANIZATION_ID,
+        name: 'hemo',
+        code: '403',
+        category: undefined,
+      });
     });
 
     it('passes category directly to repository without normalization', async () => {
       listExamsActive.mockResolvedValueOnce([]);
       countExamsActive.mockResolvedValueOnce(0);
 
-      await useCase.execute({ category: ExamCategory.HEMATOLOGY });
+      await useCase.execute({
+        organizationId: ORGANIZATION_ID,
+        category: ExamCategory.HEMATOLOGY,
+      });
 
-      expect(listExamsActive).toHaveBeenCalledWith(
-        undefined,
-        undefined,
-        ExamCategory.HEMATOLOGY,
-        0,
-        10,
-      );
-      expect(countExamsActive).toHaveBeenCalledWith(
-        undefined,
-        undefined,
-        ExamCategory.HEMATOLOGY,
-      );
+      expect(listExamsActive).toHaveBeenCalledWith({
+        organizationId: ORGANIZATION_ID,
+        name: undefined,
+        code: undefined,
+        category: ExamCategory.HEMATOLOGY,
+        skip: 0,
+        take: 10,
+      });
+      expect(countExamsActive).toHaveBeenCalledWith({
+        organizationId: ORGANIZATION_ID,
+        name: undefined,
+        code: undefined,
+        category: ExamCategory.HEMATOLOGY,
+      });
     });
 
     it('returns empty data when repository returns no results', async () => {
       listExamsActive.mockResolvedValueOnce([]);
       countExamsActive.mockResolvedValueOnce(0);
 
-      const result = await useCase.execute({});
+      const result = await useCase.execute({ organizationId: ORGANIZATION_ID });
 
       expect(result.data).toHaveLength(0);
       expect(result.meta.total).toBe(0);

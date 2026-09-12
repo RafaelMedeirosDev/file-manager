@@ -7,9 +7,12 @@ import {
   ParseUUIDPipe,
   Post,
   Query,
+  Req,
   ValidationPipe,
 } from '@nestjs/common';
 import { ROLE } from '@prisma/client';
+import type { Request } from 'express';
+import type { JwtPayload } from '../auth/jwt.strategy';
 import { Roles } from '../auth/roles.decorator';
 import { CreateExamDTO } from '../shared/dto/exam/CreateExamDTO';
 import { ListExamsQueryDTO } from '../shared/dto/exam/ListExamsQueryDTO';
@@ -59,8 +62,12 @@ export class ExamController {
       }),
     )
     query: ListExamsQueryDTO,
+    @Req() req: Request & { user: JwtPayload },
   ): Promise<ListExamsOutput> {
-    return this.listExamsUseCase.execute(query);
+    return this.listExamsUseCase.execute({
+      organizationId: req.user.organizationId,
+      ...query,
+    });
   }
 
   @Post()
@@ -74,15 +81,23 @@ export class ExamController {
       }),
     )
     body: CreateExamDTO,
+    @Req() req: Request & { user: JwtPayload },
   ): Promise<CreateExamOutput> {
-    return this.createExamUseCase.execute(body);
+    return this.createExamUseCase.execute({
+      organizationId: req.user.organizationId,
+      ...body,
+    });
   }
 
   @Delete(':id')
   @Roles(ROLE.ADMIN)
   async softDelete(
     @Param('id', new ParseUUIDPipe()) id: string,
+    @Req() req: Request & { user: JwtPayload },
   ): Promise<SoftDeleteExamOutput> {
-    return this.softDeleteExamUseCase.execute({ id });
+    return this.softDeleteExamUseCase.execute({
+      organizationId: req.user.organizationId,
+      id,
+    });
   }
 }

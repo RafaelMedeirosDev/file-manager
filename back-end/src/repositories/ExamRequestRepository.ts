@@ -21,13 +21,30 @@ export type ExamSummary = {
 export class ExamRequestRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findById(id: string): Promise<ExamRequestWithExamsAndUser | null> {
-    return this.prisma.examRequest.findUnique({
-      where: { id },
+  /**
+   * `findFirst`, e nao `findUnique`: e o que permite somar o predicado de
+   * organizacao ao id.
+   */
+  findById(
+    organizationId: string,
+    id: string,
+  ): Promise<ExamRequestWithExamsAndUser | null> {
+    return this.prisma.examRequest.findFirst({
+      where: { id, organizationId },
       include: { exams: true, user: true },
     });
   }
 
+  /**
+   * Escrita por chave primaria: `update` exige `where` unique. A leitura que
+   * precede esta escrita e a recortada (`findById`) -- ver a nota equivalente
+   * em UserRepository.updateById.
+   *
+   * O `exams: { set: ... }` abaixo reescreve a juncao `_ExamToExamRequest` por
+   * id puro, sem nenhum recorte possivel. Quem garante que os ids sao da mesma
+   * organizacao e ExamRepository.findActiveByIds, chamado no use case antes
+   * daqui.
+   */
   update(
     id: string,
     data: { indication?: string; examIds?: string[] },
@@ -44,13 +61,20 @@ export class ExamRequestRepository {
     });
   }
 
+  /**
+   * O `exams: { connect: ... }` liga a juncao `_ExamToExamRequest` por id puro
+   * -- mesma nota de `update`: a garantia de que os exames sao da mesma
+   * organizacao vem de ExamRepository.findActiveByIds, no use case.
+   */
   create(data: {
+    organizationId: string;
     userId: string;
     indication?: string;
     examIds: string[];
   }): Promise<ExamRequestWithExams> {
     return this.prisma.examRequest.create({
       data: {
+        organizationId: data.organizationId,
         userId: data.userId,
         indication: data.indication ?? '',
         exams: {
@@ -61,16 +85,21 @@ export class ExamRequestRepository {
     });
   }
 
-  listExamsRequestActive(
-    userId?: string,
-    dateFrom?: Date,
-    dateTo?: Date,
-    examsIds?: string[],
-    skip?: number,
-    take?: number,
-  ): Promise<ExamRequestWithExamsAndUser[]> {
+  listExamsRequestActive(input: {
+    organizationId: string;
+    userId?: string;
+    dateFrom?: Date;
+    dateTo?: Date;
+    examsIds?: string[];
+    skip?: number;
+    take?: number;
+  }): Promise<ExamRequestWithExamsAndUser[]> {
+    const { organizationId, userId, dateFrom, dateTo, examsIds } = input;
+
     return this.prisma.examRequest.findMany({
       where: {
+        // Incondicional, fora de qualquer spread.
+        organizationId,
         deletedAt: null,
         ...(userId ? { userId } : {}),
         ...(dateFrom || dateTo
@@ -86,26 +115,29 @@ export class ExamRequestRepository {
               exams: { some: { id: { in: examsIds } } },
             }
           : {}),
-        user: { role: 'USER' },
       },
       include: {
         exams: true,
         user: true,
       },
       orderBy: { createdAt: 'desc' },
-      skip,
-      take,
+      skip: input.skip,
+      take: input.take,
     });
   }
 
-  countExamRequestActive(
-    userId?: string,
-    dateFrom?: Date,
-    dateTo?: Date,
-    examsIds?: string[],
-  ): Promise<number> {
+  countExamRequestActive(input: {
+    organizationId: string;
+    userId?: string;
+    dateFrom?: Date;
+    dateTo?: Date;
+    examsIds?: string[];
+  }): Promise<number> {
+    const { organizationId, userId, dateFrom, dateTo, examsIds } = input;
+
     return this.prisma.examRequest.count({
       where: {
+        organizationId,
         deletedAt: null,
         ...(userId ? { userId } : {}),
         ...(dateFrom || dateTo
@@ -121,7 +153,6 @@ export class ExamRequestRepository {
               exams: { some: { id: { in: examsIds } } },
             }
           : {}),
-        user: { role: 'USER' },
       },
     });
   }

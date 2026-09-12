@@ -48,10 +48,10 @@ export class CreateExamRequestUseCase {
       throw new NotFoundException(ErrorMessagesEnum.USER_NOT_FOUND);
     }
 
-    const exams = await this.examRepository.findManyBy({
-      id: { in: input.examIds },
-      deletedAt: null,
-    });
+    const exams = await this.examRepository.findActiveByIds(
+      input.organizationId,
+      input.examIds,
+    );
 
     if (exams.length !== input.examIds.length) {
       this.logger.warn(
@@ -62,6 +62,7 @@ export class CreateExamRequestUseCase {
     }
 
     const examRequest = await this.examRequestRepository.create({
+      organizationId: input.organizationId,
       userId: input.userId,
       indication: input.indication ?? '',
       examIds: input.examIds,

@@ -68,8 +68,10 @@ export class ExamRequestController {
       }),
     )
     query: ListExamRequestsQueryDTO,
+    @Req() req: Request & { user: JwtPayload },
   ): Promise<ListExamRequestsOutput> {
     return this.listExamRequestsUseCase.execute({
+      organizationId: req.user.organizationId,
       page: query.page,
       limit: query.limit,
       dateFrom: query.dateFrom,
@@ -84,8 +86,12 @@ export class ExamRequestController {
   async getById(
     @Param(new ValidationPipe({ transform: true, whitelist: true }))
     params: ExamRequestParamsDTO,
+    @Req() req: Request & { user: JwtPayload },
   ): Promise<GetExamRequestByIdOutput> {
-    return this.getExamRequestByIdUseCase.execute({ id: params.id });
+    return this.getExamRequestByIdUseCase.execute({
+      organizationId: req.user.organizationId,
+      id: params.id,
+    });
   }
 
   @Patch(':id')
@@ -101,8 +107,10 @@ export class ExamRequestController {
       }),
     )
     body: UpdateExamRequestDTO,
+    @Req() req: Request & { user: JwtPayload },
   ): Promise<UpdateExamRequestOutput> {
     return this.updateExamRequestUseCase.execute({
+      organizationId: req.user.organizationId,
       id: params.id,
       indication: body.indication,
       examIds: body.examIds,

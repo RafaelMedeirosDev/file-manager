@@ -4,6 +4,7 @@ import { ExamRequestRepository } from '../../repositories/ExamRequestRepository'
 import { ErrorMessagesEnum } from '@file-manager/shared';
 
 export type GetExamRequestByIdInput = {
+  organizationId: string;
   id: string;
 };
 
@@ -30,7 +31,10 @@ export class GetExamRequestByIdUseCase {
       id: input.id,
     });
 
-    const examRequest = await this.examRequestRepository.findById(input.id);
+    const examRequest = await this.examRequestRepository.findById(
+      input.organizationId,
+      input.id,
+    );
 
     if (!examRequest || examRequest.deletedAt) {
       this.logger.warn('[GetExamRequestByIdUseCase] ExamRequest not found', {
