@@ -53,7 +53,11 @@ export class ListUsersUseCase {
       id: user.id,
       name: user.name,
       email: user.email,
-      role: user.role,
+      // `memberships[0]` e seguro: o `where` da consulta exige uma associacao
+      // ativa nesta organizacao, e a unique (user_id, organization_id) garante
+      // que existe no maximo uma. Um fallback aqui reintroduziria exatamente o
+      // bug que este mapeamento corrige -- um papel plausivel e errado.
+      role: user.memberships[0].role,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     }));

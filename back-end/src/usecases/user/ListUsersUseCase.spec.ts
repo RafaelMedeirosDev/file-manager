@@ -6,17 +6,31 @@ const ORGANIZATION_ID = 'org-uuid-principal';
 
 // ── Factories ─────────────────────────────────────────────────────────────────
 
-function userMock(overrides = {}) {
+/**
+ * `role` e o papel NA organizacao (memberships[0]); `userRole` e a coluna
+ * global `users.role`. Sao parametros separados de proposito: e a divergencia
+ * entre os dois que torna detectavel o bug de ler a coluna errada. Uma factory
+ * com um campo so passaria nos dois estados do codigo.
+ */
+function userMock(
+  overrides: {
+    id?: string;
+    name?: string;
+    email?: string;
+    role?: ROLE;
+    userRole?: ROLE;
+  } = {},
+) {
   return {
-    id: 'user-uuid-001',
-    name: 'Alice',
-    email: 'alice@example.com',
+    id: overrides.id ?? 'user-uuid-001',
+    name: overrides.name ?? 'Alice',
+    email: overrides.email ?? 'alice@example.com',
     password: 'hashed',
-    role: ROLE.USER,
+    role: overrides.userRole ?? ROLE.USER,
     createdAt: new Date('2026-01-15'),
     updatedAt: new Date('2026-01-15'),
     deletedAt: null,
-    ...overrides,
+    memberships: [{ role: overrides.role ?? ROLE.USER }],
   };
 }
 
@@ -36,6 +50,19 @@ describe('ListUsersUseCase', () => {
       countActiveUsers,
     } as unknown as UserRepository);
     jest.clearAllMocks();
+  });
+
+  it('reads the role from the membership, not from users.role', async () => {
+    // Divergentes de proposito: a coluna global diz USER, a associacao desta
+    // organizacao diz ADMIN. Quem manda e a associacao.
+    listUsersActive.mockResolvedValueOnce([
+      userMock({ role: ROLE.ADMIN, userRole: ROLE.USER }),
+    ]);
+    countActiveUsers.mockResolvedValueOnce(1);
+
+    const result = await useCase.execute({ organizationId: ORGANIZATION_ID });
+
+    expect(result.data[0].role).toBe(ROLE.ADMIN);
   });
 
   describe('should be able to list users with success', () => {

@@ -8,6 +8,7 @@ import { ROLE } from '@prisma/client';
 import { ErrorMessagesEnum } from '@file-manager/shared';
 import { UpdateUserUseCase } from './UpdateUserUseCase';
 import { UserRepository } from '../../repositories/UserRepository';
+import { MembershipRepository } from '../../repositories/MembershipRepository';
 import { BCRYPT_SALT_ROUNDS } from '../../shared/constants/bcrypt.constants';
 
 jest.mock('bcrypt', () => ({ hash: jest.fn() }));
@@ -31,12 +32,46 @@ function userMock(overrides: Record<string, unknown> = {}) {
   };
 }
 
+/**
+ * `role` e o papel NA organizacao; `userRole` e a coluna global `users.role`.
+ * Separados de proposito: e a divergencia entre os dois que torna detectavel o
+ * bug de ler a coluna errada.
+ */
+function membershipMock(
+  overrides: {
+    role?: ROLE;
+    userRole?: ROLE;
+    deletedAt?: Date | null;
+    userDeletedAt?: Date | null;
+  } = {},
+) {
+  return {
+    id: 'membership-uuid-001',
+    userId: 'user-uuid-001',
+    organizationId: ORGANIZATION_ID,
+    role: overrides.role ?? ROLE.USER,
+    createdAt: new Date('2026-01-01T00:00:00.000Z'),
+    updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+    deletedAt: overrides.deletedAt ?? null,
+    user: userMock({
+      role: overrides.userRole ?? ROLE.USER,
+      deletedAt: overrides.userDeletedAt ?? null,
+    }),
+    organization: {
+      id: ORGANIZATION_ID,
+      name: 'Organizacao Principal',
+      slug: 'principal',
+      deletedAt: null,
+    },
+  };
+}
+
 // ── Mock repository ──────────────────────────────────────
 const mockUserRepository = {
-  findById: jest.fn(),
   findByEmail: jest.fn(),
   updateById: jest.fn(),
 };
+const mockMembershipRepository = { findByUserAndOrganization: jest.fn() };
 
 // ── Suite ────────────────────────────────────────────────
 describe('UpdateUserUseCase', () => {
@@ -47,13 +82,16 @@ describe('UpdateUserUseCase', () => {
       providers: [
         UpdateUserUseCase,
         { provide: UserRepository, useValue: mockUserRepository },
+        { provide: MembershipRepository, useValue: mockMembershipRepository },
       ],
     }).compile();
 
     useCase = module.get<UpdateUserUseCase>(UpdateUserUseCase);
     jest.clearAllMocks();
     hashMock.mockResolvedValue('hashed-password' as never);
-    mockUserRepository.findById.mockResolvedValue(userMock());
+    mockMembershipRepository.findByUserAndOrganization.mockResolvedValue(
+      membershipMock(),
+    );
     mockUserRepository.updateById.mockResolvedValue(userMock());
   });
 
@@ -106,6 +144,26 @@ describe('UpdateUserUseCase', () => {
     });
   });
 
+  it('reads the role from the membership, not from users.role', async () => {
+    // Divergentes de proposito: a coluna global diz USER, a associacao diz
+    // ADMIN. O papel nao muda num update, entao sai da leitura inicial.
+    mockMembershipRepository.findByUserAndOrganization.mockResolvedValue(
+      membershipMock({ role: ROLE.ADMIN, userRole: ROLE.USER }),
+    );
+    mockUserRepository.findByEmail.mockResolvedValue(null);
+    mockUserRepository.updateById.mockResolvedValue(
+      userMock({ email: 'nova@example.com', role: ROLE.USER }),
+    );
+
+    const output = await useCase.execute({
+      organizationId: ORGANIZATION_ID,
+      id: 'user-uuid-001',
+      email: 'nova@example.com',
+    });
+
+    expect(output.role).toBe(ROLE.ADMIN);
+  });
+
   // ── Error cases ────────────────────────────────────────
   describe('should not be able to update a user if', () => {
     it('no field was provided', async () => {
@@ -119,11 +177,15 @@ describe('UpdateUserUseCase', () => {
       );
 
       // valida antes de ir ao repositorio
-      expect(mockUserRepository.findById).not.toHaveBeenCalled();
+      expect(
+        mockMembershipRepository.findByUserAndOrganization,
+      ).not.toHaveBeenCalled();
     });
 
     it('the user does not exist', async () => {
-      mockUserRepository.findById.mockResolvedValue(null);
+      mockMembershipRepository.findByUserAndOrganization.mockResolvedValue(
+        null,
+      );
 
       await expect(
         useCase.execute({
@@ -137,8 +199,8 @@ describe('UpdateUserUseCase', () => {
     });
 
     it('the user is soft-deleted', async () => {
-      mockUserRepository.findById.mockResolvedValue(
-        userMock({ deletedAt: new Date('2026-02-01T00:00:00.000Z') }),
+      mockMembershipRepository.findByUserAndOrganization.mockResolvedValue(
+        membershipMock({ userDeletedAt: new Date('2026-02-01T00:00:00.000Z') }),
       );
 
       await expect(
