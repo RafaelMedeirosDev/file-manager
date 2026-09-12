@@ -5,6 +5,8 @@ import { GetExamRequestByIdUseCase } from './GetExamRequestByIdUseCase';
 import { ExamRequestRepository } from '../../repositories/ExamRequestRepository';
 import { ErrorMessagesEnum } from '@file-manager/shared';
 
+const ORGANIZATION_ID = 'org-uuid-principal';
+
 function examRequestMock(overrides = {}) {
   return {
     id: 'req-uuid-001',
@@ -57,12 +59,16 @@ describe('GetExamRequestByIdUseCase', () => {
         examRequestMock(),
       );
 
-      const result = await useCase.execute({ id: 'req-uuid-001' });
+      const result = await useCase.execute({
+        organizationId: ORGANIZATION_ID,
+        id: 'req-uuid-001',
+      });
 
       expect(result.id).toBe('req-uuid-001');
       expect(result.user.name).toBe('Alice');
       expect(result.exams).toHaveLength(1);
       expect(mockExamRequestRepository.findById).toHaveBeenCalledWith(
+        ORGANIZATION_ID,
         'req-uuid-001',
       );
     });
@@ -72,7 +78,9 @@ describe('GetExamRequestByIdUseCase', () => {
     it('exam request is not found', async () => {
       mockExamRequestRepository.findById.mockResolvedValueOnce(null);
 
-      await expect(useCase.execute({ id: 'nonexistent' })).rejects.toThrow(
+      await expect(
+        useCase.execute({ organizationId: ORGANIZATION_ID, id: 'nonexistent' }),
+      ).rejects.toThrow(
         new NotFoundException(ErrorMessagesEnum.EXAM_REQUEST_NOT_FOUND),
       );
     });
@@ -82,7 +90,12 @@ describe('GetExamRequestByIdUseCase', () => {
         examRequestMock({ deletedAt: new Date() }),
       );
 
-      await expect(useCase.execute({ id: 'req-uuid-001' })).rejects.toThrow(
+      await expect(
+        useCase.execute({
+          organizationId: ORGANIZATION_ID,
+          id: 'req-uuid-001',
+        }),
+      ).rejects.toThrow(
         new NotFoundException(ErrorMessagesEnum.EXAM_REQUEST_NOT_FOUND),
       );
     });

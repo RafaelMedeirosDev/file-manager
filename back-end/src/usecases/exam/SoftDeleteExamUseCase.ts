@@ -13,10 +13,16 @@ export class SoftDeleteExamUseCase {
 
   constructor(private readonly examRepository: ExamRepository) {}
 
-  async execute(input: { id: string }): Promise<SoftDeleteExamOutput> {
+  async execute(input: {
+    organizationId: string;
+    id: string;
+  }): Promise<SoftDeleteExamOutput> {
     this.logger.log('[SoftDeleteExamUseCase] Execute started');
 
-    const exam = await this.examRepository.findById(input.id);
+    const exam = await this.examRepository.findById(
+      input.organizationId,
+      input.id,
+    );
 
     if (!exam || exam.deletedAt) {
       throw new NotFoundException(ErrorMessagesEnum.EXAM_NOT_FOUND);

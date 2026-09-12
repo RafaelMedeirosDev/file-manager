@@ -3,6 +3,7 @@ import { ExamCategory, ErrorMessagesEnum } from '@file-manager/shared';
 import { ExamRepository } from '../../repositories/ExamRepository';
 
 export type CreateExamInput = {
+  organizationId: string;
   name: string;
   code: string;
   category: ExamCategory;
@@ -26,7 +27,10 @@ export class CreateExamUseCase {
   async execute(input: CreateExamInput): Promise<CreateExamOutput> {
     this.logger.log('[CreateExamUseCase] Execute started');
 
-    const existing = await this.examRepository.findByCode(input.code);
+    const existing = await this.examRepository.findByCode(
+      input.organizationId,
+      input.code,
+    );
 
     if (existing) {
       this.logger.warn('[CreateExamUseCase] Exam code already registered', {
@@ -38,6 +42,7 @@ export class CreateExamUseCase {
     }
 
     const exam = await this.examRepository.create({
+      organizationId: input.organizationId,
       name: input.name,
       code: input.code,
       category: input.category,

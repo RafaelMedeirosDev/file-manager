@@ -74,9 +74,11 @@ model Organization {
   updatedAt DateTime  @default(now()) @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
 
-  memberships Membership[]
-  folders     Folder[]
-  files       File[]
+  memberships  Membership[]
+  folders      Folder[]
+  files        File[]
+  exams        Exam[]
+  examRequests ExamRequest[]
 
   @@map("organizations")
 }
@@ -185,30 +187,49 @@ model File {
 }
 
 model Exam {
-  id        String       @id @default(uuid()) @db.Uuid
-  name      String       @db.VarChar(255)
-  code      String       @unique @db.VarChar(50)
-  category  ExamCategory
-  createdAt DateTime     @default(now()) @map("created_at")
-  updatedAt DateTime     @default(now()) @updatedAt @map("updated_at")
-  deletedAt DateTime?    @map("deleted_at")
+  id             String       @id @default(uuid()) @db.Uuid
+  name           String       @db.VarChar(255)
+  // O catalogo passa a ser por organizacao. Sem isso, um ADMIN da organizacao
+  // de demonstracao -- cuja credencial e publica -- criaria e excluiria exames
+  // no catalogo real, porque POST e DELETE de /exams sao rotas de escrita.
+  organizationId String       @map("organization_id") @db.Uuid
+  code           String       @db.VarChar(50)
+  category       ExamCategory
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @default(now()) @updatedAt @map("updated_at")
+  deletedAt      DateTime?    @map("deleted_at")
 
+  organization Organization  @relation(fields: [organizationId], references: [id])
   examRequests ExamRequest[]
 
+  // Composta, e nao `code @unique`: as duas organizacoes precisam poder
+  // carregar os mesmos codigos TUSS. Sem recorte de deleted_at, mantendo o
+  // alinhamento com ExamRepository.findByCode.
+  @@unique([organizationId, code])
+  @@index([organizationId])
   @@map("exams")
 }
 
 model ExamRequest {
-  id         String    @id @default(uuid()) @db.Uuid
-  userId     String    @map("user_id") @db.Uuid
-  indication String    @db.Text
-  createdAt  DateTime  @default(now()) @map("created_at")
-  updatedAt  DateTime  @default(now()) @updatedAt @map("updated_at")
-  deletedAt  DateTime? @map("deleted_at")
+  id             String    @id @default(uuid()) @db.Uuid
+  // Coluna propria: `userId` e ambiguo, porque a mesma pessoa pode pertencer a
+  // duas organizacoes.
+  organizationId String    @map("organization_id") @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  indication     String    @db.Text
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
 
-  user  User   @relation(fields: [userId], references: [id])
-  exams Exam[]
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+  // Relacao N-N implicita: o Prisma gera `_ExamToExamRequest`, que nao aparece
+  // neste arquivo e portanto nao pode receber coluna de organizacao. A garantia
+  // de que uma solicitacao nao referencia exame de outra organizacao e
+  // write-time, e mora em ExamRepository.findActiveByIds.
+  exams        Exam[]
 
+  @@index([organizationId])
   @@index([userId])
   @@map("exam_requests")
 }

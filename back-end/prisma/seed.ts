@@ -152,9 +152,14 @@ async function main(): Promise<void> {
 
     for (const exam of EXAMS) {
       await prisma.exam.upsert({
-        where: { code: exam.code },
+        where: {
+          organizationId_code: {
+            organizationId: organization.id,
+            code: exam.code,
+          },
+        },
         update: {},
-        create: exam,
+        create: { ...exam, organizationId: organization.id },
       });
     }
 

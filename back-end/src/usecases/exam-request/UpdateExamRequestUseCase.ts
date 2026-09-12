@@ -10,6 +10,7 @@ import { ExamRequestRepository } from '../../repositories/ExamRequestRepository'
 import { ErrorMessagesEnum } from '@file-manager/shared';
 
 export type UpdateExamRequestInput = {
+  organizationId: string;
   id: string;
   indication?: string;
   examIds?: string[];
@@ -51,7 +52,10 @@ export class UpdateExamRequestUseCase {
       );
     }
 
-    const examRequest = await this.examRequestRepository.findById(input.id);
+    const examRequest = await this.examRequestRepository.findById(
+      input.organizationId,
+      input.id,
+    );
 
     if (!examRequest || examRequest.deletedAt) {
       this.logger.warn('[UpdateExamRequestUseCase] ExamRequest not found', {
@@ -61,10 +65,10 @@ export class UpdateExamRequestUseCase {
     }
 
     if (input.examIds !== undefined) {
-      const exams = await this.examRepository.findManyBy({
-        id: { in: input.examIds },
-        deletedAt: null,
-      });
+      const exams = await this.examRepository.findActiveByIds(
+        input.organizationId,
+        input.examIds,
+      );
 
       if (exams.length !== input.examIds.length) {
         this.logger.warn(

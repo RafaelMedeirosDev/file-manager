@@ -4,6 +4,8 @@ import { ErrorMessagesEnum } from '@file-manager/shared';
 import { SoftDeleteExamUseCase } from './SoftDeleteExamUseCase';
 import { ExamRepository } from '../../repositories/ExamRepository';
 
+const ORGANIZATION_ID = 'org-uuid-principal';
+
 const NOW = new Date('2026-08-22T12:00:00.000Z');
 
 // ── Factories ────────────────────────────────────────────
@@ -49,7 +51,10 @@ describe('SoftDeleteExamUseCase', () => {
       mockExamRepository.findById.mockResolvedValue(examMock());
       mockExamRepository.softDeleteById.mockResolvedValue(undefined);
 
-      const output = await useCase.execute({ id: 'exam-uuid-001' });
+      const output = await useCase.execute({
+        organizationId: ORGANIZATION_ID,
+        id: 'exam-uuid-001',
+      });
 
       expect(mockExamRepository.softDeleteById).toHaveBeenCalledWith(
         'exam-uuid-001',
@@ -67,7 +72,9 @@ describe('SoftDeleteExamUseCase', () => {
     it('the exam does not exist', async () => {
       mockExamRepository.findById.mockResolvedValue(null);
 
-      await expect(useCase.execute({ id: 'missing' })).rejects.toThrow(
+      await expect(
+        useCase.execute({ organizationId: ORGANIZATION_ID, id: 'missing' }),
+      ).rejects.toThrow(
         new NotFoundException(ErrorMessagesEnum.EXAM_NOT_FOUND),
       );
 
@@ -79,7 +86,12 @@ describe('SoftDeleteExamUseCase', () => {
         examMock({ deletedAt: new Date('2026-01-02T00:00:00.000Z') }),
       );
 
-      await expect(useCase.execute({ id: 'exam-uuid-001' })).rejects.toThrow(
+      await expect(
+        useCase.execute({
+          organizationId: ORGANIZATION_ID,
+          id: 'exam-uuid-001',
+        }),
+      ).rejects.toThrow(
         new NotFoundException(ErrorMessagesEnum.EXAM_NOT_FOUND),
       );
 

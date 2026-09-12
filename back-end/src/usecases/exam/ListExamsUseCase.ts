@@ -25,7 +25,8 @@ export class ListExamsUseCase {
 
   constructor(private readonly examRepository: ExamRepository) {}
 
-  async execute(input?: {
+  async execute(input: {
+    organizationId: string;
     page?: number;
     limit?: number;
     name?: string;
@@ -41,18 +42,20 @@ export class ListExamsUseCase {
     const normalizedCode = input?.code?.trim().toLowerCase();
     const normalizedCategory = input?.category;
 
-    const exams = await this.examRepository.listExamsActive(
-      normalizedName,
-      normalizedCode,
-      normalizedCategory,
+    const exams = await this.examRepository.listExamsActive({
+      organizationId: input.organizationId,
+      name: normalizedName,
+      code: normalizedCode,
+      category: normalizedCategory,
       skip,
-      limit,
-    );
-    const totalExams = await this.examRepository.countExamsActive(
-      normalizedName,
-      normalizedCode,
-      normalizedCategory,
-    );
+      take: limit,
+    });
+    const totalExams = await this.examRepository.countExamsActive({
+      organizationId: input.organizationId,
+      name: normalizedName,
+      code: normalizedCode,
+      category: normalizedCategory,
+    });
 
     const paginatedExams = exams.map((exam) => ({
       id: exam.id,

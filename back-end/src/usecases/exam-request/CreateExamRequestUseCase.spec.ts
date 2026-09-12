@@ -58,7 +58,7 @@ const mockUserRepository = {
 };
 
 const mockExamRepository = {
-  findManyBy: jest.fn(),
+  findActiveByIds: jest.fn(),
 };
 
 const mockExamRequestRepository = {
@@ -90,7 +90,7 @@ describe('CreateExamRequestUseCase', () => {
   describe('should be able to create exam request with success', () => {
     it('creates with explicit indication', async () => {
       mockUserRepository.findById.mockResolvedValueOnce(userMock());
-      mockExamRepository.findManyBy.mockResolvedValueOnce([examMock()]);
+      mockExamRepository.findActiveByIds.mockResolvedValueOnce([examMock()]);
       mockExamRequestRepository.create.mockResolvedValueOnce(
         examRequestMock({ indication: 'Paciente em jejum' }),
       );
@@ -103,6 +103,7 @@ describe('CreateExamRequestUseCase', () => {
       });
 
       expect(mockExamRequestRepository.create).toHaveBeenCalledWith({
+        organizationId: ORGANIZATION_ID,
         userId: 'user-uuid-001',
         indication: 'Paciente em jejum',
         examIds: ['exam-uuid-001'],
@@ -113,7 +114,7 @@ describe('CreateExamRequestUseCase', () => {
 
     it('defaults indication to empty string when undefined', async () => {
       mockUserRepository.findById.mockResolvedValueOnce(userMock());
-      mockExamRepository.findManyBy.mockResolvedValueOnce([examMock()]);
+      mockExamRepository.findActiveByIds.mockResolvedValueOnce([examMock()]);
       mockExamRequestRepository.create.mockResolvedValueOnce(examRequestMock());
 
       await useCase.execute({
@@ -167,7 +168,7 @@ describe('CreateExamRequestUseCase', () => {
     it('one or more exams are not found', async () => {
       mockUserRepository.findById.mockResolvedValueOnce(userMock());
       // returns fewer exams than requested
-      mockExamRepository.findManyBy.mockResolvedValueOnce([]);
+      mockExamRepository.findActiveByIds.mockResolvedValueOnce([]);
 
       await expect(
         useCase.execute({

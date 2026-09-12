@@ -3,6 +3,8 @@ import { ExamCategory } from '@file-manager/shared';
 import { ListExamRequestsUseCase } from './ListExamRequestsUseCase';
 import { ExamRequestRepository } from '../../repositories/ExamRequestRepository';
 
+const ORGANIZATION_ID = 'org-uuid-principal';
+
 // ── Factories ─────────────────────────────────────────────────────────────────
 
 function userMock(overrides = {}) {
@@ -83,7 +85,7 @@ describe('ListExamRequestsUseCase', () => {
       );
       mockExamRequestRepository.countExamRequestActive.mockResolvedValueOnce(2);
 
-      const result = await useCase.execute({});
+      const result = await useCase.execute({ organizationId: ORGANIZATION_ID });
 
       expect(result.data).toHaveLength(2);
       expect(result.data[0].id).toBe('req-1');
@@ -111,7 +113,7 @@ describe('ListExamRequestsUseCase', () => {
       ]);
       mockExamRequestRepository.countExamRequestActive.mockResolvedValueOnce(1);
 
-      const result = await useCase.execute({});
+      const result = await useCase.execute({ organizationId: ORGANIZATION_ID });
 
       expect(result.data[0]).toEqual({
         id: 'req-x',
@@ -138,7 +140,11 @@ describe('ListExamRequestsUseCase', () => {
       ]);
       mockExamRequestRepository.countExamRequestActive.mockResolvedValueOnce(5);
 
-      const result = await useCase.execute({ page: 2, limit: 2 });
+      const result = await useCase.execute({
+        organizationId: ORGANIZATION_ID,
+        page: 2,
+        limit: 2,
+      });
 
       expect(result.meta.page).toBe(2);
       expect(result.meta.limit).toBe(2);
@@ -153,6 +159,7 @@ describe('ListExamRequestsUseCase', () => {
       mockExamRequestRepository.countExamRequestActive.mockResolvedValueOnce(0);
 
       await useCase.execute({
+        organizationId: ORGANIZATION_ID,
         userId: 'user-alice',
         dateFrom: '2026-01-01',
         dateTo: '2026-03-31',
@@ -161,22 +168,24 @@ describe('ListExamRequestsUseCase', () => {
 
       expect(
         mockExamRequestRepository.listExamsRequestActive,
-      ).toHaveBeenCalledWith(
-        'user-alice',
-        new Date('2026-01-01'),
-        new Date('2026-03-31'),
-        ['exam-a'],
-        0,
-        10,
-      );
+      ).toHaveBeenCalledWith({
+        organizationId: ORGANIZATION_ID,
+        userId: 'user-alice',
+        dateFrom: new Date('2026-01-01'),
+        dateTo: new Date('2026-03-31'),
+        examsIds: ['exam-a'],
+        skip: 0,
+        take: 10,
+      });
       expect(
         mockExamRequestRepository.countExamRequestActive,
-      ).toHaveBeenCalledWith(
-        'user-alice',
-        new Date('2026-01-01'),
-        new Date('2026-03-31'),
-        ['exam-a'],
-      );
+      ).toHaveBeenCalledWith({
+        organizationId: ORGANIZATION_ID,
+        userId: 'user-alice',
+        dateFrom: new Date('2026-01-01'),
+        dateTo: new Date('2026-03-31'),
+        examsIds: ['exam-a'],
+      });
     });
 
     it('passes undefined for dateFrom and dateTo when not provided', async () => {
@@ -185,11 +194,19 @@ describe('ListExamRequestsUseCase', () => {
       );
       mockExamRequestRepository.countExamRequestActive.mockResolvedValueOnce(0);
 
-      await useCase.execute({});
+      await useCase.execute({ organizationId: ORGANIZATION_ID });
 
       expect(
         mockExamRequestRepository.listExamsRequestActive,
-      ).toHaveBeenCalledWith(undefined, undefined, undefined, undefined, 0, 10);
+      ).toHaveBeenCalledWith({
+        organizationId: ORGANIZATION_ID,
+        userId: undefined,
+        dateFrom: undefined,
+        dateTo: undefined,
+        examsIds: undefined,
+        skip: 0,
+        take: 10,
+      });
     });
 
     it('passes undefined for examIds when the array is empty', async () => {
@@ -198,11 +215,19 @@ describe('ListExamRequestsUseCase', () => {
       );
       mockExamRequestRepository.countExamRequestActive.mockResolvedValueOnce(0);
 
-      await useCase.execute({ examIds: [] });
+      await useCase.execute({ organizationId: ORGANIZATION_ID, examIds: [] });
 
       expect(
         mockExamRequestRepository.listExamsRequestActive,
-      ).toHaveBeenCalledWith(undefined, undefined, undefined, undefined, 0, 10);
+      ).toHaveBeenCalledWith({
+        organizationId: ORGANIZATION_ID,
+        userId: undefined,
+        dateFrom: undefined,
+        dateTo: undefined,
+        examsIds: undefined,
+        skip: 0,
+        take: 10,
+      });
     });
 
     it('returns empty data when repository returns no results', async () => {
@@ -211,7 +236,7 @@ describe('ListExamRequestsUseCase', () => {
       );
       mockExamRequestRepository.countExamRequestActive.mockResolvedValueOnce(0);
 
-      const result = await useCase.execute({});
+      const result = await useCase.execute({ organizationId: ORGANIZATION_ID });
 
       expect(result.data).toHaveLength(0);
       expect(result.meta.total).toBe(0);

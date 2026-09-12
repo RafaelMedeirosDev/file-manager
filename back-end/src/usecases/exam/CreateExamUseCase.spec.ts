@@ -4,6 +4,8 @@ import { ErrorMessagesEnum, ExamCategory } from '@file-manager/shared';
 import { CreateExamUseCase } from './CreateExamUseCase';
 import { ExamRepository } from '../../repositories/ExamRepository';
 
+const ORGANIZATION_ID = 'org-uuid-principal';
+
 // ── Factories ────────────────────────────────────────────
 function examMock(overrides: Record<string, unknown> = {}) {
   return {
@@ -20,6 +22,7 @@ function examMock(overrides: Record<string, unknown> = {}) {
 
 function inputMock(overrides: Record<string, unknown> = {}) {
   return {
+    organizationId: ORGANIZATION_ID,
     name: 'Hemograma completo',
     code: '40304361',
     category: ExamCategory.HEMATOLOGY,
@@ -55,6 +58,7 @@ describe('CreateExamUseCase', () => {
       const output = await useCase.execute(inputMock());
 
       expect(mockExamRepository.create).toHaveBeenCalledWith({
+        organizationId: ORGANIZATION_ID,
         name: 'Hemograma completo',
         code: '40304361',
         category: ExamCategory.HEMATOLOGY,

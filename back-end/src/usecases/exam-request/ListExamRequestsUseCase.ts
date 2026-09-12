@@ -3,6 +3,7 @@ import { ExamCategory } from '@file-manager/shared';
 import { ExamRequestRepository } from '../../repositories/ExamRequestRepository';
 
 export type ListExamRequestsInput = {
+  organizationId: string;
   page?: number;
   limit?: number;
   dateFrom?: string;
@@ -45,20 +46,24 @@ export class ListExamRequestsUseCase {
       input.examIds && input.examIds.length > 0 ? input.examIds : undefined;
 
     const examRequest = await this.examRequestRepository.listExamsRequestActive(
-      userId,
-      dateFrom,
-      dateTo,
-      examsIds,
-      skip,
-      limit,
-    );
-    const totalExamRequest =
-      await this.examRequestRepository.countExamRequestActive(
+      {
+        organizationId: input.organizationId,
         userId,
         dateFrom,
         dateTo,
         examsIds,
-      );
+        skip,
+        take: limit,
+      },
+    );
+    const totalExamRequest =
+      await this.examRequestRepository.countExamRequestActive({
+        organizationId: input.organizationId,
+        userId,
+        dateFrom,
+        dateTo,
+        examsIds,
+      });
 
     const paginatedExamRequest = examRequest.map((req) => ({
       id: req.id,
