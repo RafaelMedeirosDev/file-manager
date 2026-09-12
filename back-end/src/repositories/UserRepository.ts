@@ -1,6 +1,17 @@
 import { Injectable } from '@nestjs/common';
-import { Folder, ROLE, User } from '@prisma/client';
+import { Folder, Membership, ROLE, User } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
+
+/**
+ * Usuario com o papel que ele tem NA organizacao consultada.
+ *
+ * `memberships` vem com no maximo um elemento: o `where` aninhado da consulta
+ * recorta pela organizacao, e a unique `(user_id, organization_id)` garante
+ * que so existe uma associacao por par. Quem le deve usar `memberships[0]`.
+ */
+export type UserWithMembershipRole = User & {
+  memberships: Array<{ role: ROLE }>;
+};
 
 @Injectable()
 export class UserRepository {
@@ -32,11 +43,14 @@ export class UserRepository {
     user: { name: string; email: string; password: string; role: ROLE };
     defaultFolderName: string;
     extraFolderNames: string[];
-  }): Promise<{ user: User; folders: Folder[] }> {
+  }): Promise<{ user: User; membership: Membership; folders: Folder[] }> {
     return this.prisma.$transaction(async (tx) => {
       const user = await tx.user.create({ data: input.user });
 
-      await tx.membership.create({
+      // Devolvida ao chamador: e dela que sai o papel exibido. Ler
+      // `user.role` no lugar duplicaria a decisao em dois campos que podem
+      // divergir -- e `users.role` sera dropada no contract.
+      const membership = await tx.membership.create({
         data: {
           userId: user.id,
           organizationId: input.organizationId,
@@ -65,7 +79,7 @@ export class UserRepository {
         ),
       ]);
 
-      return { user, folders };
+      return { user, membership, folders };
     });
   }
 
@@ -123,12 +137,23 @@ export class UserRepository {
     });
   }
 
+  /**
+   * Traz junto o papel do usuario NESTA organizacao.
+   *
+   * O `where` aninhado do include repete o predicado do `where` de fora, e nao
+   * e redundancia: sem ele viriam todas as associacoes do usuario, e
+   * `memberships[0]` devolveria o papel de uma organizacao qualquer.
+   *
+   * `include` e nao `select`: o select obrigaria a enumerar os escalares de
+   * `User`, trocaria o retorno por um payload anonimo e faria um campo novo
+   * exigir edicao manual aqui.
+   */
   listUsersActive(input: {
     organizationId: string;
     search?: string;
     skip?: number;
     take?: number;
-  }): Promise<User[]> {
+  }): Promise<UserWithMembershipRole[]> {
     return this.prisma.user.findMany({
       where: {
         deletedAt: null,
@@ -153,6 +178,12 @@ export class UserRepository {
               ],
             }
           : {}),
+      },
+      include: {
+        memberships: {
+          where: { organizationId: input.organizationId, deletedAt: null },
+          select: { role: true },
+        },
       },
       orderBy: { name: 'asc' },
       skip: input.skip,

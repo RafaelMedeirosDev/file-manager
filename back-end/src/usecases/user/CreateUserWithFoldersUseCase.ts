@@ -68,17 +68,18 @@ export class CreateUserWithFoldersUseCase {
     }
 
     // Uma transacao: ou o usuario nasce com todas as pastas, ou nao nasce.
-    const { user, folders } = await this.userRepository.createWithFolders({
-      organizationId: input.organizationId,
-      user: {
-        name: input.name,
-        email: input.email,
-        password: hashedPassword,
-        role: ROLE.USER,
-      },
-      defaultFolderName,
-      extraFolderNames,
-    });
+    const { user, membership, folders } =
+      await this.userRepository.createWithFolders({
+        organizationId: input.organizationId,
+        user: {
+          name: input.name,
+          email: input.email,
+          password: hashedPassword,
+          role: ROLE.USER,
+        },
+        defaultFolderName,
+        extraFolderNames,
+      });
 
     const createdFolders: CreatedFolderOutput[] = folders.map((folder) => ({
       id: folder.id,
@@ -94,7 +95,9 @@ export class CreateUserWithFoldersUseCase {
       id: user.id,
       name: user.name,
       email: user.email,
-      role: user.role,
+      // Da associacao criada na mesma transacao. Repetir ROLE.USER aqui
+      // duplicaria a decisao de papel em dois lugares que podem divergir.
+      role: membership.role,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
       folders: createdFolders,

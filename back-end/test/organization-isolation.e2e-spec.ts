@@ -489,4 +489,42 @@ describe('Organization isolation (e2e)', () => {
     const ids = (res.body as ListBody).data.map((item) => item.id);
     expect(ids).toContain((created.body as { id: string }).id);
   });
+  it('shows the role of each organization, not a single global one', async () => {
+    // O cenario que o seed da organizacao de demonstracao cria: a mesma pessoa
+    // com papeis diferentes nas duas. Enquanto a listagem lia `users.role`, que
+    // e global, as duas telas mostravam o mesmo valor -- e o badge de
+    // UsersPage e um ternario sem terceiro ramo, entao o erro aparecia como um
+    // administrador rotulado "Usuario", sem nenhum sinal de falha.
+    const dual = await prisma.user.create({
+      data: {
+        name: 'Papel Divergente',
+        email: `papeis${SUFFIX}`,
+        password: 'hash',
+        role: ROLE.USER,
+      },
+    });
+    await prisma.membership.createMany({
+      data: [
+        { userId: dual.id, organizationId: ORG_A, role: ROLE.ADMIN },
+        { userId: dual.id, organizationId: ORG_B, role: ROLE.USER },
+      ],
+    });
+
+    const findRole = (body: unknown) =>
+      (body as { data: Array<{ id: string; role: string }> }).data.find(
+        (u) => u.id === dual.id,
+      )?.role;
+
+    const inA = await request(app.getHttpServer())
+      .get('/users?limit=100')
+      .set('Authorization', token(ORG_A, a.adminId))
+      .expect(200);
+    const inB = await request(app.getHttpServer())
+      .get('/users?limit=100')
+      .set('Authorization', token(ORG_B, b.adminId))
+      .expect(200);
+
+    expect(findRole(inA.body)).toBe(ROLE.ADMIN);
+    expect(findRole(inB.body)).toBe(ROLE.USER);
+  });
 });

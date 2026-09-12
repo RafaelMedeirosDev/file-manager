@@ -744,11 +744,17 @@ VITE_API_URL=http://localhost:3000
 **Inconsistências conhecidas**
 - O soft delete de arquivos não remove o objeto correspondente do bucket R2.
 - `PATCH /folders/:id` (renomear pasta) existe na API, com RBAC e teste, mas nenhuma tela do frontend chama a rota.
-- O papel exibido em `/users` ainda vem de `users.role`, que é global, enquanto a permissão real vem da associação com a organização. Os dois coincidem hoje, e a divergência só aparece quando alguém tiver papéis diferentes em duas organizações — trocar a leitura é pré-requisito da migration de *contract* que remove `users.role`.
 
 **Pendência de migration**
 
-As quatro colunas `organization_id` carregam um `DEFAULT` temporário, necessário porque o deploy e a migration são eventos separados e o código antigo precisa continuar inserindo durante a janela entre eles. Enquanto ele existir, um `create()` que esqueça `organizationId` **não falha** — grava na organização principal em silêncio. A migration de *contract* (`DROP DEFAULT` nas quatro + `DROP COLUMN users.role`) fecha isso.
+As quatro colunas `organization_id` carregam um `DEFAULT` temporário, necessário porque o deploy e a migration são eventos separados e o código antigo precisa continuar inserindo durante a janela entre eles. Enquanto ele existir, um `create()` que esqueça `organizationId` **não falha** — grava na organização principal em silêncio.
+
+O *contract* sai em duas etapas, porque `users.role` é `NOT NULL` sem default: parar de escrevê-la quebraria o `INSERT`, e dropá-la antes do deploy quebraria o código em execução.
+
+1. Migration com `DROP DEFAULT` nas quatro colunas e `users.role DROP NOT NULL`, mais o código deixando de escrever a coluna. Segura na ordem padrão (migration primeiro), porque o código atual **sempre** passa `organizationId` explicitamente.
+2. Migration com `DROP COLUMN users.role`, depois de a etapa 1 estar em produção.
+
+Nenhuma leitura de `users.role` resta no código — o papel exibido vem da associação desde a etapa que corrigiu isso.
 
 ---
 

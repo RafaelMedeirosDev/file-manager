@@ -37,6 +37,21 @@ const input = {
   password: 'plain-password',
 };
 
+/**
+ * O papel vem da associacao criada na mesma transacao, e nao de `users.role`.
+ */
+function membershipMock(overrides: { role?: ROLE } = {}) {
+  return {
+    id: 'membership-uuid-001',
+    userId: 'user-uuid-001',
+    organizationId: ORGANIZATION_ID,
+    role: overrides.role ?? ROLE.USER,
+    createdAt: new Date('2026-01-01T00:00:00.000Z'),
+    updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+    deletedAt: null,
+  };
+}
+
 // ── Mock repositories ────────────────────────────────────
 const mockUserRepository = {
   findByEmail: jest.fn(),
@@ -63,8 +78,23 @@ describe('CreateUserWithFoldersUseCase', () => {
     mockUserRepository.findByEmail.mockResolvedValue(null);
     mockUserRepository.createWithFolders.mockResolvedValue({
       user: userMock(),
+      membership: membershipMock(),
       folders: [folderMock()],
     });
+  });
+
+  it('reads the role from the membership created in the same transaction', async () => {
+    // Divergentes de proposito. `users.role` sera dropada no contract; o papel
+    // exibido tem de vir da associacao mesmo quando os dois discordam.
+    mockUserRepository.createWithFolders.mockResolvedValue({
+      user: userMock({ role: ROLE.USER }),
+      membership: membershipMock({ role: ROLE.ADMIN }),
+      folders: [folderMock()],
+    });
+
+    const output = await useCase.execute(input);
+
+    expect(output.role).toBe(ROLE.ADMIN);
   });
 
   // ── Happy path ─────────────────────────────────────────
@@ -91,6 +121,7 @@ describe('CreateUserWithFoldersUseCase', () => {
     it('passes the extra folder names along with the default one', async () => {
       mockUserRepository.createWithFolders.mockResolvedValue({
         user: userMock(),
+        membership: membershipMock(),
         folders: [
           folderMock(),
           folderMock({ id: 'folder-exams', name: 'Exames' }),

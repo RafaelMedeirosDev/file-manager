@@ -8,6 +8,7 @@ import {
 import { ROLE } from '@prisma/client';
 import { hash } from 'bcrypt';
 import { UserRepository } from '../../repositories/UserRepository';
+import { MembershipRepository } from '../../repositories/MembershipRepository';
 import { ErrorMessagesEnum } from '@file-manager/shared';
 import { BCRYPT_SALT_ROUNDS } from '../../shared/constants/bcrypt.constants';
 
@@ -31,7 +32,10 @@ export type UpdateUserOutput = {
 export class UpdateUserUseCase {
   private readonly logger = new Logger(UpdateUserUseCase.name);
 
-  constructor(private readonly userRepository: UserRepository) {}
+  constructor(
+    private readonly userRepository: UserRepository,
+    private readonly membershipRepository: MembershipRepository,
+  ) {}
 
   async execute(input: UpdateUserInput): Promise<UpdateUserOutput> {
     this.logger.log('[UpdateUserUseCase] Execute started');
@@ -41,12 +45,16 @@ export class UpdateUserUseCase {
       );
     }
 
-    const existingUser = await this.userRepository.findById(
-      input.organizationId,
-      input.id,
-    );
+    // A associacao serve a dois propositos numa consulta so: e a guarda de
+    // existencia recortada por organizacao, e e de onde sai o papel exibido.
+    // Mesmo metodo que SoftDeleteUserUseCase usa.
+    const membership =
+      await this.membershipRepository.findByUserAndOrganization(
+        input.id,
+        input.organizationId,
+      );
 
-    if (!existingUser || existingUser.deletedAt) {
+    if (!membership || membership.deletedAt || membership.user.deletedAt) {
       throw new NotFoundException(ErrorMessagesEnum.USER_NOT_FOUND);
     }
 
@@ -75,7 +83,9 @@ export class UpdateUserUseCase {
       id: updatedUser.id,
       name: updatedUser.name,
       email: updatedUser.email,
-      role: updatedUser.role,
+      // Da associacao, e nao de `users.role`: o papel nao muda num update,
+      // entao vem da leitura acima.
+      role: membership.role,
       createdAt: updatedUser.createdAt,
       updatedAt: updatedUser.updatedAt,
     };
