@@ -93,6 +93,15 @@ jobs:
       - name: Seed
         run: pnpm --dir back-end prisma:seed
 
+      # Rodado DUAS vezes de proposito. O seed da demo reconstroi a
+      # organizacao (delete fisico escopado + insert), e o cron de producao
+      # depende de isso ser idempotente -- se nao for, a segunda execucao
+      # devolve contagens diferentes e o passo quebra aqui, nao em producao.
+      - name: Seed da organizacao demo (duas vezes, para provar idempotencia)
+        run: |
+          pnpm --dir back-end prisma:seed:demo
+          pnpm --dir back-end prisma:seed:demo
+
       - name: Testes unitarios
         run: pnpm test
 

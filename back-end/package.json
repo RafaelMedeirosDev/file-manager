@@ -24,6 +24,8 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "prisma:generate": "prisma generate",
     "prisma:seed": "prisma db seed",
+    "prisma:seed:demo": "ts-node prisma/seed-demo.ts",
+    "demo:upload-assets": "ts-node prisma/upload-demo-assets.ts",
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio"
