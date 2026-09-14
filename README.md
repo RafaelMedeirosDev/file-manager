@@ -155,9 +155,10 @@ Segundo domínio da aplicação: histórico de solicitações com filtros por pe
 - O upload usa `PutObjectCommand` e o download usa `GetObjectCommand`, ambos autenticados com as credenciais da aplicação. O objeto é resolvido pela chave (`key`) guardada no banco, e não por uma URL — o que permite manter o bucket privado e elimina a possibilidade de SSRF que existia quando o download buscava um endereço vindo do banco.
 
 ### Testes
-- **Jest 30** + **ts-jest** para testes unitários no backend: **187 testes em 30 suítes**, cobrindo os 25 use cases (leitura, escrita, upload, download e soft delete) além do fluxo de autenticação.
-- **Supertest 7** + **`@nestjs/testing`** para testes end-to-end (3 arquivos em `back-end/test/`): uma suíte dedicada a **RBAC**, que valida os códigos 403/200/201 por papel nas rotas de usuários, pastas e arquivos, e uma de **limites de upload**, que confirma o 413 e o 415 antes de o handler executar.
-- Não há suíte de testes no frontend nem no pacote `shared/`.
+- **Jest 30** + **ts-jest** para testes unitários no backend: **218 testes em 33 suítes**, cobrindo os 25 use cases (leitura, escrita, upload, download e soft delete) além do fluxo de autenticação.
+- **Supertest 7** + **`@nestjs/testing`** para testes end-to-end (**39 testes em 4 arquivos** em `back-end/test/`): uma suíte dedicada a **RBAC**, que valida os códigos 403/200/201 por papel nas rotas de usuários, pastas e arquivos; uma de **limites de upload**, que confirma o 413 e o 415 antes de o handler executar; e uma de **isolamento entre organizações**, que sobe o `AppModule` inteiro contra o Postgres e assina tokens reais.
+- **Vitest 3** + **Testing Library** para o frontend: **39 testes em 7 arquivos**, colocados ao lado do código como no backend. Cobrem o login de dois passos (no hook e na página renderizada), a persistência da sessão, a normalização de erro e paginação, a guarda do header `Authorization` no interceptor do Axios e os dois guards de RBAC de rota.
+- O pacote `shared/` não tem suíte própria: ele é só tipos e enums, sem lógica executável.
 
 ---
 
@@ -231,7 +232,7 @@ file-manager/
 │   │   ├── usecases/             # exam, exam-request, file, folder, user
 │   │   ├── app.module.ts
 │   │   └── main.ts
-│   └── test/                     # testes e2e (app, rbac)
+│   └── test/                     # testes e2e (app, rbac, upload, isolamento)
 │
 ├── front-end/
 │   └── src/
@@ -242,6 +243,7 @@ file-manager/
 │       ├── pages/                # telas
 │       ├── services/             # api.ts (instância Axios)
 │       ├── shared/               # components, types, utils
+│       ├── test/                 # setup do Vitest (specs ficam ao lado do codigo)
 │       └── styles.css            # design system em CSS + camadas Tailwind
 │
 ├── shared/
@@ -617,9 +619,11 @@ pnpm build:front    # apenas o frontend
 ### 10. Executar os testes
 
 ```bash
-pnpm test                       # testes unitários (atualmente apenas o back-end possui suíte)
+pnpm test                       # testes unitários do backend (Jest) e do frontend (Vitest)
 pnpm --dir back-end test:e2e    # testes end-to-end do backend
 pnpm --dir back-end test:cov    # relatório de cobertura
+pnpm --dir front-end test       # apenas o frontend
+pnpm --dir front-end test:watch # frontend em modo watch
 ```
 
 > **Os testes e2e exigem o banco de pé e com as migrations aplicadas.** A suíte
@@ -758,13 +762,12 @@ VITE_API_URL=http://localhost:3000
 - Soft delete uniforme em todas as entidades, sem nenhuma exclusão física no backend.
 - Paginação, filtro e contagem executados no banco, com contrato de resposta padronizado.
 - Contratos de API compartilhados entre backend e frontend por um pacote único, evitando divergência de tipos.
-- **187 testes unitários em 30 suítes**, cobrindo os 25 use cases e o fluxo de autenticação, mais 10 testes e2e em 3 suítes.
+- **218 testes unitários em 33 suítes** no backend, cobrindo os 25 use cases e o fluxo de autenticação, mais **39 testes e2e em 4 suítes** e **39 testes de frontend em 7 arquivos**.
 - Leitura dos arquivos autenticada pelo SDK, sem depender de endereço público, o que elimina o SSRF por construção.
 - Rate limiting, CORS por allowlist e `helmet` no transporte; sessão e papel conferidos no banco a cada requisição.
 - Ambiente publicado, com CI rodando build, lint e as duas suítes de teste em todo pull request.
 
 **O que está parcial ou pendente**
-- **Sem testes no frontend** — não há runner configurado. O lint cobre o workspace (com `react-hooks/exhaustive-deps` como erro), mas não há teste de hook ou de componente.
 - **Respostas do OpenAPI sem schema.** O plugin de CLI infere os schemas dos DTOs de entrada a partir do `class-validator`, mas os corpos de resposta não estão declarados: o `/docs` mostra os parâmetros de cada rota, não o formato do retorno.
 - **Sem CD.** O deploy existe e está no ar, mas é acionado fora do pipeline: o CI valida o pull request e não publica nada.
 - **Rate limiting sem precisão em ambiente multi-instância** — o contador vive em memória, então cada instância mantém a própria contagem (ver a nota em Proteções de transporte).
@@ -803,13 +806,12 @@ Nenhuma leitura de `users.role` resta no código — o papel exibido vem da asso
 - **Validação de dados de entrada** com DTOs, `class-validator` e normalização de campos.
 - **Organização em monorepo** com pnpm workspaces e Turborepo, incluindo ordenação de builds por dependência entre pacotes.
 - **Frontend organizado por features**, com separação entre página, hook e service, rotas protegidas por autenticação e por papel, e assistentes em múltiplas etapas.
-- **Testes automatizados** com Jest e Supertest, incluindo uma suíte dedicada a validar o comportamento do RBAC por código de status HTTP.
+- **Testes automatizados** nos dois lados: Jest e Supertest no backend, com uma suíte dedicada a validar o RBAC por código de status HTTP, e Vitest com Testing Library no frontend.
 
 ---
 
 ## Melhorias futuras
 
-- Introduzir um runner de testes no frontend e cobrir hooks e utilitários.
 - Adicionar CD ao pipeline de CI, para que o deploy passe pelo mesmo gate dos testes.
 - Containerizar a API e o front, e subir um S3 local (MinIO) para que o upload funcione sem credenciais reais do R2.
 - Validar o conteúdo real dos arquivos por *magic bytes*, complementando a checagem de extensão e mimetype.

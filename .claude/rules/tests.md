@@ -28,12 +28,31 @@ expect(logger.log).toHaveBeenCalledTimes(2);
 ```
 
 ## Frontend
-- There is no dedicated frontend test script configured right now.
-- Still write frontend code so it stays testable: keep HTTP in services, branching in hooks or utils, and rendering mostly in components.
-- If the task explicitly requires frontend tests, say which tooling must be added or reused before creating files that cannot be run.
+- Vitest 3 + Testing Library. Config in the `test` block of `front-end/vite.config.ts`; setup in `front-end/src/test/setup.ts`.
+- Specs are `*.spec.ts(x)` **colocated** beside the code, mirroring the backend.
+- `globals: false` — import `{ describe, it, expect, vi }` from `'vitest'` in every spec.
+- `jsdom` is the default environment. Add `// @vitest-environment node` at the top of specs that touch no DOM.
+- Mock at the service seam with `vi.spyOn(service, 'method')`. Let `AuthProvider` and `react-router` run for real.
+- `vi.spyOn(obj, 'name')` is also what keeps `@typescript-eslint/unbound-method` quiet: it takes the method as a string, so no unbound member reference is created. `expect(service.method).toHaveBeenCalled()` is a lint **error**.
+- `await` every `user.*` call and every `waitFor` — `no-floating-promises` is a warning, and `lint:ci` runs with `--max-warnings 0`.
+- Prefer `user-event` over `fireEvent`: `fireEvent` dispatches on `disabled` controls, which silently passes over real bugs.
+- Assert navigation by what rendered after it, not by a mocked `navigate`.
+
+Do this:
+```ts
+const login = vi.spyOn(authService, 'login').mockResolvedValue(authenticated);
+expect(login).toHaveBeenCalledWith({ email, password });
+```
+
+Avoid this:
+```ts
+expect(authService.login).toHaveBeenCalled(); // unbound-method: erro de lint
+```
 
 ## Useful commands
 - `pnpm --dir back-end test`
 - `pnpm --dir back-end test:e2e`
+- `pnpm --dir front-end test`
+- `pnpm --dir front-end test:watch`
 - `pnpm --dir front-end build`
 - `pnpm test`
