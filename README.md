@@ -8,7 +8,18 @@ Aplicação full stack em TypeScript para gestão de arquivos por usuário, orga
 **Aplicação no ar:** [file-manager.up.railway.app](https://file-manager.up.railway.app)
 **Documentação da API:** [`/docs`](https://file-manager-production-355f.up.railway.app/docs) — Swagger UI, com as 27 rotas e o botão *Authorize* para colar um token
 
-> O acesso de demonstração será liberado junto com a organização de demo, atualmente em preparação. Para explorar o sistema completo agora, siga [Como executar o projeto](#como-executar-o-projeto) — o seed cria um `ADMIN` e um `USER` prontos para uso.
+### Acesso de demonstração
+
+Entre com uma das contas abaixo para avaliar o sistema sem clonar o repositório:
+
+| Papel | E-mail | Senha | O que vê |
+|---|---|---|---|
+| **ADMIN** | `admin@demo.filemanager.dev` | `demo1234` | tudo: usuários, pastas e arquivos de todos, catálogo de exames e solicitações |
+| **USER** | `user@demo.filemanager.dev` | `demo1234` | apenas as próprias pastas e arquivos; `/users` e o catálogo respondem 403 |
+
+As duas contas são publicadas de propósito: entrar com cada uma torna a [matriz de permissões](#matriz-de-permissões-por-rota) verificável, em vez de apenas documentada.
+
+Elas pertencem a uma **organização de demonstração isolada**, com dados fictícios, e são reconstruídas todas as noites — sinta-se livre para criar, editar e excluir. Nenhum dado real do sistema é acessível por elas: o isolamento entre organizações é aplicado no banco, em toda consulta, e coberto por testes end-to-end.
 
 | Pacote | Stack | Porta padrão |
 |---|---|---|
@@ -561,7 +572,15 @@ Em ambientes de produção, use `pnpm prisma:migrate:deploy`.
 pnpm --dir back-end prisma:seed
 ```
 
-Cria os usuários iniciais e uma amostra do catálogo de exames. O seed é idempotente — rodar de novo não duplica nada.
+Cria os usuários iniciais e uma amostra do catálogo de exames, **na organização principal**. O seed é idempotente — rodar de novo não duplica nada.
+
+Para popular também a organização de demonstração, com dados fictícios em volume suficiente para exercitar paginação e filtros:
+
+```bash
+pnpm --dir back-end prisma:seed:demo
+```
+
+> Este segundo seed **reconstrói**: apaga tudo que pertence à organização de demonstração e insere de novo, e é por isso que ele pode rodar em produção por cron sem acumular lixo. Todos os `deleteMany` são escopados por `organizationId`, e o único que não tem essa coluna — `users`, cuja identidade é global — usa duas guardas somadas: o sufixo de e-mail `@demo.filemanager.dev` **e** a ausência de qualquer associação. A segunda é o que impede o script de apagar uma conta real que também seja membro da demonstração.
 
 | Papel | E-mail | Senha |
 |---|---|---|
@@ -704,6 +723,8 @@ VITE_API_URL=http://localhost:3000
 | `test` / `test:watch` / `test:cov` / `test:debug` | Testes unitários com Jest, em suas variações. |
 | `test:e2e` | Testes end-to-end via `test/jest-e2e.json`. |
 | `prisma:seed` | Popula o banco com usuários iniciais e exames de exemplo. |
+| `prisma:seed:demo` | **Reconstrói** a organização de demonstração: apaga tudo que pertence a ela e insere de novo. Escopado por `organizationId` — nunca toca a organização principal. É o que o cron noturno executa. |
+| `demo:upload-assets` | Sobe no R2 os objetos que a demo referencia. Roda **uma vez**, à mão; o cron não precisa de credencial de storage. |
 | `prisma:generate` / `prisma:migrate:dev` / `prisma:migrate:deploy` / `prisma:studio` | Comandos do Prisma. |
 
 ### `front-end/`
@@ -746,13 +767,13 @@ VITE_API_URL=http://localhost:3000
 - **Sem testes no frontend** — não há runner configurado. O lint cobre o workspace (com `react-hooks/exhaustive-deps` como erro), mas não há teste de hook ou de componente.
 - **Respostas do OpenAPI sem schema.** O plugin de CLI infere os schemas dos DTOs de entrada a partir do `class-validator`, mas os corpos de resposta não estão declarados: o `/docs` mostra os parâmetros de cada rota, não o formato do retorno.
 - **Sem CD.** O deploy existe e está no ar, mas é acionado fora do pipeline: o CI valida o pull request e não publica nada.
-- **Sem acesso de demonstração aberto.** O ambiente está publicado, mas ainda não há uma organização de demo com credenciais para visitantes.
 - **Rate limiting sem precisão em ambiente multi-instância** — o contador vive em memória, então cada instância mantém a própria contagem (ver a nota em Proteções de transporte).
 - Camada de estilos mista no frontend: classes utilitárias do Tailwind, um design system em CSS puro e blocos de estilo injetados em tempo de execução em algumas páginas convivem no mesmo projeto.
 - Ausência de arquivo de licença.
 
 **Inconsistências conhecidas**
-- O soft delete de arquivos não remove o objeto correspondente do bucket R2.
+- O soft delete de arquivos não remove o objeto correspondente do bucket R2. A conta ADMIN da demonstração pode enviar arquivos, e a reconstrução noturna desfaz o dano **no banco** — mas os objetos permanecem no bucket, porque o seed apaga linhas, não objetos. O teto de 10 MiB por arquivo e o limite de 100 requisições por minuto contêm o volume; a solução proporcional é uma regra de *lifecycle* no bucket, não bloquear upload na demonstração, que tiraria justamente a funcionalidade mais interessante de avaliar.
+- **Três telas não paginam.** O frontend fixa `limit: 100` e ignora `meta.total` na listagem de solicitações de exames, na árvore de pastas da sidebar e nos seletores do wizard de solicitação. Acima de 100 registros essas telas truncam **sem nenhum indício visual**. O backend pagina corretamente em todas — a lacuna é só de consumo.
 - `PATCH /folders/:id` (renomear pasta) existe na API, com RBAC e teste, mas nenhuma tela do frontend chama a rota.
 
 **Pendência de migration**
@@ -790,7 +811,6 @@ Nenhuma leitura de `users.role` resta no código — o papel exibido vem da asso
 
 - Introduzir um runner de testes no frontend e cobrir hooks e utilitários.
 - Adicionar CD ao pipeline de CI, para que o deploy passe pelo mesmo gate dos testes.
-- Abrir uma organização de demonstração, com credenciais de acesso para visitantes.
 - Containerizar a API e o front, e subir um S3 local (MinIO) para que o upload funcione sem credenciais reais do R2.
 - Validar o conteúdo real dos arquivos por *magic bytes*, complementando a checagem de extensão e mimetype.
 - Enviar os uploads em streaming direto para o R2, eliminando o buffer em memória e o limite agregado do bulk.
