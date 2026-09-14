@@ -22,10 +22,14 @@ export const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
+// O `!config.headers.Authorization` nao e defensividade solta: o passo 2 do
+// login manda o pre-auth no header explicitamente, e ele NAO e a sessao. Sem a
+// guarda, uma sessao antiga ainda no storage sobrescreveria aquele header, e a
+// troca de organizacao responderia 401 por um motivo que ninguem acharia.
 api.interceptors.request.use((config) => {
   const session = readSession();
 
-  if (session?.accessToken) {
+  if (session?.accessToken && !config.headers.Authorization) {
     config.headers.Authorization = `Bearer ${session.accessToken}`;
   }
 

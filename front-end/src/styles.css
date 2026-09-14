@@ -787,6 +787,25 @@
   align-items: center;
 }
 
+/* Nome da organizacao em que a sessao esta, ao lado da marca -- e onde a
+   convencao poe o workspace, e e o que diz a quem abre a demo onde ele esta. */
+.topbar-org {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 10px;
+  padding: 3px 9px;
+  border: 1px solid var(--shell-border);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  white-space: nowrap;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* ── Botão hamburguer (oculto no desktop) ── */
 .sb-toggle {
   display: none;
@@ -855,6 +874,7 @@
   /* Oculta nav da topbar e info do usuário em mobile */
   .topbar-nav       { display: none; }
   .topbar-user-text { display: none; }
+  .topbar-org       { display: none; }
 
   /* Nav mobile aparece dentro da sidebar */
   .sb-mobile-nav { display: block; }

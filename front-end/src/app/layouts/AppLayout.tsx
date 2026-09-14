@@ -588,7 +588,7 @@ function UserAccountDropdown({
 // ─── Layout ────────────────────────────────────────────────────────────────
 
 export function AppLayout() {
-  const { user, logout } = useAuth();
+  const { user, organization, logout } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
@@ -664,6 +664,12 @@ export function AppLayout() {
           </button>
 
           <BrandMark onClick={() => navigate('/')} />
+
+          {organization ? (
+            <span className="topbar-org" title={organization.name}>
+              {organization.name}
+            </span>
+          ) : null}
 
           <nav className="topbar-nav">
             {user?.role === 'ADMIN' && (

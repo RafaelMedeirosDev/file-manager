@@ -292,17 +292,27 @@ Pastas raiz são identificadas por `folder_id IS NULL`, o que permite navegaçã
 
 ### Fluxo de login
 
-1. `POST /auth/login` recebe `email` e `password` validados por DTO.
-2. O `AuthService` busca o usuário por e-mail e rejeita a tentativa caso o usuário não exista **ou** esteja marcado como excluído (`deletedAt`).
-3. A senha é comparada com o hash armazenado usando `bcrypt.compare`.
-4. Em caso de falha, é lançada uma `UnauthorizedException` com mensagem genérica — a resposta não distingue e-mail inexistente de senha incorreta.
-5. Em caso de sucesso, é assinado um JWT com o payload `{ sub, email, role }` e retornado `{ accessToken, user: { id, name, email, role } }`.
+O login tem **dois passos**, porque um usuário pode pertencer a mais de uma organização e a sessão precisa saber em qual delas ele entrou.
 
-O token tem validade de **1 dia** e é assinado com `JWT_SECRET`. **Não há refresh token** — expirado o token, o usuário precisa autenticar novamente.
+1. `POST /auth/login` recebe `email` e `password` validados por DTO.
+2. O `AuthService` busca o usuário por e-mail e rejeita a tentativa caso ele não exista **ou** esteja marcado como excluído (`deletedAt`).
+3. A senha é comparada com o hash armazenado usando `bcrypt.compare`.
+4. Em caso de falha, é lançada uma `UnauthorizedException` com mensagem genérica — a resposta não distingue e-mail inexistente de senha incorreta. Uma conta válida **sem nenhuma associação ativa** recebe a mesma mensagem, para não revelar que ela existe.
+5. Em caso de sucesso, a resposta é **discriminada por `status`**:
+   - **uma** associação ativa → `status: 'authenticated'`, com `accessToken`, `user` e `organization`. É o caminho da maioria dos acessos, e continua sendo de um passo só.
+   - **duas ou mais** → `status: 'organization_required'`, com um `preAuthToken` de 5 minutos e a lista de organizações com o papel em cada uma.
+6. No segundo caso, `POST /auth/organizations/:organizationId/token` troca o `preAuthToken` pelo token da organização escolhida. Quem não pertence à organização informada recebe **403**, com uma mensagem única para os quatro modos de falha — distinguir "não existe" de "você não é membro" revelaria quais organizações existem.
+
+Os dois tipos de token são separados pela **audiência gravada no próprio token** (`api` e `pre-auth`), e cada passport strategy declara a sua. O efeito é que um `preAuthToken` é recusado em qualquer rota de negócio na **verificação da assinatura**, antes de qualquer código da aplicação rodar — e um token de sessão é recusado no passo 2 pelo mesmo mecanismo.
+
+O token de sessão carrega `{ sub, email, organizationId }` e tem validade de **1 dia**. **O papel não vai no token**: ele é lido da associação a cada requisição, então remover alguém de uma organização ou rebaixá-lo vale na requisição seguinte, em vez de esperar a expiração. **Não há refresh token** — expirado o token, o usuário autentica novamente.
+
+No frontend, o `preAuthToken` e a lista de organizações vivem **apenas em estado React**, nunca no `localStorage`: é uma credencial em trânsito, não uma sessão. Recarregar a página na tela de escolha volta ao login, que é o comportamento correto e sai de graça por não persistir nada.
 
 ### Guards e papéis
 
-- **`JwtAuthGuard`** — estende `AuthGuard('jwt')`. A `JwtStrategy` extrai o token do header `Authorization: Bearer`, valida a expiração e **confere o usuário no banco a cada requisição**: se ele foi excluído, o token é recusado na hora, sem esperar a expiração. O papel também é lido do banco, então rebaixar um usuário passa a valer imediatamente.
+- **`JwtAuthGuard`** — estende `AuthGuard('jwt')` e é registrado como **guard global**, então cobre toda rota do Nest sem que nenhum controller precise declarar nada; um controller novo nasce fechado. Rotas que não passam por ele declaram `@SkipJwtAuth()` explicitamente — hoje são três: o health check, o login, e o passo 2 do login, que é autenticado por outro esquema. A `JwtStrategy` extrai o token do header `Authorization: Bearer`, valida expiração e audiência, e **confere a associação no banco a cada requisição**: se o usuário foi excluído, se a associação foi removida ou se a organização foi desativada, o token é recusado na hora. O papel vem dessa associação, então rebaixar alguém numa organização passa a valer imediatamente.
+- Nenhum guard global cobre `/docs` e `/docs-json`: são middleware do Express, fora do pipeline de rotas do Nest.
 - **`RolesGuard`** — lê os papéis exigidos com `Reflector.getAllAndOverride`, de modo que um `@Roles(...)` no handler **sobrescreve** o do controller. Sem metadata de papéis, a rota é liberada para qualquer usuário autenticado; sem `req.user`, o acesso é negado.
 - **`@Roles(ROLE.ADMIN, ROLE.USER)`** — decorator que declara os papéis permitidos por rota.
 
