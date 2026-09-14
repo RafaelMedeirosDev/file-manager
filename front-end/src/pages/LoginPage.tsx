@@ -144,6 +144,7 @@ function FeatureRow({
 
 export function LoginPage() {
   const {
+    step,
     email,
     setEmail,
     password,
@@ -151,6 +152,10 @@ export function LoginPage() {
     error,
     loading,
     handleSubmit,
+    organizations,
+    selectingOrganizationId,
+    handleSelectOrganization,
+    backToCredentials,
   } = useLogin();
 
   return (
@@ -408,6 +413,68 @@ export function LoginPage() {
           color: #e11d48;
           line-height: 1.45;
         }
+        /* ── Passo 2: escolha de organizacao ── */
+        .lp-org-list {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+        .lp-org-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          width: 100%;
+          padding: 14px 16px;
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 4px;
+          cursor: pointer;
+          text-align: left;
+          transition: border-color 0.15s ease, background 0.15s ease;
+        }
+        .lp-org-row:hover:not(:disabled) {
+          border-color: #0078D4;
+          background: #f8fbff;
+        }
+        .lp-org-row:focus-visible {
+          outline: 2px solid #0078D4;
+          outline-offset: 2px;
+        }
+        .lp-org-row:disabled {
+          cursor: default;
+          opacity: 0.55;
+        }
+        .lp-org-name {
+          font-family: 'Manrope', sans-serif;
+          font-weight: 700;
+          font-size: 13px;
+          color: #0d1e35;
+          letter-spacing: 0.01em;
+        }
+        .lp-org-role {
+          font-family: 'Manrope', sans-serif;
+          font-weight: 500;
+          font-size: 11px;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: #94a3b8;
+          white-space: nowrap;
+        }
+        .lp-back {
+          display: inline-block;
+          margin-top: 20px;
+          padding: 0;
+          background: none;
+          border: none;
+          cursor: pointer;
+          font-family: 'Manrope', sans-serif;
+          font-size: 12px;
+          font-weight: 600;
+          color: #94a3b8;
+          letter-spacing: 0.02em;
+        }
+        .lp-back:hover { color: #0078D4; }
         .lp-footer {
           margin-top: 32px;
           padding-top: 24px;
@@ -528,98 +595,152 @@ export function LoginPage() {
 
         {/* ── Right: Form panel ── */}
         <div className="lp-right">
-          <p className="lp-form-wordmark">Bem-vindo</p>
-          <p className="lp-form-tagline">Entre para acessar seu workspace.</p>
+          {step === 'organization' ? (
+            <>
+              <p className="lp-form-wordmark">Escolha a organização</p>
+              <p className="lp-form-tagline">
+                Sua conta tem acesso a mais de uma.
+              </p>
 
-          <p className="lp-field-section">Credenciais de acesso</p>
+              <p className="lp-field-section">Organizações disponíveis</p>
 
-          <form onSubmit={handleSubmit} noValidate>
-            <div className="lp-field-group">
-              <div>
-                <label className="lp-label" htmlFor="email">
-                  Endereço de email
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="app-input"
-                  placeholder="seu@email.com"
-                  autoComplete="email"
-                  required
-                />
-              </div>
-              <div>
-                <label className="lp-label" htmlFor="password">
-                  Senha
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="app-input"
-                  placeholder="••••••••"
-                  autoComplete="current-password"
-                  required
-                />
-              </div>
-            </div>
-
-            {error ? (
-              <div className="lp-error" role="alert">
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                  style={{ flexShrink: 0, marginTop: '1px' }}
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="8" x2="12" y2="12" />
-                  <line x1="12" y1="16" x2="12.01" y2="16" />
-                </svg>
-                {error}
-              </div>
-            ) : null}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary mt-6 w-full py-2.5"
-              style={{ fontSize: '13px', letterSpacing: '0.04em' }}
-            >
-              {loading ? (
-                <>
-                  <svg
-                    width="13"
-                    height="13"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    aria-hidden="true"
-                    style={{
-                      marginRight: '8px',
-                      animation: 'lp-spin 0.7s linear infinite',
-                    }}
+              <div className="lp-org-list">
+                {organizations.map((organization) => (
+                  <button
+                    key={organization.id}
+                    type="button"
+                    className="lp-org-row"
+                    // Todas desabilitadas durante a troca: duas escolhas em voo
+                    // gravariam duas sessoes, e a ultima a responder venceria.
+                    disabled={selectingOrganizationId !== null}
+                    onClick={() =>
+                      void handleSelectOrganization(organization.id)
+                    }
                   >
-                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                  </svg>
-                  Entrando...
-                </>
-              ) : (
-                'Entrar'
-              )}
-            </button>
-          </form>
+                    <span className="lp-org-name">{organization.name}</span>
+                    <span className="lp-org-role">
+                      {selectingOrganizationId === organization.id
+                        ? 'Entrando...'
+                        : organization.role === 'ADMIN'
+                          ? 'Administrador'
+                          : 'Usuário'}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              {error ? (
+                <div className="lp-error" role="alert">
+                  <span>{error}</span>
+                </div>
+              ) : null}
+
+              <button
+                type="button"
+                className="lp-back"
+                onClick={backToCredentials}
+              >
+                ← Entrar com outra conta
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="lp-form-wordmark">Bem-vindo</p>
+              <p className="lp-form-tagline">
+                Entre para acessar seu workspace.
+              </p>
+
+              <p className="lp-field-section">Credenciais de acesso</p>
+
+              <form onSubmit={handleSubmit} noValidate>
+                <div className="lp-field-group">
+                  <div>
+                    <label className="lp-label" htmlFor="email">
+                      Endereço de email
+                    </label>
+                    <input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="app-input"
+                      placeholder="seu@email.com"
+                      autoComplete="email"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="lp-label" htmlFor="password">
+                      Senha
+                    </label>
+                    <input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="app-input"
+                      placeholder="••••••••"
+                      autoComplete="current-password"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {error ? (
+                  <div className="lp-error" role="alert">
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                      style={{ flexShrink: 0, marginTop: '1px' }}
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="12" />
+                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                    {error}
+                  </div>
+                ) : null}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="btn-primary mt-6 w-full py-2.5"
+                  style={{ fontSize: '13px', letterSpacing: '0.04em' }}
+                >
+                  {loading ? (
+                    <>
+                      <svg
+                        width="13"
+                        height="13"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        aria-hidden="true"
+                        style={{
+                          marginRight: '8px',
+                          animation: 'lp-spin 0.7s linear infinite',
+                        }}
+                      >
+                        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                      </svg>
+                      Entrando...
+                    </>
+                  ) : (
+                    'Entrar'
+                  )}
+                </button>
+              </form>
+            </>
+          )}
 
           <div className="lp-footer" aria-hidden="true">
             <span className="lp-footer-text">File Manager</span>

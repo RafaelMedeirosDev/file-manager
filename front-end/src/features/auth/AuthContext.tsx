@@ -15,13 +15,29 @@ import {
   writeSession,
   type Session,
 } from './session';
-import type { AuthUser, LoginPayload } from '../../types/auth';
+import type {
+  AuthUser,
+  LoginAuthenticated,
+  LoginPayload,
+  LoginResponse,
+  SessionOrganization,
+} from '../../types/auth';
 
 type AuthContextValue = {
   user: AuthUser | null;
+  organization: SessionOrganization | null;
   accessToken: string | null;
   isAuthenticated: boolean;
-  login: (payload: LoginPayload) => Promise<void>;
+  /**
+   * Devolve a resposta em vez de `void` porque o login tem dois desfechos:
+   * ou ja veio a sessao, ou falta escolher a organizacao. Quem ramifica por
+   * `status` e o `useLogin`; aqui so se grava o que for sessao.
+   */
+  login: (payload: LoginPayload) => Promise<LoginResponse>;
+  selectOrganization: (
+    preAuthToken: string,
+    organizationId: string,
+  ) => Promise<void>;
   logout: () => void;
 };
 
@@ -43,17 +59,46 @@ export const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(() => readSession());
 
-  const login = useCallback(async (payload: LoginPayload) => {
-    const response = await authService.login(payload);
-
+  /**
+   * Unico ponto que escreve sessao. Os dois caminhos do login convergem aqui,
+   * e e o que mantem `preAuthToken` fora do storage: ele nunca passa por esta
+   * funcao.
+   */
+  const startSession = useCallback((authenticated: LoginAuthenticated) => {
     const nextSession: Session = {
-      accessToken: response.accessToken,
-      user: response.user,
+      accessToken: authenticated.accessToken,
+      user: authenticated.user,
+      organization: authenticated.organization,
     };
 
     writeSession(nextSession);
     setSession(nextSession);
   }, []);
+
+  const login = useCallback(
+    async (payload: LoginPayload) => {
+      const response = await authService.login(payload);
+
+      if (response.status === 'authenticated') {
+        startSession(response);
+      }
+
+      return response;
+    },
+    [startSession],
+  );
+
+  const selectOrganization = useCallback(
+    async (preAuthToken: string, organizationId: string) => {
+      const authenticated = await authService.selectOrganization(
+        preAuthToken,
+        organizationId,
+      );
+
+      startSession(authenticated);
+    },
+    [startSession],
+  );
 
   const logout = useCallback(() => {
     clearSession();
@@ -99,12 +144,14 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const value = useMemo<AuthContextValue>(
     () => ({
       user: session?.user ?? null,
+      organization: session?.organization ?? null,
       accessToken: session?.accessToken ?? null,
       isAuthenticated: Boolean(session?.accessToken),
       login,
+      selectOrganization,
       logout,
     }),
-    [session, login, logout],
+    [session, login, selectOrganization, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
