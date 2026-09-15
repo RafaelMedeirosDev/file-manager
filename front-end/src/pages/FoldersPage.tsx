@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/hooks/useAuth';
 import { FolderIcon } from '../components/Icons';
 import { useFolders } from '../features/folders/hooks/useFolders';
-import { useSidebarContext } from '../features/folders/contexts/SidebarContext';
 
 // ── Avatar helpers ────────────────────────────────────────
 
@@ -34,9 +33,13 @@ function avatarInitials(name: string): string {
 export function FoldersPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { selectedUserId, selectUser } = useSidebarContext();
   const [showDelete, setShowDelete] = useState(false);
   const {
+    // Vêm do hook, e não do SidebarContext: a seleção mora na URL desde que
+    // clicar num usuário em /users passou a abrir as pastas dele. O contexto
+    // é remontado ao cruzar a fronteira entre os dois ramos do router.
+    selectedUserId,
+    selectUserId,
     visibleFolders,
     usersOptions,
     usersById,
@@ -81,14 +84,14 @@ export function FoldersPage() {
   }
 
   function handleSelectUser(id: string) {
-    selectUser(id);
+    selectUserId(id);
     setComboOpen(false);
     setComboQuery('');
   }
 
   function handleClear(e: React.MouseEvent) {
     e.stopPropagation();
-    selectUser(null);
+    selectUserId(null);
     setComboQuery('');
     setComboOpen(false);
   }
@@ -593,7 +596,22 @@ export function FoldersPage() {
               </>
             )}
           </>
-        ) : null}
+        ) : (
+          /* Antes este ramo era `null` e a pagina ficava so com o combobox.
+             Chegar aqui sem selecao passou a ser comum: basta abrir /folders
+             pelo menu, agora que o caminho principal e clicar num nome. */
+          <div className="users-empty-state">
+            <div className="users-empty-icon">
+              <FolderIcon width="22" height="22" />
+            </div>
+            <h3>Nenhum usuário selecionado</h3>
+            <p>
+              {isAdmin
+                ? 'Escolha um usuário acima, ou clique no nome dele na tela de Usuários.'
+                : 'Não há pastas para exibir.'}
+            </p>
+          </div>
+        )}
       </div>
     </>
   );

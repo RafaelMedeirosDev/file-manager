@@ -323,6 +323,26 @@
   text-overflow: ellipsis;
 }
 
+/*
+ * O nome do usuario leva para as pastas dele. Herda cor e peso do .users-name
+ * que o envolve, para o link nao parecer um elemento novo na tabela.
+ *
+ * O foco segue a unica convencao do projeto, a mesma de .users-btn-icon.
+ */
+.users-name-link {
+  color: inherit;
+  text-decoration: none;
+  border-radius: 3px;
+}
+
+.users-name-link:hover { text-decoration: underline; }
+
+.users-name-link:focus-visible {
+  outline: 2px solid #0078d4;
+  outline-offset: 2px;
+  text-decoration: underline;
+}
+
 .users-email {
   margin: 2px 0 0 0;
   font-family: 'Manrope', sans-serif;

@@ -392,6 +392,27 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     onClose();
   }
 
+  /**
+   * Clicar num usuário na sidebar.
+   *
+   * Em `/folders` a grade é filtrada pelo `?userId` da URL, então expandir
+   * alguém aqui precisa mexer na URL -- senão a árvore abriria um usuário e a
+   * grade continuaria mostrando outro.
+   *
+   * Nas demais telas nada de navegação: expandir uma árvore em `/exams` não
+   * pode arrancar ninguém da tela em que está. Ali o comportamento segue
+   * idêntico ao de antes.
+   */
+  function handleUserClick(userId: string) {
+    if (!isFoldersRoot) {
+      handleToggleUser(userId);
+      return;
+    }
+
+    const isOpen = expandedUsers.has(userId);
+    navigate(isOpen ? '/folders' : `/folders?userId=${userId}`);
+  }
+
   function renderNodes(nodes: FolderNode[], depth = 0): React.ReactNode {
     return nodes.map((node) => (
       <TreeItem
@@ -533,7 +554,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   <div key={u.id}>
                     <button
                       type="button"
-                      onClick={() => handleToggleUser(u.id)}
+                      onClick={() => handleUserClick(u.id)}
                       className="sb-item"
                       style={{ paddingLeft: 8 }}
                     >

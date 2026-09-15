@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../auth/hooks/useAuth';
 import {
   getApiErrorMessage,
@@ -34,6 +35,10 @@ async function fetchAllRootFolders(): Promise<FolderItem[]> {
 // ── Types internos do hook ───────────────────────────────
 
 type UseFoldersReturn = {
+  // Seleção — vem da URL, não do contexto. Ver o comentário no corpo do hook.
+  selectedUserId: string | null;
+  selectUserId: (id: string | null) => void;
+
   // Dados
   usersOptions: UserOption[];
   visibleFolders: FolderItem[];
@@ -61,7 +66,41 @@ type UseFoldersReturn = {
 
 export function useFolders(): UseFoldersReturn {
   const { user } = useAuth();
-  const { selectedUserId, selectUser } = useSidebarContext();
+  const { selectUser } = useSidebarContext();
+
+  /**
+   * O usuário selecionado vive na URL, e não no SidebarContext.
+   *
+   * Não é preferência de estilo: o `AppLayout` está declarado DUAS vezes no
+   * router -- uma no ramo protegido (`/folders`) e outra no ramo de ADMIN
+   * (`/users`). Ir de uma tela à outra remonta o SidebarProvider, e o
+   * `selectedUserId`, que é `useState` puro, é destruído exatamente na
+   * navegação que precisamos fazer. A URL é a única coisa que atravessa.
+   *
+   * De quebra, o endereço passa a ser compartilhável e sobrevive ao F5.
+   */
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedUserId = searchParams.get('userId');
+
+  /**
+   * Mão única: URL → contexto. O contexto não escreve de volta na URL, e é
+   * isso que impede dois efeitos de se alimentarem em laço.
+   *
+   * `selectUser` continua existindo porque é ele quem abre o acordeão da
+   * sidebar (`setExpandedUsers(new Set([id]))`) -- a seleção da grade deixou
+   * de depender dele, a aparência da sidebar não.
+   */
+  useEffect(() => {
+    selectUser(selectedUserId);
+  }, [selectedUserId, selectUser]);
+
+  function selectUserId(id: string | null) {
+    if (id) {
+      setSearchParams({ userId: id });
+    } else {
+      setSearchParams({});
+    }
+  }
 
   const [folders, setFolders] = useState<FolderItem[]>([]);
   const [usersOptions, setUsersOptions] = useState<UserOption[]>([]);
@@ -105,11 +144,14 @@ export function useFolders(): UseFoldersReturn {
 
   // ── Auto-seleciona o próprio usuário quando role === 'USER' ──
 
+  // Escreve na URL, e não no contexto, para que o endereço não minta para
+  // quem não é ADMIN. `replace` porque isto não é navegação do usuário: ele
+  // não deveria precisar de dois "voltar" para sair da tela.
   useEffect(() => {
-    if (user?.role === 'USER' && user.id) {
-      selectUser(user.id);
+    if (user?.role === 'USER' && user.id && selectedUserId !== user.id) {
+      setSearchParams({ userId: user.id }, { replace: true });
     }
-  }, [user?.role, user?.id, selectUser]);
+  }, [user?.role, user?.id, selectedUserId, setSearchParams]);
 
   // ── Carga de pastas (depende de selectedUserId) ──────────
 
@@ -198,6 +240,8 @@ export function useFolders(): UseFoldersReturn {
   // ── Retorno ──────────────────────────────────────────
 
   return {
+    selectedUserId,
+    selectUserId,
     usersOptions,
     visibleFolders,
     usersById,
