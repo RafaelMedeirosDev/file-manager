@@ -18,6 +18,17 @@ export type CreateUserPayload = {
   folders?: string[];
 };
 
+/**
+ * Todos os campos sao opcionais porque o backend so atualiza o que recebe, e o
+ * modal de edicao envia apenas o que mudou. Mandar um campo intocado nao seria
+ * inofensivo: a senha em branco viraria um hash novo, invalidando o login.
+ */
+export type UpdateUserPayload = {
+  name?: string;
+  email?: string;
+  password?: string;
+};
+
 export type ChangeOwnPasswordPayload = {
   currentPassword: string;
   newPassword: string;
@@ -35,6 +46,10 @@ export const usersService = {
 
   create(payload: CreateUserPayload): Promise<UserItem> {
     return api.post<UserItem>('/users', payload).then((r) => r.data);
+  },
+
+  update(id: string, payload: UpdateUserPayload): Promise<UserItem> {
+    return api.patch<UserItem>(`/users/${id}`, payload).then((r) => r.data);
   },
 
   changeOwnPassword(payload: ChangeOwnPasswordPayload): Promise<void> {

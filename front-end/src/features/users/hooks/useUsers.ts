@@ -21,6 +21,11 @@ type UseUsersReturn = {
   totalPages: number;
   goToPage: (p: number) => void;
   handleSoftDeleteUser: (userId: string, userName: string) => Promise<void>;
+  /** Usuario em edicao, ou null. O modal so e montado enquanto houver um. */
+  editingUser: UserItem | null;
+  openEditUser: (user: UserItem) => void;
+  closeEditUser: () => void;
+  handleUserSaved: () => void;
 };
 
 export function useUsers(): UseUsersReturn {
@@ -35,6 +40,7 @@ export function useUsers(): UseUsersReturn {
   const [searchTerm, setSearchTermState] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
+  const [editingUser, setEditingUser] = useState<UserItem | null>(null);
   const requestIdRef = useRef(0);
 
   // Debounce da busca — reseta para página 1 ao buscar
@@ -124,6 +130,28 @@ export function useUsers(): UseUsersReturn {
     }
   }
 
+  function openEditUser(user: UserItem) {
+    setActionError(null);
+    setEditingUser(user);
+  }
+
+  function closeEditUser() {
+    setEditingUser(null);
+  }
+
+  /**
+   * Fecha o modal e recarrega a pagina atual.
+   *
+   * Recarregar em vez de mesclar a resposta na lista: o backend normaliza o
+   * e-mail e a ordenacao e por nome, entao um nome editado pode mudar de
+   * posicao -- ou sair da pagina. Substituir a linha no lugar mostraria uma
+   * lista que o servidor nao devolveria.
+   */
+  function handleUserSaved() {
+    setEditingUser(null);
+    setReloadKey((prev) => prev + 1);
+  }
+
   return {
     users,
     totalUsers,
@@ -137,5 +165,9 @@ export function useUsers(): UseUsersReturn {
     totalPages,
     goToPage,
     handleSoftDeleteUser,
+    editingUser,
+    openEditUser,
+    closeEditUser,
+    handleUserSaved,
   };
 }

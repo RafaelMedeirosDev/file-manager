@@ -229,13 +229,18 @@ export class UserRepository {
    *
    * A autorizacao segue delegada ao use case, com uma diferenca que importa:
    * a LEITURA que precede esta escrita e recortada por organizacao
-   * (`findByIdInOrganization`). Um use case novo que chame este metodo sem
-   * fazer aquela leitura antes muta linha de organizacao alheia -- e o ponto
-   * de vazamento numero um deste repositorio.
+   * (`findById`, ou a associacao via MembershipRepository). Um use case novo
+   * que chame este metodo sem fazer aquela leitura antes muta linha de
+   * organizacao alheia -- e o ponto de vazamento numero um deste repositorio.
+   *
+   * `role` NAO entra neste `data`, e nao por esquecimento: o papel vive em
+   * `memberships.role`, e `users.role` e a coluna legada que o contract vai
+   * dropar. Escrever aqui seria escrever no lugar errado.
    */
   updateById(
     id: string,
     data: {
+      name?: string;
       email?: string;
       password?: string;
     },
