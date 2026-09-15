@@ -582,6 +582,16 @@ Para popular também a organização de demonstração, com dados fictícios em 
 pnpm --dir back-end prisma:seed:demo
 ```
 
+O que ele monta: **16 contas**, **58 pastas** em até 4 níveis, **109 arquivos** distribuídos entre todas as contas, **18 exames** cobrindo as 8 categorias e **30 solicitações** espalhadas pelos últimos 90 dias. Nenhuma conta fica sem arquivo e nenhum usuário fica sem solicitação — as duas coisas são conferidas pelo próprio script antes de ele escrever qualquer linha.
+
+As linhas de `files` apontam para **20 objetos** fixos no bucket, sob o prefixo `demo/`. Uma mesma chave é referenciada por várias linhas, com nomes de exibição diferentes: é isso que permite encher a demonstração sem transformar o cron num processo que faz upload. Os objetos são enviados **uma vez**, à mão:
+
+```bash
+pnpm --dir back-end demo:upload-assets    # precisa das credenciais do R2
+```
+
+> **A ordem importa.** Se o seed rodar antes de os objetos existirem, ele insere linhas apontando para chaves ausentes e o download responde 404. Degrada em vez de quebrar — `DownloadFileUseCase` mapeia `NoSuchKey` para `FILE_NOT_FOUND` —, mas é a falha mais provável ao adicionar assets novos.
+
 > Este segundo seed **reconstrói**: apaga tudo que pertence à organização de demonstração e insere de novo, e é por isso que ele pode rodar em produção por cron sem acumular lixo. Todos os `deleteMany` são escopados por `organizationId`, e o único que não tem essa coluna — `users`, cuja identidade é global — usa duas guardas somadas: o sufixo de e-mail `@demo.filemanager.dev` **e** a ausência de qualquer associação. A segunda é o que impede o script de apagar uma conta real que também seja membro da demonstração.
 
 | Papel | E-mail | Senha |
@@ -776,7 +786,9 @@ VITE_API_URL=http://localhost:3000
 
 **Inconsistências conhecidas**
 - O soft delete de arquivos não remove o objeto correspondente do bucket R2. A conta ADMIN da demonstração pode enviar arquivos, e a reconstrução noturna desfaz o dano **no banco** — mas os objetos permanecem no bucket, porque o seed apaga linhas, não objetos. O teto de 10 MiB por arquivo e o limite de 100 requisições por minuto contêm o volume; a solução proporcional é uma regra de *lifecycle* no bucket, não bloquear upload na demonstração, que tiraria justamente a funcionalidade mais interessante de avaliar.
-- **Três telas não paginam.** O frontend fixa `limit: 100` e ignora `meta.total` na listagem de solicitações de exames, na árvore de pastas da sidebar e nos seletores do wizard de solicitação. Acima de 100 registros essas telas truncam **sem nenhum indício visual**. O backend pagina corretamente em todas — a lacuna é só de consumo.
+- **Quatro consumos não paginam.** O frontend fixa `limit: 100` e ignora `meta.total` na listagem de solicitações de exames, nos seletores do wizard de solicitação, e em dois pontos da sidebar — a lista de usuários no modo ADMIN e as pastas raiz no modo USER. Acima de 100 registros esses pontos truncam **sem nenhum indício visual**; na tela de solicitações o contador do cabeçalho continua mostrando o total, então ele passa a divergir da tabela. O backend pagina corretamente em todos — a lacuna é só de consumo.
+- **Uma pasta raiz pode sumir da sidebar sem erro.** No modo ADMIN, as pastas são agrupadas pelos usuários da primeira página de 100; uma pasta cujo dono esteja além desse limite é descartada em silêncio. Não acontece com o volume atual — só a partir de ~100 contas na organização.
+- **Os arquivos de uma pasta não paginam.** `GET /folders/:id` devolve todos os arquivos da pasta, sem `skip`/`take`, e a tela renderiza todos sem virtualização. É o motivo de o seed de demonstração limitar os arquivos por pasta.
 - `PATCH /folders/:id` (renomear pasta) existe na API, com RBAC e teste, mas nenhuma tela do frontend chama a rota.
 
 **Pendência de migration**
