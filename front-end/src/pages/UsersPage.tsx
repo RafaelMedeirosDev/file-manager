@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/hooks/useAuth';
+import { EditUserModal } from '../features/users/components/EditUserModal';
 import { useUsers } from '../features/users/hooks/useUsers';
 
 // ── Paginação ─────────────────────────────────────────────
@@ -168,6 +169,49 @@ function EmptySearchIcon() {
   );
 }
 
+// Icones locais, seguindo a convencao do arquivo (SearchIcon acima) e o traco
+// do components/Icons.tsx: viewBox 24, stroke currentColor, pontas redondas.
+function EditIcon() {
+  return (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M3 6h18" />
+      <path d="M8 6V4h8v2" />
+      <path d="M6 6l1 14h10l1-14" />
+      <path d="M10 11v5" />
+      <path d="M14 11v5" />
+    </svg>
+  );
+}
+
 export function UsersPage() {
   const { user } = useAuth();
   const {
@@ -183,6 +227,10 @@ export function UsersPage() {
     totalPages,
     goToPage,
     handleSoftDeleteUser,
+    editingUser,
+    openEditUser,
+    closeEditUser,
+    handleUserSaved,
   } = useUsers();
 
   const isAdmin = user?.role === 'ADMIN';
@@ -295,14 +343,34 @@ export function UsersPage() {
                   </div>
 
                   <div className="users-actions-cell">
+                    {isAdmin ? (
+                      <button
+                        type="button"
+                        className="users-btn-icon"
+                        // Sem texto nao ha nome acessivel: o aria-label passa
+                        // a ser obrigatorio, e o title devolve por tooltip o
+                        // rotulo que o icone tirou.
+                        aria-label={`Editar ${u.name}`}
+                        title="Editar"
+                        onClick={() => openEditUser(u)}
+                      >
+                        <EditIcon />
+                      </button>
+                    ) : null}
                     {isAdmin && u.id !== user?.id ? (
                       <button
                         type="button"
-                        className="users-btn-delete"
+                        className="users-btn-icon users-btn-icon-danger"
+                        aria-label={`Excluir ${u.name}`}
+                        title="Excluir"
+                        // Sem rotulo textual nao ha para onde trocar "Excluir"
+                        // por "Excluindo...": o estado em curso vira o botao
+                        // desabilitado mais o aria-busy.
+                        aria-busy={deletingUserId === u.id}
                         onClick={() => handleSoftDeleteUser(u.id, u.name)}
                         disabled={deletingUserId === u.id}
                       >
-                        {deletingUserId === u.id ? 'Excluindo…' : 'Excluir'}
+                        <TrashIcon />
                       </button>
                     ) : null}
                   </div>
@@ -344,6 +412,17 @@ export function UsersPage() {
           onPage={goToPage}
         />
       </div>
+
+      {/* Montado so enquanto ha alguem em edicao: e o mount/unmount que zera o
+          formulario ao trocar de usuario, sem efeito de sincronizacao. */}
+      {editingUser ? (
+        <EditUserModal
+          user={editingUser}
+          isSelf={editingUser.id === user?.id}
+          onClose={closeEditUser}
+          onSaved={handleUserSaved}
+        />
+      ) : null}
     </>
   );
 }

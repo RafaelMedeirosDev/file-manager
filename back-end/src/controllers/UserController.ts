@@ -151,6 +151,7 @@ export class UserController {
     return this.updateUserUseCase.execute({
       organizationId: req.user.organizationId,
       id: params.id,
+      name: body.name,
       email: body.email,
       password: body.password,
     });

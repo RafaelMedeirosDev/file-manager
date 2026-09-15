@@ -113,6 +113,43 @@ describe('UpdateUserUseCase', () => {
       );
     });
 
+    it('updates only the name, without touching bcrypt or the email check', async () => {
+      await useCase.execute({
+        organizationId: ORGANIZATION_ID,
+        id: 'user-uuid-001',
+        name: 'Alice Ribeiro',
+      });
+
+      expect(mockUserRepository.updateById).toHaveBeenCalledWith(
+        'user-uuid-001',
+        { name: 'Alice Ribeiro', email: undefined, password: undefined },
+      );
+      // Sem email no input nao ha o que conferir, e sem senha nao ha o que
+      // hashear. Um PATCH so de nome nao pode custar nenhuma das duas coisas.
+      expect(mockUserRepository.findByEmail).not.toHaveBeenCalled();
+      expect(hashMock).not.toHaveBeenCalled();
+    });
+
+    it('updates the name together with the email', async () => {
+      mockUserRepository.findByEmail.mockResolvedValue(null);
+
+      await useCase.execute({
+        organizationId: ORGANIZATION_ID,
+        id: 'user-uuid-001',
+        name: 'Alice Ribeiro',
+        email: 'nova@example.com',
+      });
+
+      expect(mockUserRepository.updateById).toHaveBeenCalledWith(
+        'user-uuid-001',
+        {
+          name: 'Alice Ribeiro',
+          email: 'nova@example.com',
+          password: undefined,
+        },
+      );
+    });
+
     it('hashes the password when one is given', async () => {
       await useCase.execute({
         organizationId: ORGANIZATION_ID,

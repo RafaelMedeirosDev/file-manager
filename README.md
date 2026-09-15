@@ -80,7 +80,8 @@ Segundo domínio da aplicação: histórico de solicitações com filtros por pe
 ### Gestão de usuários
 - Listagem paginada com busca por nome e e-mail (executada no banco).
 - Criação de usuário com criação simultânea de pastas: uma pasta padrão com o nome do usuário (`isDefault`) e, opcionalmente, uma lista de pastas adicionais, ignorando nomes duplicados.
-- Atualização de dados e **soft delete**.
+- Edição de nome, e-mail e senha por um `ADMIN` (`PATCH /users/:id`), num modal na própria listagem. Só os campos alterados vão no payload — em particular, um campo de senha em branco **não** é enviado, para não substituir a senha do usuário sem que ninguém tenha pedido. O papel não é editável: ele vive em `memberships.role`, e mudá-lo exigiria guardas de auto-rebaixamento e de último `ADMIN` que o projeto ainda não tem.
+- **Soft delete** que desliga a associação com a organização, e não a conta global.
 - Troca da própria senha (`PATCH /users/me/password`), disponível para `ADMIN` e `USER`, com validação da senha atual.
 
 ### Gestão de pastas

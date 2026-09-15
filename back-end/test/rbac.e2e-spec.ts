@@ -258,6 +258,29 @@ describe('RBAC (e2e)', () => {
       .expect(403);
   });
 
+  // PATCH /users/:id existia desde antes, com o mock ja provido aqui, mas
+  // nenhum teste exercitava a rota -- o ADMIN-only dela nao estava afirmado em
+  // nivel de HTTP. Os dois testes abaixo fecham isso.
+  it('USER deve receber 403 ao tentar editar user', async () => {
+    await request(app.getHttpServer())
+      .patch('/users/11111111-1111-4111-8111-111111111111')
+      .set('Authorization', 'Bearer user-token')
+      .send({ name: 'Nome novo' })
+      .expect(403);
+
+    expect(updateUserUseCase.execute).not.toHaveBeenCalled();
+  });
+
+  it('ADMIN deve conseguir editar user', async () => {
+    await request(app.getHttpServer())
+      .patch('/users/11111111-1111-4111-8111-111111111111')
+      .set('Authorization', 'Bearer admin-token')
+      .send({ name: 'Nome novo' })
+      .expect(200);
+
+    expect(updateUserUseCase.execute).toHaveBeenCalled();
+  });
+
   it('USER deve receber 403 ao tentar criar folder', async () => {
     await request(app.getHttpServer())
       .post('/folders')

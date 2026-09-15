@@ -4,6 +4,12 @@ import { trimLowerCase, trimValue } from '../transforms';
 
 export class UpdateUserBodyDTO {
   @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  @Transform(trimValue)
+  name?: string;
+
+  @IsOptional()
   @IsEmail()
   @MaxLength(50)
   @Transform(trimLowerCase)
