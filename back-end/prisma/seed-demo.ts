@@ -4,7 +4,15 @@ import { ExamCategory, Prisma, PrismaClient, ROLE } from '@prisma/client';
 import { hash } from 'bcrypt';
 import { Pool } from 'pg';
 import { BCRYPT_SALT_ROUNDS } from '../src/shared/constants/bcrypt.constants';
-import { DEMO_ASSETS } from './demo-assets';
+import { randomUUID } from 'crypto';
+import {
+  DEMO_ASSETS,
+  GUIDE_ASSETS,
+  IMG_ASSETS,
+  LAB_ASSETS,
+  RX_ASSETS,
+  type DemoAsset,
+} from './demo-assets';
 
 /**
  * Reconstroi a organizacao de demonstracao do zero.
@@ -60,7 +68,6 @@ const PATIENTS = [
   'Natalia Queiroz Sa',
   'Otavio Bandeira Cruz',
 ];
-
 /**
  * 18 exames cobrindo os 8 valores de ExamCategory.
  *
@@ -230,8 +237,444 @@ async function wipeDemoOrganization(
     },
   });
 }
+// ── Estrutura de pastas ─────────────────────────────────
+
+type FolderTheme = { name: string; pool: DemoAsset[] };
+
+/**
+ * Cada subpasta tem um tema, e os arquivos dela saem do pool daquele tema.
+ * E o que faz o conteudo de "Exames de imagem" combinar com o nome da pasta,
+ * em vez de ser sorteio.
+ *
+ * Sao 5 temas e a escolha e `(i + s) % 5`, entao dois usuarios vizinhos
+ * recebem as subpastas em ordem diferente.
+ */
+const FOLDER_THEMES: FolderTheme[] = [
+  { name: 'Exames laboratoriais', pool: LAB_ASSETS },
+  { name: 'Exames de imagem', pool: IMG_ASSETS },
+  { name: 'Receitas e atestados', pool: RX_ASSETS },
+  { name: 'Laudos anteriores', pool: LAB_ASSETS },
+  { name: 'Orientacoes e termos', pool: GUIDE_ASSETS },
+];
+
+/** Todo nome de pasta que nao vem do nome do usuario. Conferidos contra o VarChar(50). */
+const FIXED_FOLDER_NAMES = [
+  ...FOLDER_THEMES.map((theme) => theme.name),
+  'Documentos internos',
+  '2026',
+  'Primeiro semestre',
+];
+
+/**
+ * Teto de arquivos por pasta. **Nao e estetica.**
+ *
+ * GetFolderByIdUseCase devolve os arquivos da pasta SEM `skip`/`take`, e a
+ * FolderDetailsPage renderiza todos sem virtualizacao -- assim como o
+ * `node.files.map` da Sidebar. Somado aos 20 que um visitante pode enviar de
+ * uma vez (BULK_UPLOAD_MAX_FILES), o pior caso ainda precisa renderizar.
+ */
+const MAX_FILES_PER_FOLDER = 6;
+
+// ── Grafo em memoria ────────────────────────────────────
+//
+// Tudo e montado aqui antes de qualquer escrita, por dois motivos:
+//
+//   1. permite `createMany` no lugar de ~200 `create` sequenciais. O seed
+//      roda dentro de UMA transacao, e no timeout padrao do Prisma (5s) uma
+//      instancia com 25ms de latencia estouraria toda noite -- silenciosamente,
+//      porque o rollback deixa a demo com os dados da vespera. E o CI nunca
+//      veria, porque la o Postgres e um container local.
+//   2. permite conferir as invariantes ANTES de escrever (ver os asserts).
+
+type SeedUser = {
+  id: string;
+  name: string;
+  email: string;
+  password: string;
+  role: ROLE;
+};
+
+type SeedFolder = {
+  id: string;
+  name: string;
+  organizationId: string;
+  userId: string;
+  folderId: string | null;
+  isDefault: boolean;
+};
+
+type SeedFile = {
+  name: string;
+  organizationId: string;
+  userId: string;
+  folderId: string;
+  extension: string;
+  key: string;
+};
+
+type SeedExamRequest = {
+  organizationId: string;
+  userId: string;
+  indication: string;
+  createdAt: Date;
+  examIds: string[];
+};
+
+/** Sufixo de mes no nome exibido: da unicidade dentro da pasta sem inventar nada. */
+function monthLabel(offset: number): string {
+  return `${String((offset % 12) + 1).padStart(2, '0')}/2026`;
+}
+
+/**
+ * Escolhe `count` assets de um pool, a partir de um ponto que avanca com o
+ * `seed`.
+ *
+ * Os pools tem 5 itens e `count` e 2, entao `gcd(2, 5) = 1`: o passo percorre
+ * o pool inteiro antes de repetir.
+ *
+ * O que isto garante e que **duas pastas do mesmo tema nao recebem o mesmo
+ * conjunto** de arquivos. NAO garante interseccao zero: com 5 itens e janelas
+ * de 2, duas janelas vizinhas compartilham um item, e isso e aceitavel --
+ * pacientes de verdade fazem os mesmos exames. O que nao pode acontecer e
+ * duas contas exibirem a lista identica.
+ */
+function pickAssets(
+  pool: DemoAsset[],
+  seed: number,
+  count: number,
+): DemoAsset[] {
+  const start = (seed * count) % pool.length;
+  return Array.from(
+    { length: Math.min(count, pool.length) },
+    (_, index) => pool[(start + index) % pool.length],
+  );
+}
+
+/**
+ * Monta pastas e arquivos de todos os donos.
+ *
+ * A ordem do array de pastas importa: o `createMany` vira um unico INSERT
+ * multi-linha e o FK de `folder_id` e conferido linha a linha, na ordem. Um
+ * filho antes do pai derrubaria a transacao inteira. Por isso os quatro
+ * passos abaixo sao por NIVEL, e nao por usuario.
+ */
+function buildFoldersAndFiles(
+  organizationId: string,
+  owners: SeedUser[],
+): { folders: SeedFolder[]; files: SeedFile[] } {
+  const folders: SeedFolder[] = [];
+  const files: SeedFile[] = [];
+
+  /**
+   * Contador sequencial de pasta, e a razao de ele existir e um bug que a
+   * verificacao pegou:
+   *
+   * antes o seed do sorteio era `index + slot` -- **a mesma conta que escolhe
+   * o tema**. Duas pastas que caissem no mesmo tema tinham por construcao o
+   * mesmo seed, e recebiam arquivos identicos. Ana e Bruno, vizinhos na
+   * listagem, compartilhavam 5 das 8 chaves.
+   *
+   * Com um contador proprio, tema e conteudo deixam de ser a mesma variavel.
+   */
+  let folderSeq = 0;
+
+  function addFiles(
+    folder: SeedFolder,
+    pool: DemoAsset[],
+    count: number,
+  ): void {
+    const seed = folderSeq;
+    folderSeq += 1;
+
+    pickAssets(pool, seed, count).forEach((asset, index) => {
+      files.push({
+        name: `${asset.name} - ${monthLabel(seed + index)}`,
+        organizationId,
+        userId: folder.userId,
+        folderId: folder.id,
+        extension: asset.extension,
+        key: asset.key,
+      });
+    });
+  }
+
+  // Nivel 1: a pasta padrao. Espelha CreateUserWithFoldersUseCase -- leva o
+  // nome do usuario e e a UNICA onde um USER pode enviar arquivos.
+  //
+  // `isDefault: true` so acontece aqui. Nao ha constraint no banco impedindo
+  // duas pastas padrao por usuario, e duas tornariam duas pastas elegiveis
+  // para upload.
+  const defaults = owners.map((owner, index) => {
+    const folder: SeedFolder = {
+      id: randomUUID(),
+      name: owner.name.slice(0, 50),
+      organizationId,
+      userId: owner.id,
+      folderId: null,
+      isDefault: true,
+    };
+    folders.push(folder);
+    addFiles(folder, GUIDE_ASSETS, 2);
+    return folder;
+  });
+
+  // Nivel 2: as subpastas tematicas.
+  const level2: Array<{
+    folder: SeedFolder;
+    theme: FolderTheme;
+    ownerIndex: number;
+  }> = [];
+
+  owners.forEach((owner, index) => {
+    const subfolderCount = 2 + (index % 2);
+
+    for (let slot = 0; slot < subfolderCount; slot += 1) {
+      const theme = FOLDER_THEMES[(index + slot) % FOLDER_THEMES.length];
+      const folder: SeedFolder = {
+        id: randomUUID(),
+        name: theme.name,
+        organizationId,
+        userId: owner.id,
+        folderId: defaults[index].id,
+        isDefault: false,
+      };
+      folders.push(folder);
+      level2.push({ folder, theme, ownerIndex: index });
+
+      // Uma pasta vazia aqui e ali e proposital: o estado vazio tambem e
+      // parte do que um avaliador precisa conseguir ver.
+      const isDeliberatelyEmpty =
+        index % 7 === 3 && slot === subfolderCount - 1;
+
+      if (!isDeliberatelyEmpty) {
+        addFiles(folder, theme.pool, 2);
+      }
+    }
+  });
+
+  // Nivel 3, em tres usuarios.
+  const level3: Array<{
+    folder: SeedFolder;
+    theme: FolderTheme;
+    ownerIndex: number;
+  }> = [];
+
+  owners.forEach((owner, index) => {
+    if (index % 7 !== 0) {
+      return;
+    }
+
+    const parent = level2.find((entry) => entry.ownerIndex === index);
+
+    if (!parent) {
+      return;
+    }
+
+    const folder: SeedFolder = {
+      id: randomUUID(),
+      name: '2026',
+      organizationId,
+      userId: owner.id,
+      folderId: parent.folder.id,
+      isDefault: false,
+    };
+    folders.push(folder);
+    addFiles(folder, parent.theme.pool, 1);
+    level3.push({ folder, theme: parent.theme, ownerIndex: index });
+  });
+
+  // Nivel 4, em UM usuario -- o `user@demo`, que e a credencial publicada.
+  //
+  // Profundidade custa requisicao: a sidebar dispara um GET /folders/:id por
+  // pasta expandida, e o throttler global e de 100/min. Quatro niveis cabem
+  // com folga; em seis, navegar normalmente ja come uma fatia visivel do balde.
+  const deepest = level3.find((entry) => entry.ownerIndex === 0);
+
+  if (deepest) {
+    const folder: SeedFolder = {
+      id: randomUUID(),
+      name: 'Primeiro semestre',
+      organizationId,
+      userId: deepest.folder.userId,
+      folderId: deepest.folder.id,
+      isDefault: false,
+    };
+    folders.push(folder);
+    addFiles(folder, deepest.theme.pool, 2);
+  }
+
+  return { folders, files };
+}
+
+/**
+ * Uma solicitacao por dono, no minimo.
+ *
+ * A regra antiga era `owners[index % owners.length]` sobre 12 indicacoes e 15
+ * donos -- os tres ultimos pacientes ficavam com zero, e na tela pareciam
+ * contas mortas.
+ */
+function buildExamRequests(
+  organizationId: string,
+  owners: SeedUser[],
+  exams: Array<{ id: string }>,
+): SeedExamRequest[] {
+  const requests: SeedExamRequest[] = [];
+
+  owners.forEach((owner, index) => {
+    const count = 1 + (index % 3);
+
+    for (let slot = 0; slot < count; slot += 1) {
+      const examCount = 1 + ((index + slot) % 4);
+
+      const examIds = Array.from(
+        { length: examCount },
+        // 7 e coprimo com 18, entao os indices de uma mesma solicitacao sao
+        // distintos. Conectar o mesmo exame duas vezes violaria a PK da
+        // tabela de juncao e derrubaria a transacao.
+        (_, position) =>
+          exams[(index * 5 + slot * 3 + 7 * position) % exams.length].id,
+      );
+
+      requests.push({
+        organizationId,
+        userId: owner.id,
+        indication: INDICATIONS[(index + slot) % INDICATIONS.length],
+        // Espalhadas por 90 dias, e nao 56: assim "ultimos 30 dias" exclui a
+        // maioria e "ultimos 7" devolve um punhado.
+        createdAt: daysAgo(((index * 7 + slot * 3) % 90) + 1),
+        examIds,
+      });
+    }
+  });
+
+  return requests;
+}
+
+// ── Invariantes ─────────────────────────────────────────
+//
+// Tudo isto e conferido ANTES de abrir a transacao. O motivo e o modo de
+// falha: uma violacao de constraint no meio do `$transaction` faz rollback de
+// tudo, a demo fica com os dados da vespera, e a aplicacao nao acusa nada --
+// so o log do cron sabe. Uma mensagem clara aqui vale mais que um P2002 la.
+
+function assertConstantsAreSound(): void {
+  const emails = PATIENTS.map(emailFor);
+
+  // emailFor monta `primeiro.ultimo@...` sem deduplicar. Dois pacientes com
+  // mesmo primeiro e ultimo nome violariam o unique de users.email.
+  if (new Set(emails).size !== emails.length) {
+    throw new Error('PATIENTS gera e-mails duplicados via emailFor.');
+  }
+
+  const longEmail = emails.find((email) => email.length > 50);
+
+  if (longEmail) {
+    throw new Error(`E-mail passa do VarChar(50) de users.email: ${longEmail}`);
+  }
+
+  const longName = [...FIXED_FOLDER_NAMES, ...PATIENTS].find(
+    (name) => name.length > 50,
+  );
+
+  if (longName) {
+    throw new Error(`Nome passa do VarChar(50): ${longName}`);
+  }
+
+  const codes = EXAMS.map((exam) => exam.code);
+
+  if (new Set(codes).size !== codes.length) {
+    throw new Error(
+      'EXAMS tem codigo duplicado -- viola @@unique([organizationId, code]).',
+    );
+  }
+}
+
+/**
+ * Confere o que este seed existe para garantir. Sao as promessas do PR, em
+ * codigo: se uma regra de distribuicao for mexida e quebrar alguma delas, o
+ * seed para aqui em vez de publicar uma demo pela metade.
+ */
+function assertContentIsUsable(
+  users: SeedUser[],
+  folders: SeedFolder[],
+  files: SeedFile[],
+  requests: SeedExamRequest[],
+): void {
+  const usersWithFiles = new Set(files.map((file) => file.userId));
+  const empty = users.filter((user) => !usersWithFiles.has(user.id));
+
+  if (empty.length > 0) {
+    throw new Error(
+      `Contas sem nenhum arquivo: ${empty.map((user) => user.email).join(', ')}`,
+    );
+  }
+
+  const byFolder = new Map<string, SeedFile[]>();
+
+  for (const file of files) {
+    byFolder.set(file.folderId, [...(byFolder.get(file.folderId) ?? []), file]);
+  }
+
+  for (const [folderId, folderFiles] of byFolder) {
+    if (folderFiles.length > MAX_FILES_PER_FOLDER) {
+      const folder = folders.find((candidate) => candidate.id === folderId);
+      throw new Error(
+        `Pasta "${folder?.name ?? folderId}" tem ${folderFiles.length} arquivos, ` +
+          `acima do teto de ${MAX_FILES_PER_FOLDER}.`,
+      );
+    }
+
+    const keys = folderFiles.map((file) => file.key);
+
+    if (new Set(keys).size !== keys.length) {
+      const folder = folders.find((candidate) => candidate.id === folderId);
+      throw new Error(
+        `Pasta "${folder?.name ?? folderId}" repete a mesma key duas vezes.`,
+      );
+    }
+  }
+
+  const requesters = new Set(requests.map((request) => request.userId));
+  const withoutRequest = users.filter(
+    (user) => user.role === ROLE.USER && !requesters.has(user.id),
+  );
+
+  if (withoutRequest.length > 0) {
+    throw new Error(
+      `USERs sem solicitacao: ${withoutRequest.map((user) => user.email).join(', ')}`,
+    );
+  }
+
+  for (const request of requests) {
+    if (new Set(request.examIds).size !== request.examIds.length) {
+      throw new Error(
+        'Uma solicitacao conecta o mesmo exame duas vezes -- viola a PK da juncao.',
+      );
+    }
+  }
+
+  // Todo asset cadastrado precisa ser referenciado por alguma linha. Um asset
+  // orfao seria um objeto subido ao R2 a mao que nunca aparece na aplicacao --
+  // custo e confusao sem retorno. Como a distribuicao e aritmetica, a
+  // cobertura muda junto com qualquer ajuste nas contagens, e sem esta
+  // verificacao a regressao passaria despercebida.
+  const usedKeys = new Set(files.map((file) => file.key));
+  const orphans = DEMO_ASSETS.filter((asset) => !usedKeys.has(asset.key));
+
+  if (orphans.length > 0) {
+    throw new Error(
+      `Assets cadastrados que nenhuma linha referencia: ${orphans
+        .map((asset) => asset.key)
+        .join(', ')}`,
+    );
+  }
+}
+
+// ── Execucao ────────────────────────────────────────────
 
 async function main(): Promise<void> {
+  assertConstantsAreSound();
+
   const { prisma, pool } = createPrismaClient();
 
   try {
@@ -271,171 +714,135 @@ async function main(): Promise<void> {
         })
       : [];
 
+    // Um hash so, reaproveitado. Fica FORA da transacao de proposito: sao 10
+    // rounds de bcrypt, e 16 hashes la dentro seriam ~1s de CPU puro dentro
+    // do orcamento de tempo da transacao.
     const demoPasswordHash = await hash(DEMO_PASSWORD, BCRYPT_SALT_ROUNDS);
 
-    await prisma.$transaction(async (tx) => {
-      await wipeDemoOrganization(tx, organization.id);
+    const demoAdmin: SeedUser = {
+      id: randomUUID(),
+      name: 'Administrador Demo',
+      email: DEMO_ADMIN_EMAIL,
+      password: demoPasswordHash,
+      role: ROLE.ADMIN,
+    };
 
-      // ── Contas ───────────────────────────────────────────
-      const demoAdmin = await tx.user.create({
-        data: {
-          name: 'Administrador Demo',
-          email: DEMO_ADMIN_EMAIL,
-          password: demoPasswordHash,
-          role: ROLE.ADMIN,
-        },
-      });
-      const demoUser = await tx.user.create({
-        data: {
-          name: 'Paciente Demo',
-          email: DEMO_USER_EMAIL,
-          password: demoPasswordHash,
-          role: ROLE.USER,
-        },
-      });
+    const demoUser: SeedUser = {
+      id: randomUUID(),
+      name: 'Paciente Demo',
+      email: DEMO_USER_EMAIL,
+      password: demoPasswordHash,
+      role: ROLE.USER,
+    };
 
-      const patients = [];
-      for (const name of PATIENTS) {
-        patients.push(
-          await tx.user.create({
+    const patients: SeedUser[] = PATIENTS.map((name) => ({
+      id: randomUUID(),
+      name,
+      email: emailFor(name),
+      password: demoPasswordHash,
+      role: ROLE.USER,
+    }));
+
+    const users = [demoAdmin, demoUser, ...patients];
+    const owners = [demoUser, ...patients];
+
+    const { folders, files } = buildFoldersAndFiles(organization.id, owners);
+
+    // O ADMIN tambem ganha pasta e arquivo. Sem isso o balde dele na sidebar
+    // fica sempre vazio -- e ele e a primeira conta que alguem abre, porque
+    // e a que esta no README.
+    const adminDefault: SeedFolder = {
+      id: randomUUID(),
+      name: demoAdmin.name,
+      organizationId: organization.id,
+      userId: demoAdmin.id,
+      folderId: null,
+      isDefault: true,
+    };
+    const adminInternal: SeedFolder = {
+      id: randomUUID(),
+      name: 'Documentos internos',
+      organizationId: organization.id,
+      userId: demoAdmin.id,
+      folderId: null,
+      isDefault: false,
+    };
+    folders.push(adminDefault, adminInternal);
+
+    for (const [folder, pool_, seed] of [
+      [adminDefault, GUIDE_ASSETS, 3],
+      // seed 4 nao e arbitrario: e o que faz esta pasta cobrir o fim do pool
+      // RX. Sem ela, `solicitacao-exames.pdf` ficaria no bucket sem nenhuma
+      // linha apontando para ele -- ver a assercao de cobertura.
+      [adminInternal, RX_ASSETS, 4],
+    ] as Array<[SeedFolder, DemoAsset[], number]>) {
+      pickAssets(pool_, seed, 2).forEach((asset, index) => {
+        files.push({
+          name: `${asset.name} - ${monthLabel(seed + index)}`,
+          organizationId: organization.id,
+          userId: demoAdmin.id,
+          folderId: folder.id,
+          extension: asset.extension,
+          key: asset.key,
+        });
+      });
+    }
+
+    const exams = EXAMS.map((exam) => ({
+      id: randomUUID(),
+      ...exam,
+      organizationId: organization.id,
+    }));
+
+    const requests = buildExamRequests(organization.id, owners, exams);
+
+    assertContentIsUsable(users, folders, files, requests);
+
+    await prisma.$transaction(
+      async (tx) => {
+        await wipeDemoOrganization(tx, organization.id);
+
+        await tx.user.createMany({ data: users });
+
+        await tx.membership.createMany({
+          data: [
+            ...users.map((user) => ({
+              userId: user.id,
+              organizationId: organization.id,
+              role: user.role,
+            })),
+            ...operators.map((operator) => ({
+              userId: operator.userId,
+              organizationId: organization.id,
+              role: ROLE.ADMIN,
+            })),
+          ],
+        });
+
+        await tx.folder.createMany({ data: folders });
+        await tx.file.createMany({ data: files });
+        await tx.exam.createMany({ data: exams });
+
+        // A unica escrita que sobra linha a linha: `_ExamToExamRequest` e uma
+        // relacao N-N implicita, sem model proprio, entao `createMany` nao
+        // alcanca. 30 idas ao banco cabem no orcamento com folga.
+        for (const request of requests) {
+          await tx.examRequest.create({
             data: {
-              name,
-              email: emailFor(name),
-              password: demoPasswordHash,
-              role: ROLE.USER,
+              organizationId: request.organizationId,
+              userId: request.userId,
+              indication: request.indication,
+              createdAt: request.createdAt,
+              exams: { connect: request.examIds.map((id) => ({ id })) },
             },
-          }),
-        );
-      }
-
-      await tx.membership.createMany({
-        data: [
-          {
-            userId: demoAdmin.id,
-            organizationId: organization.id,
-            role: ROLE.ADMIN,
-          },
-          {
-            userId: demoUser.id,
-            organizationId: organization.id,
-            role: ROLE.USER,
-          },
-          ...patients.map((patient) => ({
-            userId: patient.id,
-            organizationId: organization.id,
-            role: ROLE.USER,
-          })),
-          ...operators.map((operator) => ({
-            userId: operator.userId,
-            organizationId: organization.id,
-            role: ROLE.ADMIN,
-          })),
-        ],
-      });
-
-      // ── Pastas ───────────────────────────────────────────
-      // A pasta padrao espelha CreateUserWithFoldersUseCase: leva o nome do
-      // usuario e e a unica onde um USER pode enviar arquivos.
-      const owners = [demoUser, ...patients];
-      const defaultFolders = new Map<string, string>();
-
-      for (const owner of owners) {
-        const folder = await tx.folder.create({
-          data: {
-            name: owner.name.slice(0, 50),
-            organizationId: organization.id,
-            userId: owner.id,
-            isDefault: true,
-          },
-        });
-        defaultFolders.set(owner.id, folder.id);
-      }
-
-      // Uma cadeia de tres niveis, para exercitar os `ancestors` do
-      // GetFolderByIdUseCase e o breadcrumb da tela. Sem ela a hierarquia
-      // nunca passa de um nivel e a feature nao aparece.
-      const nivel2 = await tx.folder.create({
-        data: {
-          name: 'Exames 2026',
-          organizationId: organization.id,
-          userId: demoUser.id,
-          folderId: defaultFolders.get(demoUser.id),
-        },
-      });
-      const nivel3 = await tx.folder.create({
-        data: {
-          name: 'Cardiologia',
-          organizationId: organization.id,
-          userId: demoUser.id,
-          folderId: nivel2.id,
-        },
-      });
-
-      // Mais algumas subpastas rasas, para a arvore nao parecer uniforme.
-      for (const patient of patients.slice(0, 4)) {
-        await tx.folder.create({
-          data: {
-            name: 'Laudos anteriores',
-            organizationId: organization.id,
-            userId: patient.id,
-            folderId: defaultFolders.get(patient.id),
-          },
-        });
-      }
-
-      // ── Arquivos ─────────────────────────────────────────
-      // Apontam para objetos que JA existem no bucket. O ultimo vai na pasta
-      // de terceiro nivel, para o download ser exercitado fora da raiz.
-      for (const [index, asset] of DEMO_ASSETS.entries()) {
-        const isLast = index === DEMO_ASSETS.length - 1;
-
-        await tx.file.create({
-          data: {
-            name: asset.name,
-            organizationId: organization.id,
-            userId: demoUser.id,
-            folderId: isLast ? nivel3.id : defaultFolders.get(demoUser.id),
-            extension: asset.extension,
-            key: asset.key,
-          },
-        });
-      }
-
-      // ── Catalogo de exames ───────────────────────────────
-      await tx.exam.createMany({
-        data: EXAMS.map((exam) => ({
-          ...exam,
-          organizationId: organization.id,
-        })),
-      });
-      const exams = await tx.exam.findMany({
-        where: { organizationId: organization.id },
-        select: { id: true },
-        orderBy: { code: 'asc' },
-      });
-
-      // ── Solicitacoes ─────────────────────────────────────
-      // createdAt espalhado nos ultimos 60 dias, para o filtro de periodo da
-      // tela ter o que recortar. `createdAt` tem @default(now()), mas aceita
-      // valor explicito.
-      for (const [index, indication] of INDICATIONS.entries()) {
-        const owner = owners[index % owners.length];
-        const examCount = (index % 4) + 1;
-        const selected = exams
-          .slice(index % (exams.length - examCount), undefined)
-          .slice(0, examCount);
-
-        await tx.examRequest.create({
-          data: {
-            organizationId: organization.id,
-            userId: owner.id,
-            indication,
-            createdAt: daysAgo(index * 5 + 1),
-            exams: { connect: selected.map(({ id }) => ({ id })) },
-          },
-        });
-      }
-    });
+          });
+        }
+      },
+      // Explicito porque o padrao do Prisma e 5s, e o seed roda contra um
+      // banco cuja latencia nao esta sob nosso controle. Ver o comentario do
+      // grafo em memoria, acima.
+      { timeout: 30_000, maxWait: 10_000 },
+    );
 
     const counts = {
       usuarios: await prisma.membership.count({
