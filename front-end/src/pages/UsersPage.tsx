@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/hooks/useAuth';
 import { EditUserModal } from '../features/users/components/EditUserModal';
 import { useUsers } from '../features/users/hooks/useUsers';
@@ -329,7 +329,20 @@ export function UsersPage() {
                       {getInitials(u.name)}
                     </div>
                     <div className="users-meta">
-                      <p className="users-name">{u.name}</p>
+                      <p className="users-name">
+                        {/* Link de verdade, e nao a linha inteira clicavel:
+                            funciona por teclado sem role/tabIndex/onKeyDown,
+                            abre em nova aba com Ctrl+clique, e nao disputa o
+                            clique com os botoes de icone ao lado -- que sem
+                            isso precisariam de stopPropagation para excluir
+                            um usuario nao navegar junto. */}
+                        <Link
+                          className="users-name-link"
+                          to={`/folders?userId=${u.id}`}
+                        >
+                          {u.name}
+                        </Link>
+                      </p>
                       <p className="users-email">{u.email}</p>
                     </div>
                   </div>

@@ -89,6 +89,7 @@ Segundo domínio da aplicação: histórico de solicitações com filtros por pe
 - Listagem paginada, com filtro por pasta pai e por raízes.
 - Detalhe de pasta retornando ancestrais (breadcrumb), pai, subpastas e arquivos em uma única resposta.
 - Criação de um mesmo conjunto de pastas para vários usuários de uma vez (assistente em etapas no frontend).
+- O usuário cuja pasta está sendo vista vive na **URL** (`/folders?userId=...`), e não em estado de componente: clicar num nome na listagem de usuários abre as pastas dele, o endereço é compartilhável e sobrevive ao recarregamento. A escolha não é estética — o `AppLayout` está declarado em dois ramos do router, e navegar de `/users` para `/folders` remonta o provider do contexto, destruindo qualquer seleção guardada em memória.
 - **Soft delete**.
 
 ### Gestão de arquivos
