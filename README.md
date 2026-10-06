@@ -6,7 +6,7 @@
 Aplicação full stack em TypeScript para gestão de arquivos por usuário, organizada como um monorepo com API REST em NestJS, SPA em React e um pacote de contratos compartilhados entre as duas pontas.
 
 **Aplicação no ar:** [file-manager.up.railway.app](https://file-manager.up.railway.app)
-**Documentação da API:** [`/docs`](https://file-manager-production-355f.up.railway.app/docs) — Swagger UI, com as 27 rotas e o botão *Authorize* para colar um token
+**Documentação da API:** [`/docs`](https://file-manager-production-355f.up.railway.app/docs) — Swagger UI, com as 28 rotas e o botão *Authorize* para colar um token
 
 ### Acesso de demonstração
 
@@ -63,7 +63,7 @@ Gestão de contas restrita a ADMIN, com o papel de cada usuário visível na lis
 
 ### Solicitações de exames
 
-Segundo domínio da aplicação: histórico de solicitações com filtros por período, paciente e exame. Cada solicitação relaciona vários exames do catálogo (relação muitos-para-muitos) e uma indicação clínica. Um ADMIN vê todas as solicitações; um USER vê apenas as próprias.
+Segundo domínio da aplicação: histórico de solicitações com filtros por período, paciente e exame. Cada solicitação relaciona vários exames do catálogo (relação muitos-para-muitos) e uma indicação clínica. A listagem, a consulta e a edição são **exclusivas do `ADMIN`** — um `USER` recebe 403 nas três. O que um `USER` pode fazer é **criar** uma solicitação, sempre para si mesmo: o campo `targetUserId` do corpo só é respeitado quando quem chama é `ADMIN`.
 
 ![Histórico de solicitações de exames com filtros](docs/screenshots/exam-requests.png)
 
@@ -141,7 +141,7 @@ Segundo domínio da aplicação: histórico de solicitações com filtros por pe
 
 ### Banco de dados
 - **PostgreSQL** como provider do datasource.
-- **Prisma ORM** como camada de acesso, com **Prisma Migrate** — o histórico conta com **11 migrations** versionadas em `back-end/prisma/migrations/`.
+- **Prisma ORM** como camada de acesso, com **Prisma Migrate** — o histórico conta com **16 migrations** versionadas em `back-end/prisma/migrations/`.
 - Modelagem relacional com 5 entidades, chaves primárias em **UUID**, colunas e tabelas em `snake_case` via `@map`/`@@map`, e timestamps (`created_at`, `updated_at`) e soft delete (`deleted_at`) em todas as tabelas.
 - A conexão é injetada em tempo de execução pelo **driver adapter** (`PrismaPg` sobre um `Pool` do `pg`), incluindo a seleção do schema — o bloco `datasource` do schema não declara `url`.
 
@@ -157,9 +157,9 @@ Segundo domínio da aplicação: histórico de solicitações com filtros por pe
 - O upload usa `PutObjectCommand` e o download usa `GetObjectCommand`, ambos autenticados com as credenciais da aplicação. O objeto é resolvido pela chave (`key`) guardada no banco, e não por uma URL — o que permite manter o bucket privado e elimina a possibilidade de SSRF que existia quando o download buscava um endereço vindo do banco.
 
 ### Testes
-- **Jest 30** + **ts-jest** para testes unitários no backend: **218 testes em 33 suítes**, cobrindo os 25 use cases (leitura, escrita, upload, download e soft delete) além do fluxo de autenticação.
-- **Supertest 7** + **`@nestjs/testing`** para testes end-to-end (**39 testes em 4 arquivos** em `back-end/test/`): uma suíte dedicada a **RBAC**, que valida os códigos 403/200/201 por papel nas rotas de usuários, pastas e arquivos; uma de **limites de upload**, que confirma o 413 e o 415 antes de o handler executar; e uma de **isolamento entre organizações**, que sobe o `AppModule` inteiro contra o Postgres e assina tokens reais.
-- **Vitest 3** + **Testing Library** para o frontend: **39 testes em 7 arquivos**, colocados ao lado do código como no backend. Cobrem o login de dois passos (no hook e na página renderizada), a persistência da sessão, a normalização de erro e paginação, a guarda do header `Authorization` no interceptor do Axios e os dois guards de RBAC de rota.
+- **Jest 30** + **ts-jest** para testes unitários no backend: **220 testes em 33 suítes**, cobrindo os 25 use cases (leitura, escrita, upload, download e soft delete) além do fluxo de autenticação.
+- **Supertest 7** + **`@nestjs/testing`** para testes end-to-end (**41 testes em 4 arquivos** em `back-end/test/`): uma suíte dedicada a **RBAC**, que valida os códigos 403/200/201 por papel nas rotas de usuários, pastas e arquivos; uma de **limites de upload**, que confirma o 413 e o 415 antes de o handler executar; e uma de **isolamento entre organizações**, que sobe o `AppModule` inteiro contra o Postgres e assina tokens reais.
+- **Vitest 3** + **Testing Library** para o frontend: **62 testes em 11 arquivos**, colocados ao lado do código como no backend. Cobrem o login de dois passos (no hook e na página renderizada), a persistência da sessão, a normalização de erro e paginação, a guarda do header `Authorization` no interceptor do Axios, os dois guards de RBAC de rota, a edição de usuário — incluindo a regra de só enviar o que mudou — e a seleção de usuário pela query string.
 - O pacote `shared/` não tem suíte própria: ele é só tipos e enums, sem lógica executável.
 
 ---
@@ -181,8 +181,8 @@ O fluxo segue a cadeia **`controller → DTO → use case → repository`**, com
 
 - **Controllers** (`src/controllers/`, 5 arquivos) — apenas transporte: recebem a requisição, aplicam `ValidationPipe({ transform: true, whitelist: true, forbidNonWhitelisted: true })` no parâmetro, extraem o contexto do requisitante de `req.user` e delegam para um único use case.
 - **DTOs** (`src/shared/dto/<domínio>/`) — validam exclusivamente o formato do input com `class-validator`, normalizam strings (`trim`) e e-mails (`trim().toLowerCase()`).
-- **Use cases** (`src/usecases/<domínio>/`, 26 arquivos) — concentram as regras de negócio: verificação de propriedade, checagem de soft delete, cálculo de paginação, montagem do `meta` e mapeamento explícito para o objeto de saída. Nunca retornam registros crus do Prisma.
-- **Repositories** (`src/repositories/`, 5 arquivos) — única camada que fala com o Prisma. Expõem métodos específicos (`listUsersActive`, `countActiveUsers`, `findActiveByUserIdAndName`, `softDeleteById`) em vez de um acesso genérico ao ORM.
+- **Use cases** (`src/usecases/<domínio>/`, 25 arquivos) — concentram as regras de negócio: verificação de propriedade, checagem de soft delete, cálculo de paginação, montagem do `meta` e mapeamento explícito para o objeto de saída. Nunca retornam registros crus do Prisma.
+- **Repositories** (`src/repositories/`, 7 arquivos) — única camada que fala com o Prisma. Expõem métodos específicos (`listUsersActive`, `countActiveUsers`, `findActiveByUserIdAndName`, `softDeleteById`) em vez de um acesso genérico ao ORM.
 - **Auth** (`src/auth/`) — módulo isolado com `AuthService`, `JwtStrategy`, `JwtAuthGuard`, `RolesGuard` e o decorator `@Roles`.
 - **Infra transversal** — `src/database/` (módulo global do Prisma), `src/config/env.ts` (validação centralizada de variáveis de ambiente na inicialização), `src/shared/interceptors/` (log HTTP) e `src/shared/lib/` (cliente R2).
 
@@ -218,7 +218,7 @@ Rotas registradas:
 file-manager/
 ├── back-end/
 │   ├── prisma/
-│   │   ├── migrations/           # 11 migrations versionadas
+│   │   ├── migrations/           # 16 migrations versionadas
 │   │   └── schema.prisma
 │   ├── src/
 │   │   ├── auth/                 # AuthService, JwtStrategy, guards, @Roles
@@ -381,7 +381,7 @@ A sessão (`accessToken` + dados do usuário) é persistida em `localStorage` so
 
 ### Documentação da API
 
-`GET /docs` serve o Swagger UI e `GET /docs-json` o documento OpenAPI. As 27 rotas
+`GET /docs` serve o Swagger UI e `GET /docs-json` o documento OpenAPI. As 28 rotas
 aparecem agrupadas por domínio, e o botão *Authorize* aceita um token do
 `POST /auth/login`, o que permite exercitar as rotas protegidas pela própria
 página.
@@ -774,7 +774,7 @@ VITE_API_URL=http://localhost:3000
 - Soft delete uniforme em todas as entidades, sem nenhuma exclusão física no backend.
 - Paginação, filtro e contagem executados no banco, com contrato de resposta padronizado.
 - Contratos de API compartilhados entre backend e frontend por um pacote único, evitando divergência de tipos.
-- **218 testes unitários em 33 suítes** no backend, cobrindo os 25 use cases e o fluxo de autenticação, mais **39 testes e2e em 4 suítes** e **39 testes de frontend em 7 arquivos**.
+- **220 testes unitários em 33 suítes** no backend, cobrindo os 25 use cases e o fluxo de autenticação, mais **41 testes e2e em 4 suítes** e **62 testes de frontend em 11 arquivos** — 323 no total.
 - Leitura dos arquivos autenticada pelo SDK, sem depender de endereço público, o que elimina o SSRF por construção.
 - Rate limiting, CORS por allowlist e `helmet` no transporte; sessão e papel conferidos no banco a cada requisição.
 - Ambiente publicado, com CI rodando build, lint e as duas suítes de teste em todo pull request.
@@ -812,7 +812,7 @@ Nenhuma leitura de `users.role` resta no código — o papel exibido vem da asso
 - **API REST com NestJS 11** aplicando injeção de dependência, módulos, interceptors e uma arquitetura em camadas explícita (`controller → DTO → use case → repository`).
 - **Autenticação JWT** com Passport e hash de senhas com bcrypt.
 - **Controle de acesso por papéis** implementado em duas frentes complementares: guard declarativo por rota e verificação de propriedade dentro das regras de negócio.
-- **Modelagem relacional com Prisma**, incluindo auto-relacionamento para hierarquia de pastas, relação N–N e um histórico de 11 migrations que evidencia evolução incremental do schema.
+- **Modelagem relacional com Prisma**, incluindo auto-relacionamento para hierarquia de pastas, relação N–N e um histórico de 16 migrations que evidencia evolução incremental do schema.
 - **Uso de driver adapter do Prisma** (`@prisma/adapter-pg`) com controle explícito de pool e schema.
 - **Paginação, busca e contagem no banco de dados**, evitando filtragem em memória, com contrato de resposta padronizado `{ data, meta }`.
 - **Integração com armazenamento de objetos** via SDK compatível com S3, incluindo geração de chave, preservação de mimetype, upload em lote com tolerância a falhas parciais e download por streaming com timeout.
