@@ -48,9 +48,7 @@ pnpm dev
 
 Detalhes de variáveis de ambiente, scripts e testes estão na documentação completa abaixo.
 
----
 
-<!-- A partir daqui segue o README atual, começando por "## Sobre o projeto" -->
 
 
 ## Sobre o projeto
