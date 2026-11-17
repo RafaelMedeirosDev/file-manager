@@ -1,33 +1,57 @@
 # File Manager
 
 [![CI](https://github.com/RafaelMedeirosDev/file-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/RafaelMedeirosDev/file-manager/actions/workflows/ci.yml)
+![NestJS](https://img.shields.io/badge/NestJS-11-E0234E?logo=nestjs&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-7-2D3748?logo=prisma&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
+![React](https://img.shields.io/badge/React-18-20232A?logo=react&logoColor=61DAFB)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Aplicação full stack em TypeScript para gestão de arquivos por usuário, organizada como um monorepo com API REST em NestJS, SPA em React e um pacote de contratos compartilhados entre as duas pontas.
+Sistema multi-tenant de gestão documental e solicitação de exames, pensado para clínicas e laboratórios. API REST em NestJS, SPA em React e contratos compartilhados num monorepo.
 
-**Aplicação no ar:** [file-manager.up.railway.app](https://file-manager.up.railway.app)
-**Documentação da API:** [`/docs`](https://file-manager-production-355f.up.railway.app/docs) — Swagger UI, com as 27 rotas e o botão *Authorize* para colar um token
+## Teste agora, sem clonar nada
 
-### Acesso de demonstração
+| | |
+| --- | --- |
+| **Aplicação** | [file-manager.up.railway.app](https://file-manager.up.railway.app) |
+| **Documentação da API (Swagger)** | [/docs](https://file-manager-production-355f.up.railway.app/docs) |
 
-Entre com uma das contas abaixo para avaliar o sistema sem clonar o repositório:
+| Papel | E-mail | Senha | O que muda |
+| --- | --- | --- | --- |
+| **ADMIN** | `admin@demo.filemanager.dev` | `demo1234` | vê e gerencia tudo da organização |
+| **USER** | `user@demo.filemanager.dev` | `demo1234` | vê só as próprias pastas e arquivos; rotas de admin respondem 403 |
 
-| Papel | E-mail | Senha | O que vê |
-|---|---|---|---|
-| **ADMIN** | `admin@demo.filemanager.dev` | `demo1234` | tudo: usuários, pastas e arquivos de todos, catálogo de exames e solicitações |
-| **USER** | `user@demo.filemanager.dev` | `demo1234` | apenas as próprias pastas e arquivos; `/users` e o catálogo respondem 403 |
+Os dados são fictícios, ficam numa organização isolada e **são reconstruídos toda noite**. Pode criar, editar e excluir à vontade.
 
-As duas contas são publicadas de propósito: entrar com cada uma torna a [matriz de permissões](#matriz-de-permissões-por-rota) verificável, em vez de apenas documentada.
+![Pastas e arquivos de um usuário](docs/screenshots/folder-details.png)
 
-Elas pertencem a uma **organização de demonstração isolada**, com dados fictícios, e são reconstruídas todas as noites — sinta-se livre para criar, editar e excluir. Nenhum dado real do sistema é acessível por elas: o isolamento entre organizações é aplicado no banco, em toda consulta, e coberto por testes end-to-end.
+## Destaques técnicos
 
-| Pacote | Stack | Porta padrão |
-|---|---|---|
-| `back-end/` | NestJS 11 + Prisma 7 + PostgreSQL | `3000` (via `PORT`) |
-| `front-end/` | React 18 + Vite 5 | `5173` |
-| `shared/` | `@file-manager/shared` — enums e contratos de API | — |
+- **Multi-tenant de verdade:** isolamento entre organizações aplicado em toda consulta e provado por testes e2e contra um PostgreSQL real.
+- **RBAC em duas camadas:** guards por rota e checagem de propriedade dentro dos casos de uso; o papel é lido do banco a cada requisição, então rebaixar alguém vale na hora.
+- **Arquivos seguros:** bucket privado no Cloudflare R2, download autenticado por streaming e leitura pela chave do objeto, o que elimina SSRF por construção.
+- **Arquitetura em camadas:** `controller → DTO → use case → repository`, com o Prisma isolado nos repositórios.
+- **Testes e CI:** 218 testes unitários, 39 e2e e 39 de front-end; build, lint e testes rodam em todo Pull Request.
+
+**Stack:** NestJS 11 · TypeScript · Prisma 7 · PostgreSQL · Cloudflare R2 · JWT · Jest · Supertest · React 18 · Vite · Vitest · pnpm + Turborepo · GitHub Actions · Railway
+
+## Rodar localmente
+
+```bash
+git clone https://github.com/RafaelMedeirosDev/file-manager.git && cd file-manager
+pnpm install
+docker compose up -d --wait
+cp back-end/.env.example back-end/.env && cp front-end/.env.example front-end/.env
+pnpm prisma:migrate:dev && pnpm --dir back-end prisma:seed
+pnpm dev
+```
+
+Detalhes de variáveis de ambiente, scripts e testes estão na documentação completa abaixo.
 
 ---
+
+<!-- A partir daqui segue o README atual, começando por "## Sobre o projeto" -->
+
 
 ## Sobre o projeto
 
@@ -35,7 +59,7 @@ O **File Manager** é uma aplicação web que centraliza o armazenamento e a org
 
 O problema que ele resolve: em operações onde cada cliente/usuário possui um conjunto próprio de documentos, é comum que os arquivos fiquem espalhados em e-mails, drives pessoais e pastas locais, sem controle de quem acessa o quê. O File Manager oferece uma hierarquia de pastas por usuário, uma pasta padrão criada automaticamente no cadastro, upload e download autenticados, e regras explícitas de permissão em cada rota da API.
 
-Além do núcleo de arquivos, o projeto implementa um segundo domínio voltado a **exames laboratoriais**: um catálogo de exames classificados por categoria e um fluxo de solicitação de exames vinculado a um usuário, com geração de PDF da solicitação no frontend. Esse módulo indica que a aplicação foi construída no contexto de um laboratório ou clínica, onde a gestão documental e a solicitação de exames convivem no mesmo sistema.
+Além do núcleo de arquivos, o projeto implementa um segundo domínio voltado a **exames laboratoriais**: um catálogo de exames classificados por categoria e um fluxo de solicitação de exames vinculado a um usuário, com geração de PDF da solicitação no frontend. O projeto foi pensado para clínicas e laboratórios, onde a gestão de documentos e a solicitação de exames convivem no mesmo sistema.
 
 Trata-se de um **monorepo full stack**: backend (API REST), frontend (SPA) e um pacote compartilhado convivem no mesmo repositório, gerenciados por pnpm workspaces e Turborepo.
 
@@ -456,7 +480,7 @@ export const r2Client = new S3Client({
 });
 ```
 
-O objeto é enviado com `PutObjectCommand` usando uma chave gerada por `randomUUID()` acrescida da extensão original, o que evita colisões e desvincula o nome público do nome informado pelo usuário. O `ContentType` é preservado a partir do mimetype recebido.
+O objeto é enviado com `PutObjectCommand` usando uma chave gerada por `randomUUID()` acrescida da extensão original, o que evita colisões e desvincula o nome público do nome informado pelo usuário. O `ContentType` gravado é o canônico, derivado da extensão, e nunca o mimetype declarado pelo cliente (ver "Limites e tipos aceitos").
 
 ### Persistência dos metadados
 
@@ -485,7 +509,7 @@ Algumas escolhas do projeto só fazem sentido junto com o problema que resolvem.
 
 O download antes buscava, com `fetch`, o endereço guardado na coluna `url`. Isso trazia dois problemas ao mesmo tempo: obrigava o bucket a ser publicamente legível — o que tornava as checagens de dono meramente decorativas, já que a URL contornava todas — e, como um `ADMIN` podia gravar qualquer endereço via `PATCH /files/:id`, o servidor podia ser induzido a buscar destinos internos (SSRF).
 
-A solução foi guardar a `key` do objeto e ler com `GetObjectCommand`. Nenhum endereço vindo do banco participa da leitura, então o SSRF deixa de existir **por construção**, e não por validação. A migration derivou a `key` das URLs já existentes (a chave sempre foi o último segmento), então nada precisou ser reprocessado. A coluna `url` continua sendo gravada para permitir rollback.
+A solução foi guardar a `key` do objeto e ler com `GetObjectCommand`. Nenhum endereço vindo do banco participa da leitura, então o SSRF deixa de existir **por construção**, e não por validação. A migration derivou a `key` das URLs já existentes (a chave sempre foi o último segmento), então nada precisou ser reprocessado. A coluna `url` deixou de ser gravada e hoje é opcional no schema, guardando o valor só nos registros antigos. A remoção definitiva vem numa migration seguinte, separada de propósito para que a versão anterior da aplicação continue funcionando durante a transição.
 
 ### Falhar na inicialização quando falta configuração
 
@@ -784,7 +808,6 @@ VITE_API_URL=http://localhost:3000
 - **Sem CD.** O deploy existe e está no ar, mas é acionado fora do pipeline: o CI valida o pull request e não publica nada.
 - **Rate limiting sem precisão em ambiente multi-instância** — o contador vive em memória, então cada instância mantém a própria contagem (ver a nota em Proteções de transporte).
 - Camada de estilos mista no frontend: classes utilitárias do Tailwind, um design system em CSS puro e blocos de estilo injetados em tempo de execução em algumas páginas convivem no mesmo projeto.
-- Ausência de arquivo de licença.
 
 **Inconsistências conhecidas**
 - O soft delete de arquivos não remove o objeto correspondente do bucket R2. A conta ADMIN da demonstração pode enviar arquivos, e a reconstrução noturna desfaz o dano **no banco** — mas os objetos permanecem no bucket, porque o seed apaga linhas, não objetos. O teto de 10 MiB por arquivo e o limite de 100 requisições por minuto contêm o volume; a solução proporcional é uma regra de *lifecycle* no bucket, não bloquear upload na demonstração, que tiraria justamente a funcionalidade mais interessante de avaliar.
@@ -815,7 +838,7 @@ Nenhuma leitura de `users.role` resta no código — o papel exibido vem da asso
 - **Modelagem relacional com Prisma**, incluindo auto-relacionamento para hierarquia de pastas, relação N–N e um histórico de 11 migrations que evidencia evolução incremental do schema.
 - **Uso de driver adapter do Prisma** (`@prisma/adapter-pg`) com controle explícito de pool e schema.
 - **Paginação, busca e contagem no banco de dados**, evitando filtragem em memória, com contrato de resposta padronizado `{ data, meta }`.
-- **Integração com armazenamento de objetos** via SDK compatível com S3, incluindo geração de chave, preservação de mimetype, upload em lote com tolerância a falhas parciais e download por streaming com timeout.
+- **Integração com armazenamento de objetos** via SDK compatível com S3, incluindo geração de chave, Content-Type canônico derivado da extensão, upload em lote com tolerância a falhas parciais e download por streaming com timeout.
 - **Soft delete consistente** aplicado como política do domínio inteiro.
 - **Validação de dados de entrada** com DTOs, `class-validator` e normalização de campos.
 - **Organização em monorepo** com pnpm workspaces e Turborepo, incluindo ordenação de builds por dependência entre pacotes.
@@ -834,7 +857,6 @@ Nenhuma leitura de `users.role` resta no código — o papel exibido vem da asso
 - Adotar um `ValidationPipe` global e um filtro global de exceções, reduzindo repetição nos controllers e padronizando o corpo das respostas de erro.
 - Implementar refresh token, para que a sessão não expire de uma vez após um dia.
 - Unificar a estratégia de estilos do frontend, eliminando os blocos de CSS injetados em tempo de execução.
-- Adicionar capturas de tela da interface ao README.
 - Dar precisão ao rate limiting em ambiente multi-instância, com armazenamento de contagem compartilhado.
 
 ---
